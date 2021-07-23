@@ -97,7 +97,7 @@ steps:
 
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/cocotola-api-secret/versions/latest
+    - versionName: projects/$PROJECT_ID/secrets/cocotola-github/versions/latest
       env: "SSH_KEY"
 
 images:
