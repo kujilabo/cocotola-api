@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+
+	f "github.com/kujilabo/cocotola-api/pkg/func"
 )
 
 func init() {
@@ -16,5 +19,7 @@ func main() {
 }
 
 func HealthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	a:=f.Abc(2)
+	fmt.Printf("%d\n",a)
 	w.Write([]byte("Hello"))
 }
