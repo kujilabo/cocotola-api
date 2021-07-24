@@ -52,7 +52,7 @@ steps:
         ls
 
   - name: "gcr.io/cloud-builders/git"
-    dir: "kujilabo-manifests/cocotola-api/overlays/develop"
+    dir: "kujilabo-manifests/cocotola-api/overlays/production"
     entrypoint: "bash"
     args:
       - -c
@@ -60,7 +60,7 @@ steps:
         ls
 
   - name: "gcr.io/$PROJECT_ID/kustomize"
-    dir: "kujilabo-manifests/cocotola-api/overlays/develop"
+    dir: "kujilabo-manifests/cocotola-api/overlays/production"
     args:
       - "edit"
       - "set"
