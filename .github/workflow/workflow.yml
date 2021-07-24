@@ -8,7 +8,22 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@master
+      - name: Setup MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: 3307
+          mysql version: "5.7"
+          mysql database: "testdb"
+          mysql user: "user"
+          mysql password: "password"
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Test
+        run: go test -race ./...
       - uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
