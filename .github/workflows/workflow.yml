@@ -1,3 +1,4 @@
+---
 on: [push, pull_request]
 name: Test
 jobs:
@@ -27,3 +28,6 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+      - uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
