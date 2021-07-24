@@ -7,3 +7,7 @@ func Abc(a int) int {
 func Def(a int) int {
 	return a * a
 }
+
+func Ghi(a int) int {
+	return a * a
+}
