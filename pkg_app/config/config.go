@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/go-playground/validator"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -85,4 +86,20 @@ func InitLog(env string, cfg *LogConfig) error {
 	logrus.SetOutput(os.Stdout)
 
 	return nil
+}
+
+func InitCORS(cfg *CORSConfig) cors.Config {
+	if len(cfg.AllowOrigins) == 1 && cfg.AllowOrigins[0] == "*" {
+		return cors.Config{
+			AllowAllOrigins: true,
+			AllowMethods:    []string{"*"},
+			AllowHeaders:    []string{"*"},
+		}
+	}
+
+	return cors.Config{
+		AllowOrigins: cfg.AllowOrigins,
+		AllowMethods: []string{"*"},
+		AllowHeaders: []string{"*"},
+	}
 }

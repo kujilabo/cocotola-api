@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,8 +22,8 @@ func main() {
 
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	ctx := context.Background()
-	ctx = log.With(ctx)
+	// bg := context.Background()
+	// ctx := log.With(bg)
 	env := flag.String("env", "", "environment")
 	flag.Parse()
 	if len(*env) == 0 {
@@ -51,20 +50,7 @@ func main() {
 	}
 
 	// cors
-	var corsConfig cors.Config
-	if len(cfg.CORS.AllowOrigins) == 1 && cfg.CORS.AllowOrigins[0] == "*" {
-		corsConfig = cors.Config{
-			AllowAllOrigins: true,
-			AllowMethods:    []string{"*"},
-			AllowHeaders:    []string{"*"},
-		}
-	} else {
-		corsConfig = cors.Config{
-			AllowOrigins: cfg.CORS.AllowOrigins,
-			AllowMethods: []string{"*"},
-			AllowHeaders: []string{"*"},
-		}
-	}
+	corsConfig := config.InitCORS(cfg.CORS)
 	logrus.Infof("cors: %+v", corsConfig)
 
 	if err := corsConfig.Validate(); err != nil {
