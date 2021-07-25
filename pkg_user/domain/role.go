@@ -17,4 +17,4 @@ var OwnerRole = &role{name: "Owner"}
 var ManagerRole = &role{name: "Manager"}
 var UserRole = &role{name: "User"}
 var GuestRole = &role{name: "Guest"}
-var UnknwonRole = &role{name: "Unknwon"}
+var UnknownRole = &role{name: "Unknown"}
