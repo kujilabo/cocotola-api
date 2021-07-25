@@ -58,12 +58,14 @@ func main() {
 		panic(err)
 	}
 
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(middleware.NewLogMiddleware())
 	if !cfg.Debug.GinMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	router := gin.New()
+	router.Use(cors.New(corsConfig))
+	router.Use(middleware.NewLogMiddleware())
+
 	if cfg.Debug.Wait {
 		router.Use(middleware.NewWaitMiddleware())
 	}
