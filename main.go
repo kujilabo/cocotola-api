@@ -11,9 +11,10 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -57,15 +58,22 @@ func main() {
 		panic(err)
 	}
 
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(middleware.NewLogMiddleware())
 	if !cfg.Debug.GinMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	router := gin.New()
+	router.Use(cors.New(corsConfig))
+	router.Use(middleware.NewLogMiddleware())
+
 	if cfg.Debug.Wait {
 		router.Use(middleware.NewWaitMiddleware())
 	}
+
+	// signingKey := []byte(cfg.Auth.SigningKey)
+	// signingMethod := jwt.SigningMethodHS256
+	// authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(5)*time.Minute, time.Duration(24*30)*time.Hour)
+	// authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.Status(http.StatusOK)
@@ -80,7 +88,7 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
-			logrus.Infof("Failed to ListenAndServe. err: %v", err)
+			logrus.Infof("failed to ListenAndServe. err: %v", err)
 			done <- true
 		}
 	}()
@@ -97,3 +105,39 @@ func main() {
 	time.Sleep(gracefulShutdownTime2)
 	logrus.Info("exited")
 }
+
+// func initialize(ctx context.Context, db *gorm.DB, password string) error {
+// 	logger := log.FromContext(ctx)
+// 	systemAdmin := userD.SystemAdminInstance()
+// 	// repository := gateway.NewRepository(db)
+// 	if err := db.Transaction(func(tx *gorm.DB) error {
+// 		// repositoryFactory := gateway.NewRepositoryFactory(db, gh)
+// 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
+// 		if err != nil {
+// 			if xerrors.Is(err, userD.ErrOrganizationNotFound) {
+// 				organizationAddParameter := &userD.OrganizationAddParameter{
+// 					Name: "cocotola",
+// 					FirstOwner: &userD.FirstOwnerAddParameter{
+// 						LoginID:  "cocotola-owner",
+// 						Password: password,
+// 						Username: "Owner(cocotola)",
+// 					},
+// 				}
+// 				organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
+// 				if err != nil {
+// 					return fmt.Errorf("failed to AddOrganization: %w", err)
+// 				}
+// 				logger.Infof("organizationID: %d", organizationID)
+// 				return nil
+// 			}
+// 			logger.Errorf("failed to AddOrganization: %w", err)
+// 			return fmt.Errorf("failed to AddOrganization: %w", err)
+// 		}
+// 		logger.Infof("organization: %d", organization)
+// 		return nil
+// 	}); err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
