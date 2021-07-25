@@ -1,3 +1,4 @@
+---
 test-mysql:
   image: mysql:5.7
   container_name: test-mysql
@@ -11,7 +12,3 @@ test-mysql:
     TZ: "Asia/Tokyo"
   ports:
     - 3307:3306
-  volumes:
-    # - "./my.cnf:/etc/mysql/conf.d/my.cnf"
-    # - "./mysql-log:/var/log/mysql"
-#    - "./mysql-data:/var/lib/mysql"
