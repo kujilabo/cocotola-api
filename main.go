@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,9 +12,14 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
+	"gorm.io/gorm"
+
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
-	"github.com/sirupsen/logrus"
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 func main() {
@@ -67,6 +73,11 @@ func main() {
 		router.Use(middleware.NewWaitMiddleware())
 	}
 
+	// signingKey := []byte(cfg.Auth.SigningKey)
+	// signingMethod := jwt.SigningMethodHS256
+	// authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(5)*time.Minute, time.Duration(24*30)*time.Hour)
+	// authMiddleware := authM.NewAuthMiddleware(signingKey)
+
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
@@ -96,4 +107,38 @@ func main() {
 	}
 	time.Sleep(gracefulShutdownTime2)
 	logrus.Info("exited")
+}
+
+func initialize(ctx context.Context, db *gorm.DB, password string) error {
+	logger := log.FromContext(ctx)
+	systemAdmin := userD.SystemAdminInstance()
+	// repository := gateway.NewRepository(db)
+	db.Transaction(func(tx *gorm.DB) error {
+		// repositoryFactory := gateway.NewRepositoryFactory(db, gh)
+		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
+		if err != nil {
+			if xerrors.Is(err, userD.ErrOrganizationNotFound) {
+				organizationAddParameter := &userD.OrganizationAddParameter{
+					Name: "cocotola",
+					FirstOwner: &userD.FirstOwnerAddParameter{
+						LoginID:  "cocotola-owner",
+						Password: password,
+						Username: "Owner(cocotola)",
+					},
+				}
+				organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
+				if err != nil {
+					return fmt.Errorf("Failed to AddOrganization: %w", err)
+				}
+				logger.Infof("organizationID: %d", organizationID)
+				return nil
+			}
+			logger.Errorf("Failed to AddOrganization: %w", err)
+			return fmt.Errorf("Failed to AddOrganization: %w", err)
+		}
+		logger.Infof("organization: %d", organization)
+		return nil
+	})
+
+	return nil
 }

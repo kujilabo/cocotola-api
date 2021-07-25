@@ -1,4 +1,10 @@
 ---
+app:
+  ownerPassword: $OWNER_PASSWORD
+auth:
+  signingKey: $SIGNING_KEY
+  accessTokenTtlMin: 5
+  refreshTokenTtlHour: 720
 cors:
   allowOrigins:
     - "https://www.cocotola.com"
@@ -6,5 +12,5 @@ shutdown:
   timeSec1: 1
   timeSec2: 1
 debug:
-  ginMode: true
-  wait: true
+  ginMode: false
+  wait: false

@@ -11,6 +11,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type AuthConfig struct {
+	SigningKey          string `yaml:"signingKey"`
+	AccessTokenTTLMin   int    `yaml:"accessTokenTtlMin" validate:"gte=1"`
+	RefreshTokenTTLHour int    `yaml:"refreshTokenTtlHour" validate:"gte=1"`
+}
+
 type CORSConfig struct {
 	AllowOrigins []string `yaml:"allowOrigins"`
 }
@@ -30,6 +36,7 @@ type DebugConfig struct {
 }
 
 type Config struct {
+	Auth     *AuthConfig     `yaml:"auth"`
 	CORS     *CORSConfig     `yaml:"cors"`
 	Shutdown *ShutdownConfig `yaml:"shutdown"`
 	Log      *LogConfig      `yaml:"log"`
