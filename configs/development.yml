@@ -1,0 +1,10 @@
+---
+cors:
+  allowOrigins:
+    - "*"
+shutdown:
+  timeSec1: 1
+  timeSec2: 1
+debug:
+  ginMode: true
+  wait: true
