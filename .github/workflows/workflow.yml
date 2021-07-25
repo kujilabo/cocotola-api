@@ -1,5 +1,5 @@
 ---
-on: [push, pull_request]
+on: [pull_request]
 name: Test
 jobs:
   test:
@@ -28,6 +28,3 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
