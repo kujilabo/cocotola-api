@@ -55,7 +55,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, xerrors.Errorf("Failed to retrieve access token.err: %w", err)
+		return nil, xerrors.Errorf("failed to retrieve access token.err: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {

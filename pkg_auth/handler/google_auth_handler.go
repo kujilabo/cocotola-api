@@ -39,7 +39,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	logger.Infof("RetrieveAccessToken. code: %s", googleAuthParameter)
 	googleAuthResponse, err := h.googleAuthService.RetrieveAccessToken(ctx, googleAuthParameter.Code)
 	if err != nil {
-		logger.Warnf("Failed to RetrieveAccessToken. err: %v", err)
+		logger.Warnf("failed to RetrieveAccessToken. err: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
 		return
 	}
@@ -47,7 +47,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	logger.Infof("RetrieveUserInfo. googleResponse: %+v", googleAuthResponse)
 	userInfo, err := h.googleAuthService.RetrieveUserInfo(ctx, googleAuthResponse)
 	if err != nil {
-		logger.Warnf("Failed to RetrieveUserInfo. error: %v", err)
+		logger.Warnf("failed to RetrieveUserInfo. error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
 		return
 	}
@@ -55,7 +55,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	logger.Info("RegisterStudent")
 	authResult, err := h.googleAuthService.RegisterStudent(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
 	if err != nil {
-		logger.Warnf("Failed to RegisterStudent. err: %+v", err)
+		logger.Warnf("failed to RegisterStudent. err: %+v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
 		return
 	}

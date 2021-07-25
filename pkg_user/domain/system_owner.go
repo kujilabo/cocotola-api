@@ -86,9 +86,17 @@ func (s *systemOwner) AddAppUser(ctx context.Context, param *AppUserAddParameter
 	userSubject := NewUserObject(appUserID)
 
 	rbacRepo := s.rf.NewRBACRepository()
-	rbacRepo.AddNamedPolicy(spaceWriter, spaceObject, "read")
-	rbacRepo.AddNamedPolicy(spaceWriter, spaceObject, "write")
-	rbacRepo.AddNamedGroupingPolicy(userSubject, spaceWriter)
+	if err := rbacRepo.AddNamedPolicy(spaceWriter, spaceObject, "read"); err != nil {
+		return 0, err
+	}
+
+	if err := rbacRepo.AddNamedPolicy(spaceWriter, spaceObject, "write"); err != nil {
+		return 0, err
+	}
+
+	if err := rbacRepo.AddNamedGroupingPolicy(userSubject, spaceWriter); err != nil {
+		return 0, err
+	}
 
 	// defaultSpace, err := s.rf.NewSpaceRepository().FindDefaultSpace(ctx, s)
 	// if err != nil {

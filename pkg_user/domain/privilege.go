@@ -9,7 +9,7 @@ type privileges struct {
 }
 
 func NewPrivileges(privs []RBACAction) Privileges {
-	values := make(map[RBACAction]bool, 0)
+	values := make(map[RBACAction]bool)
 	for _, p := range privs {
 		values[p] = true
 	}

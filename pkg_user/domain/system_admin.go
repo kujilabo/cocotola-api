@@ -58,52 +58,52 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param *OrganizationAd
 	// add organization
 	organizationID, err := s.rf.NewOrganizationRepository().AddOrganization(ctx, s, param)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to AddOrganization. error: %w", err)
+		return 0, fmt.Errorf("failed to AddOrganization. error: %w", err)
 	}
 
 	// add system owner
 	systemOwnerID, err := s.rf.NewAppUserRepository().AddSystemOwner(ctx, s, organizationID)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to AddSystemOwner. error: %w", err)
+		return 0, fmt.Errorf("failed to AddSystemOwner. error: %w", err)
 	}
 
 	systemOwner, err := s.rf.NewAppUserRepository().FindSystemOwnerByOrganizationName(ctx, s, param.Name)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to FindSystemOwnerByOrganizationName. error: %w", err)
+		return 0, fmt.Errorf("failed to FindSystemOwnerByOrganizationName. error: %w", err)
 	}
 
 	// // add system student
 	// systemStudentID, err := s.rf.NewAppUserRepository().AddSystemStudent(ctx, systemOwner)
 	// if err != nil {
-	// 	return 0, fmt.Errorf("Failed to AddSystemStudent. error: %w", err)
+	// 	return 0, fmt.Errorf("failed to AddSystemStudent. error: %w", err)
 	// }
 
 	// add owner
 	ownerID, err := s.rf.NewAppUserRepository().AddFirstOwner(ctx, systemOwner, param.FirstOwner)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to AddFirstOwner. error: %w", err)
+		return 0, fmt.Errorf("failed to AddFirstOwner. error: %w", err)
 	}
 
 	owner, err := s.rf.NewAppUserRepository().FindOwnerByLoginID(ctx, systemOwner, param.FirstOwner.LoginID)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to FindOwnerByLoginID. error: %w", err)
+		return 0, fmt.Errorf("failed to FindOwnerByLoginID. error: %w", err)
 	}
 
 	// add public group
 	publicGroupID, err := s.rf.NewAppUserGroupRepository().AddPublicGroup(ctx, systemOwner)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to AddPublicGroup. error: %w", err)
+		return 0, fmt.Errorf("failed to AddPublicGroup. error: %w", err)
 	}
 
 	// public-group <-> owner
 	if err := s.rf.NewGroupUserRepository().AddGroupUser(ctx, systemOwner, publicGroupID, ownerID); err != nil {
-		return 0, fmt.Errorf("Failed to AddGroupUser. error: %w", err)
+		return 0, fmt.Errorf("failed to AddGroupUser. error: %w", err)
 	}
 
 	// add default space
 	spaceID, err := s.rf.NewSpaceRepository().AddDefaultSpace(ctx, systemOwner)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to AddDefaultSpace. error: %w", err)
+		return 0, fmt.Errorf("failed to AddDefaultSpace. error: %w", err)
 	}
 
 	logger.Infof("SystemOwnerID:%d, owner: %+v, spaceID: %d", systemOwnerID, owner, spaceID)
@@ -112,12 +112,12 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param *OrganizationAd
 	// // add personal group
 	// personalGroupID, err := s.appUserGroupRepositor.AddPublicGroup(owner)
 	// if err != nil {
-	// 	return 0, fmt.Errorf("Failed to AddPersonalGroup. error: %w", err)
+	// 	return 0, fmt.Errorf("failed to AddPersonalGroup. error: %w", err)
 	// }
 
 	// // personal-group <-> owner
 	// if err := s.groupUserRepository.AddGroupUser(systemOwner, personalGroupID, ownerID); err != nil {
-	// 	return 0, fmt.Errorf("Failed to AddGroupUser. error: %w", err)
+	// 	return 0, fmt.Errorf("failed to AddGroupUser. error: %w", err)
 	// }
 
 	return organizationID, nil

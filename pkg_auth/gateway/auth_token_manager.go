@@ -87,7 +87,7 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 	currentToken, err := jwt.ParseWithClaims(tokenString, &AppUserClaims{}, keyFunc)
 	if err != nil {
 		logger.WithError(err).Infof("%v", err)
-		return "", domain.NewUnauthorizedError(fmt.Sprintf("Failed to ParseWithClaims. err: %v", err))
+		return "", domain.NewUnauthorizedError(fmt.Sprintf("failed to ParseWithClaims. err: %v", err))
 	}
 
 	currentClaims, ok := currentToken.Claims.(*AppUserClaims)

@@ -91,7 +91,7 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
-			logrus.Infof("Failed to ListenAndServe. err: %v", err)
+			logrus.Infof("failed to ListenAndServe. err: %v", err)
 			done <- true
 		}
 	}()
@@ -113,7 +113,7 @@ func initialize(ctx context.Context, db *gorm.DB, password string) error {
 	logger := log.FromContext(ctx)
 	systemAdmin := userD.SystemAdminInstance()
 	// repository := gateway.NewRepository(db)
-	db.Transaction(func(tx *gorm.DB) error {
+	if err := db.Transaction(func(tx *gorm.DB) error {
 		// repositoryFactory := gateway.NewRepositoryFactory(db, gh)
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
@@ -128,17 +128,19 @@ func initialize(ctx context.Context, db *gorm.DB, password string) error {
 				}
 				organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
 				if err != nil {
-					return fmt.Errorf("Failed to AddOrganization: %w", err)
+					return fmt.Errorf("failed to AddOrganization: %w", err)
 				}
 				logger.Infof("organizationID: %d", organizationID)
 				return nil
 			}
-			logger.Errorf("Failed to AddOrganization: %w", err)
-			return fmt.Errorf("Failed to AddOrganization: %w", err)
+			logger.Errorf("failed to AddOrganization: %w", err)
+			return fmt.Errorf("failed to AddOrganization: %w", err)
 		}
 		logger.Infof("organization: %d", organization)
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }
