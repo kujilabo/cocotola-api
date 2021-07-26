@@ -18,7 +18,7 @@ func InitSystemAdmin(rf RepositoryFactory) {
 }
 
 type SystemAdmin interface {
-	ID() uint
+	GetID() uint
 
 	FindSystemOwnerByOrganizationID(ctx context.Context, organizationID OrganizationID) (SystemOwner, error)
 
@@ -26,7 +26,7 @@ type SystemAdmin interface {
 
 	FindOrganizationByName(ctx context.Context, name string) (Organization, error)
 
-	AddOrganization(ctx context.Context, parma *OrganizationAddParameter) (OrganizationID, error)
+	AddOrganization(ctx context.Context, parma OrganizationAddParameter) (OrganizationID, error)
 }
 
 type systemAdmin struct {
@@ -37,7 +37,7 @@ func SystemAdminInstance() SystemAdmin {
 	return systemAdminInstance
 }
 
-func (s *systemAdmin) ID() uint {
+func (s *systemAdmin) GetID() uint {
 	return SystemAdminID
 }
 
@@ -53,7 +53,7 @@ func (s *systemAdmin) FindOrganizationByName(ctx context.Context, name string) (
 	return s.rf.NewOrganizationRepository().FindOrganizationByName(ctx, s, name)
 }
 
-func (s *systemAdmin) AddOrganization(ctx context.Context, param *OrganizationAddParameter) (OrganizationID, error) {
+func (s *systemAdmin) AddOrganization(ctx context.Context, param OrganizationAddParameter) (OrganizationID, error) {
 	logger := log.FromContext(ctx)
 	// add organization
 	organizationID, err := s.rf.NewOrganizationRepository().AddOrganization(ctx, s, param)
@@ -67,7 +67,7 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param *OrganizationAd
 		return 0, fmt.Errorf("failed to AddSystemOwner. error: %w", err)
 	}
 
-	systemOwner, err := s.rf.NewAppUserRepository().FindSystemOwnerByOrganizationName(ctx, s, param.Name)
+	systemOwner, err := s.rf.NewAppUserRepository().FindSystemOwnerByOrganizationName(ctx, s, param.GetName())
 	if err != nil {
 		return 0, fmt.Errorf("failed to FindSystemOwnerByOrganizationName. error: %w", err)
 	}
@@ -79,12 +79,12 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param *OrganizationAd
 	// }
 
 	// add owner
-	ownerID, err := s.rf.NewAppUserRepository().AddFirstOwner(ctx, systemOwner, param.FirstOwner)
+	ownerID, err := s.rf.NewAppUserRepository().AddFirstOwner(ctx, systemOwner, param.GetFirstOwner())
 	if err != nil {
 		return 0, fmt.Errorf("failed to AddFirstOwner. error: %w", err)
 	}
 
-	owner, err := s.rf.NewAppUserRepository().FindOwnerByLoginID(ctx, systemOwner, param.FirstOwner.LoginID)
+	owner, err := s.rf.NewAppUserRepository().FindOwnerByLoginID(ctx, systemOwner, param.GetFirstOwner().GetLoginID())
 	if err != nil {
 		return 0, fmt.Errorf("failed to FindOwnerByLoginID. error: %w", err)
 	}

@@ -1,20 +1,20 @@
 package domain
 
 type Role interface {
-	Name() string
+	GetName() string
 }
 
 type role struct {
-	name string
+	Name string `validate:"required"`
 }
 
-func (r *role) Name() string {
-	return r.name
+func (r *role) GetName() string {
+	return r.Name
 }
 
-var AdministratorRole = &role{name: "Administrator"}
-var OwnerRole = &role{name: "Owner"}
-var ManagerRole = &role{name: "Manager"}
-var UserRole = &role{name: "User"}
-var GuestRole = &role{name: "Guest"}
-var UnknownRole = &role{name: "Unknown"}
+var AdministratorRole = &role{Name: "Administrator"}
+var OwnerRole = &role{Name: "Owner"}
+var ManagerRole = &role{Name: "Manager"}
+var UserRole = &role{Name: "User"}
+var GuestRole = &role{Name: "Guest"}
+var UnknownRole = &role{Name: "Unknown"}

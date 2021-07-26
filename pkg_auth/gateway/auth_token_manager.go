@@ -64,7 +64,7 @@ func (m *authTokenManager) createJWT(ctx context.Context, appUser user.AppUser, 
 		AppUserID:        appUser.GetID(),
 		Username:         appUser.GetUsername(),
 		OrganizationID:   organization.GetID(),
-		OrganizationName: organization.Name(),
+		OrganizationName: organization.GetName(),
 		Role:             appUser.GetRoles()[0],
 		TokenType:        tokenType,
 		StandardClaims: jwt.StandardClaims{
@@ -84,6 +84,7 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		return []byte(m.signingKey), nil
 	}
+
 	currentToken, err := jwt.ParseWithClaims(tokenString, &AppUserClaims{}, keyFunc)
 	if err != nil {
 		logger.WithError(err).Infof("%v", err)
@@ -94,9 +95,11 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 	if !ok || !currentToken.Valid {
 		return "", domain.NewUnauthorizedError("Invalid token. err: %v")
 	}
+
 	if currentClaims.TokenType != "refresh" {
 		return "", domain.NewUnauthorizedError("Invalid token type")
 	}
+
 	now := time.Now()
 	tmpID := uint(1)
 	userModel := user.NewModel(currentClaims.AppUserID, 1, now, now, tmpID, tmpID)
@@ -105,10 +108,15 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 		return "", err
 	}
 
-	organization := user.NewOrganization(user.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID), currentClaims.OrganizationName)
+	organization, err := user.NewOrganization(user.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID), currentClaims.OrganizationName)
+	if err != nil {
+		return "", err
+	}
+
 	accessToken, err := m.createJWT(ctx, appUser, organization, m.tokenTimeout, "access")
 	if err != nil {
 		return "", err
 	}
+
 	return accessToken, nil
 }

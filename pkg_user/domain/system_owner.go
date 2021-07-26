@@ -19,7 +19,7 @@ type SystemOwner interface {
 
 	FindAppUserByLoginID(ctx context.Context, loginID string) (AppUser, error)
 
-	AddAppUser(ctx context.Context, param *AppUserAddParameter) (AppUserID, error)
+	AddAppUser(ctx context.Context, param AppUserAddParameter) (AppUserID, error)
 }
 
 type systemOwner struct {
@@ -49,7 +49,7 @@ func (s *systemOwner) FindAppUserByLoginID(ctx context.Context, loginID string) 
 	return s.rf.NewAppUserRepository().FindAppUserByLoginID(ctx, s, loginID)
 }
 
-func (s *systemOwner) AddAppUser(ctx context.Context, param *AppUserAddParameter) (AppUserID, error) {
+func (s *systemOwner) AddAppUser(ctx context.Context, param AppUserAddParameter) (AppUserID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddStudent")
 	appUserID, err := s.rf.NewAppUserRepository().AddAppUser(ctx, s, param)

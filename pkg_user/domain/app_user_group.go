@@ -4,43 +4,43 @@ type AppUserGroupID uint
 
 type AppUserGroup interface {
 	Model
-	OrganizationID() OrganizationID
-	Key() string
-	Name() string
-	Description() string
+	GetOrganizationID() OrganizationID
+	GetKey() string
+	GetName() string
+	GetDescription() string
 }
 
 type appUserGroup struct {
 	Model
-	organizationID OrganizationID
-	key            string
-	name           string
-	description    string
+	OrganizationID OrganizationID
+	Key            string `validate:"required"`
+	Name           string `validate:"required"`
+	Description    string
 }
 
 // NewAppUserGroup returns a new AppUserGroup
 func NewAppUserGroup(model Model, organizationID OrganizationID, key, name, description string) AppUserGroup {
 	return &appUserGroup{
 		Model:          model,
-		organizationID: organizationID,
-		key:            key,
-		name:           name,
-		description:    description,
+		OrganizationID: organizationID,
+		Key:            key,
+		Name:           name,
+		Description:    description,
 	}
 }
 
-func (g *appUserGroup) OrganizationID() OrganizationID {
-	return g.organizationID
+func (g *appUserGroup) GetOrganizationID() OrganizationID {
+	return g.OrganizationID
 }
 
-func (g *appUserGroup) Key() string {
-	return g.key
+func (g *appUserGroup) GetKey() string {
+	return g.Key
 }
 
-func (g *appUserGroup) Name() string {
-	return g.name
+func (g *appUserGroup) GetName() string {
+	return g.Name
 }
 
-func (g *appUserGroup) Description() string {
-	return g.description
+func (g *appUserGroup) GetDescription() string {
+	return g.Description
 }

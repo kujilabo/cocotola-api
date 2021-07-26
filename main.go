@@ -19,6 +19,7 @@ import (
 	"github.com/kujilabo/cocotola-api/docs"
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
+	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
 
 func main() {
@@ -53,6 +54,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	logrus.Info(userG.AppUserTableName)
 
 	// cors
 	corsConfig := config.InitCORS(cfg.CORS)

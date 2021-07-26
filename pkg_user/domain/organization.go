@@ -1,56 +1,32 @@
 package domain
 
+import "github.com/go-playground/validator"
+
 type OrganizationID uint
 
 type Organization interface {
 	Model
-	Name() string
+	GetName() string
 }
 
 type organization struct {
 	Model
-	name string
+	Name string `validate:"required"`
 }
 
-func NewOrganization(model Model, name string) Organization {
-	return &organization{
+func NewOrganization(model Model, name string) (Organization, error) {
+	m := &organization{
 		Model: model,
-		name:  name,
+		Name:  name,
 	}
+	v := validator.New()
+	return m, v.Struct(m)
 }
 
-func (m *organization) Name() string {
-	return m.name
+func (m *organization) GetName() string {
+	return m.Name
 }
 
 func (m *organization) String() string {
-	return m.name
+	return m.Name
 }
-
-// type OrganizationAddParameter struct {
-// 	Name       string
-// 	FirstOwner *FirstOwnerAddParameter
-// }
-
-// func NewOrganizationAddParameter(name string, firstOwner *FirstOwnerAddParameter) *OrganizationAddParameter {
-// 	return &OrganizationAddParameter{
-// 		Name:       name,
-// 		FirstOwner: firstOwner,
-// 	}
-// }
-
-// type OrganizationNotFoundError struct {
-// 	id   uint
-// 	text string
-// }
-
-// func NewOrganizationNotFoundError(id uint) *OrganizationNotFoundError {
-// 	return &OrganizationNotFoundError{
-// 		id:   id,
-// 		text: fmt.Sprintf("Organization not found. Organization ID: %d", id),
-// 	}
-// }
-
-// func (e *OrganizationNotFoundError) Error() string {
-// 	return e.text
-// }

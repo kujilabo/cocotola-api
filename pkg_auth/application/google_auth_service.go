@@ -63,7 +63,7 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 	if err != nil {
 		if errors.Is(err, user.ErrAppUserNotFound) {
 			logger.Info("Add student")
-			parameter := user.NewAppUserAddParameter(
+			parameter, err := user.NewAppUserAddParameter(
 				googleUserInfo.Email,
 				googleUserInfo.Name,
 				[]string{""},
@@ -75,6 +75,10 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 					"providerRefreshToken": googleAuthResponse.RefreshToken,
 				},
 			)
+			if err != nil {
+				return nil, xerrors.Errorf("invalid AppUserAddParameter. err: %w", err)
+			}
+
 			studentID, err := systemOwner.AddAppUser(ctx, parameter)
 			if err != nil {
 				return nil, xerrors.Errorf("failed to AddStudent. err: %w", err)
