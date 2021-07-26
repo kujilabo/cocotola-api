@@ -24,8 +24,8 @@ type appUser struct {
 	rf RepositoryFactory
 	Model
 	OrganizationID OrganizationID `validate:"required,gte=1"`
-	LoginID        string
-	Username       string
+	LoginID        string         `validate:"required"`
+	Username       string         `validate:"required"`
 	Roles          []string
 	Properties     map[string]string
 }
