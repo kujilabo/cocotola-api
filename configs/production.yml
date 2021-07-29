@@ -1,16 +1,22 @@
 ---
 app:
   ownerPassword: $OWNER_PASSWORD
+  testUserEmail: $TEST_USER_EMAIL
 auth:
   signingKey: $SIGNING_KEY
   accessTokenTtlMin: 5
   refreshTokenTtlHour: 720
+  googleCallback: https://www.cocotola.com/app/callback
+  googleClientId: 830416463276-lf7d9r39v1ct78u6p1dke6cv5kd8g6o1.apps.googleusercontent.com
+  googleClientSecret: $GOOGLE_CLIENT_SECRET
 cors:
   allowOrigins:
     - "https://www.cocotola.com"
 shutdown:
   timeSec1: 1
   timeSec2: 1
+log:
+  level: debug
 debug:
   ginMode: false
   wait: false

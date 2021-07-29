@@ -1,6 +1,13 @@
 package domain
 
-import "context"
+import (
+	"context"
+
+	"golang.org/x/xerrors"
+)
+
+var ErrSpaceNotFound = xerrors.New("Space not found")
+var ErrSpaceAlreadyExists = xerrors.New("Space already exists")
 
 type SpaceRepository interface {
 	FindDefaultSpace(ctx context.Context, operator AppUser) (Space, error)

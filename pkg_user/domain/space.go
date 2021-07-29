@@ -1,6 +1,9 @@
 package domain
 
+import "github.com/go-playground/validator"
+
 type SpaceID uint
+type SpaceTypeID int
 
 type Space interface {
 	Model
@@ -12,15 +15,15 @@ type Space interface {
 
 type space struct {
 	Model
-	OrganizationID OrganizationID
-	SpaceType      int
-	Key            string `validate:"required"`
-	Name           string `validate:"required"`
-	Description    string `validate:"required"`
+	OrganizationID OrganizationID `validate:"required,gte=1"`
+	SpaceType      int            `validate:"required,gte=1"`
+	Key            string         `validate:"required"`
+	Name           string         `validate:"required"`
+	Description    string         `validate:"required"`
 }
 
-func NewSpace(model Model, organizationID OrganizationID, spaceType int, key, name, description string) Space {
-	return &space{
+func NewSpace(model Model, organizationID OrganizationID, spaceType int, key, name, description string) (Space, error) {
+	m := &space{
 		Model:          model,
 		OrganizationID: organizationID,
 		SpaceType:      spaceType,
@@ -28,6 +31,9 @@ func NewSpace(model Model, organizationID OrganizationID, spaceType int, key, na
 		Name:           name,
 		Description:    description,
 	}
+
+	v := validator.New()
+	return m, v.Struct(m)
 }
 
 func (m *space) GetOrganizationID() OrganizationID {

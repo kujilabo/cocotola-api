@@ -11,10 +11,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type AppConfig struct {
+	OwnerPassword string `yaml:"ownerPassword" validate:"required"`
+	TestUserEmail string `yaml:"testUserEmail" validate:"required"`
+}
+
 type AuthConfig struct {
 	SigningKey          string `yaml:"signingKey"`
 	AccessTokenTTLMin   int    `yaml:"accessTokenTtlMin" validate:"gte=1"`
 	RefreshTokenTTLHour int    `yaml:"refreshTokenTtlHour" validate:"gte=1"`
+	GoogleCallbackURL   string `yaml:"googleCallbackUrl" validate:"required"`
+	GoogleClientID      string `yaml:"googleClientId" validate:"required"`
+	GoogleClientSecret  string `yaml:"googleClientSecret" validate:"required"`
 }
 
 type CORSConfig struct {
@@ -36,10 +44,11 @@ type DebugConfig struct {
 }
 
 type Config struct {
-	Auth     *AuthConfig     `yaml:"auth"`
-	CORS     *CORSConfig     `yaml:"cors"`
-	Shutdown *ShutdownConfig `yaml:"shutdown"`
-	Log      *LogConfig      `yaml:"log"`
+	App      *AppConfig      `yaml:"app" validate:"required"`
+	Auth     *AuthConfig     `yaml:"auth" validate:"required"`
+	CORS     *CORSConfig     `yaml:"cors" validate:"required"`
+	Shutdown *ShutdownConfig `yaml:"shutdown" validate:"required"`
+	Log      *LogConfig      `yaml:"log" validate:"required"`
 	Debug    *DebugConfig    `yaml:"debug"`
 }
 

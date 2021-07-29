@@ -1,4 +1,4 @@
-create table `app_user` (
+create table `space` (
  `id` integer primary key autoincrement
 ,`version` int not null
 ,`created_at` datetime not null default current_timestamp
@@ -6,15 +6,12 @@ create table `app_user` (
 ,`created_by` int not null
 ,`updated_by` int not null
 ,`organization_id` int not null
-,`login_id` varchar(200)
-,`hashed_password` varchar(200)
-,`username` varchar(40)
-,`role` varchar(20)
-,`provider` varchar(40)
-,`provider_id` varchar(40)
-,`provider_access_token` text
-,`provider_refresh_token` text
-,`removed` tinyint(1) not null
-,unique(`organization_id`, `login_id`)
+,`type` int not null
+,`key` varchar(20) not null
+,`name` varchar(20) not null
+,`description` varchar(40) not null
+,unique(`organization_id`, `type`, `key`)
+,foreign key(`created_by`) references `app_user`(`id`)
+,foreign key(`updated_by`) references `app_user`(`id`)
 ,foreign key(`organization_id`) references `organization`(`id`)
 );

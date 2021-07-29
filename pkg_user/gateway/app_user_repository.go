@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
@@ -133,7 +132,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context,
 		Where("login_id = ?", SystemOwnerLoginID).
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, xerrors.Errorf("system owner not found. organization ID : %d, err: %w", organizationID, domain.ErrSystemOwnerNotFound)
+			return nil, xerrors.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, domain.ErrSystemOwnerNotFound)
 
 		}
 		return nil, result.Error
@@ -215,11 +214,7 @@ func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator dom
 
 func (r *appUserRepository) addAppUser(ctx context.Context, appUserEntity *appUserEntity) (domain.AppUserID, error) {
 	if result := r.db.Create(&appUserEntity); result.Error != nil {
-		dbErr, ok := result.Error.(*mysql.MySQLError)
-		if ok && dbErr.Number == 1062 {
-			return 0, xerrors.Errorf("failed to addAppUser. err: %w", domain.ErrAppUserAlreadyExists)
-		}
-		return 0, xerrors.Errorf("failed to addAppUser. err: %w", result.Error)
+		return 0, convertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
 	}
 	return domain.AppUserID(appUserEntity.ID), nil
 }

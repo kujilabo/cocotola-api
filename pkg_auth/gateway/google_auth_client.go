@@ -7,9 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"golang.org/x/xerrors"
+
 	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	"golang.org/x/xerrors"
 )
 
 type googleAuthClient struct {
@@ -58,18 +59,14 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 		return nil, xerrors.Errorf("failed to retrieve access token.err: %w", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		respBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
-		logger.Infof("%s", c.clientSecret)
-		logger.Infof("%s", c.clientID)
-		logger.Infof("%s", c.redirectURI)
-		logger.Infof("%s", c.grantType)
-		logger.Infof("%s", code)
-		logger.Infof("status:%d", resp.StatusCode)
-		logger.Infof("Resp:%s", string(respBytes))
+		logger.Debugf("status:%d", resp.StatusCode)
+		logger.Debugf("Resp:%s", string(respBytes))
 		return nil, xerrors.New(string(respBytes))
 	}
 
@@ -102,8 +99,8 @@ func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthRespo
 	}
 	defer resp.Body.Close()
 
-	logger.Infof("access_token:%s", googleAuthResponse.AccessToken)
-	logger.Infof("status:%d", resp.StatusCode)
+	logger.Debugf("access_token:%s", googleAuthResponse.AccessToken)
+	logger.Debugf("status:%d", resp.StatusCode)
 
 	googleUserInfo := domain.GoogleUserInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(&googleUserInfo); err != nil {
