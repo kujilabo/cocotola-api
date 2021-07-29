@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"net/http"
@@ -79,32 +80,17 @@ func main() {
 	}
 
 	// init db
-	db, err := libG.OpenSQLite("./app.db")
+	db, sqlDB, err := initDB()
 	if err != nil {
 		fmt.Printf("Failed to InitDB. err: %+v1", err)
 		panic(err)
 	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		fmt.Printf("Failed to DB. err: %+v1", err)
-		panic(err)
-	}
 	defer sqlDB.Close()
-
-	if err := sqlDB.Ping(); err != nil {
-		fmt.Printf("Failed to Ping. err: %+v1", err)
-		panic(err)
-	}
-
-	if err := gateway.MigrateSQLiteDB(db); err != nil {
-		panic(err)
-	}
 
 	rf := userG.NewRepositoryFactory(db)
 	userD.InitSystemAdmin(rf)
 
-	if err := initialize(ctx, db, cfg.App.OwnerPassword); err != nil {
+	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
 		panic(err)
 	}
 
@@ -139,6 +125,7 @@ func main() {
 		logger.Infof("%s", appUser.GetLoginID())
 
 		if appUser.GetLoginID() == cfg.App.TestUserEmail {
+			logger.Info("%s", appUser.GetLoginID())
 		}
 		return nil
 	}
@@ -187,7 +174,30 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initialize(ctx context.Context, db *gorm.DB, password string) error {
+func initDB() (*gorm.DB, *sql.DB, error) {
+	// init db
+	db, err := libG.OpenSQLite("./app.db")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := sqlDB.Ping(); err != nil {
+		return nil, nil, err
+	}
+
+	if err := gateway.MigrateSQLiteDB(db); err != nil {
+		return nil, nil, err
+	}
+
+	return db, sqlDB, nil
+}
+
+func initApp(ctx context.Context, db *gorm.DB, password string) error {
 	logger := log.FromContext(ctx)
 	systemAdmin := userD.SystemAdminInstance()
 	// repository := gateway.NewRepository(db)

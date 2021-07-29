@@ -47,18 +47,22 @@ func NewSpaceRepository(db *gorm.DB) domain.SpaceRepository {
 }
 
 func (r *spaceRepository) FindDefaultSpace(ctx context.Context, operator domain.AppUser) (domain.Space, error) {
+	logger := log.FromContext(ctx)
 
 	space := spaceEntity{}
-	if result := r.db.Where(&spaceEntity{
+	result := r.db.Where(&spaceEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
 		Type:           1,
 		Key:            "default",
-	}).Find(&space); result.Error != nil {
+	}).First(&space)
+	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrSpaceNotFound
 		}
+		return nil, result.Error
 	}
 
+	logger.Debugf("%d, %+v", result.RowsAffected, space)
 	return space.toSpace()
 }
 
@@ -71,10 +75,11 @@ func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain
 		OrganizationID: uint(operator.GetOrganizationID()),
 		Type:           2,
 		Key:            strconv.Itoa(int(operator.GetID())),
-	}).Find(&space); result.Error != nil {
+	}).First(&space); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrSpaceNotFound
 		}
+		return nil, result.Error
 	}
 
 	return space.toSpace()

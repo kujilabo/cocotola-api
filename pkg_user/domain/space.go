@@ -19,7 +19,7 @@ type space struct {
 	SpaceType      int            `validate:"required,gte=1"`
 	Key            string         `validate:"required"`
 	Name           string         `validate:"required"`
-	Description    string         `validate:"required"`
+	Description    string
 }
 
 func NewSpace(model Model, organizationID OrganizationID, spaceType int, key, name, description string) (Space, error) {

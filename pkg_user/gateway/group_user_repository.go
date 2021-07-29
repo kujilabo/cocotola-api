@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )

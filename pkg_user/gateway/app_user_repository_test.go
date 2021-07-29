@@ -81,6 +81,7 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	assert.NoError(t, err)
 
 	// delete all organizations
+	db.Where("true").Delete(&spaceEntity{})
 	db.Where("true").Delete(&appUserEntity{})
 	db.Where("true").Delete(&organizationEntity{})
 
@@ -105,6 +106,13 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	assert.Greater(t, int(uint(firstOwnerID)), 0)
 
 	firstOwner, err := appUserRepo.FindOwnerByLoginID(bg, sysOwner, "OWNER_ID")
+	assert.NoError(t, err)
+
+	spaceRepo := NewSpaceRepository(db)
+	_, err = spaceRepo.AddDefaultSpace(bg, sysOwner)
+	assert.NoError(t, err)
+	_, err = spaceRepo.AddPersonalSpace(bg, sysOwner, firstOwner)
+	assert.NoError(t, err)
 
 	return orgID, firstOwner
 }
@@ -159,7 +167,7 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := appUserRepo.AddAppUser(bg, tt.args.operator, tt.args.param)
 				if err != nil && !xerrors.Is(err, tt.err) {
-					t.Errorf("AddAppUser() error = %v, wantErr %v", err, tt.err)
+					t.Errorf("AddAppUser() error = %v, err %v", err, tt.err)
 					return
 				}
 				if err == nil {
