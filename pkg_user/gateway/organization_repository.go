@@ -7,9 +7,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/go-sql-driver/mysql"
-	"github.com/mattn/go-sqlite3"
-
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -79,13 +76,7 @@ func (r *organizationRepository) AddOrganization(ctx context.Context, operator d
 	}
 
 	if result := r.db.Create(&organization); result.Error != nil {
-		if dbErr, ok := result.Error.(*mysql.MySQLError); ok && dbErr.Number == 1062 {
-			return 0, domain.ErrOrganizationAlreadyExists
-		}
-		if dbErr, ok := result.Error.(sqlite3.Error); ok && int(dbErr.ExtendedCode) == 2067 {
-			return 0, domain.ErrOrganizationAlreadyExists
-		}
-		return 0, result.Error
+		return 0, convertDuplicatedError(result.Error, domain.ErrOrganizationAlreadyExists)
 	}
 
 	return domain.OrganizationID(organization.ID), nil

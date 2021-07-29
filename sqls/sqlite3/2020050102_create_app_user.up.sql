@@ -16,4 +16,5 @@ create table `app_user` (
 ,`provider_refresh_token` text
 ,`removed` tinyint(1) not null
 ,unique(`organization_id`, `login_id`)
+,foreign key(`organization_id`) references `organization`(`id`)
 );
