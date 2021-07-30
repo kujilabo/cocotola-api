@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"database/sql"
+	"errors"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -34,7 +35,7 @@ func migrateDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) 
 	}
 
 	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
+		if errors.Is(err, migrate.ErrNoChange) {
 			return err
 		}
 	}

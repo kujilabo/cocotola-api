@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -9,10 +9,11 @@ import (
 )
 
 func TestNewSystemOwner(t *testing.T) {
-	model := NewModel(0, 0, time.Now(), time.Now(), 0, 0)
+	model, err := NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+	assert.NoError(t, err)
 	appUser, err := NewAppUser(nil, model, 1, "LOGIN_ID", "USERNAME", nil, nil)
 	assert.NoError(t, err)
 	systemOwner, err := NewSystemOwner(nil, appUser)
 	assert.NoError(t, err)
-	fmt.Println(systemOwner)
+	log.Println(systemOwner)
 }

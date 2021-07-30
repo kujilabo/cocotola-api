@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/go-playground/validator"
+
 type AppUserGroupID uint
 
 type AppUserGroup interface {
@@ -19,14 +21,17 @@ type appUserGroup struct {
 }
 
 // NewAppUserGroup returns a new AppUserGroup
-func NewAppUserGroup(model Model, organizationID OrganizationID, key, name, description string) AppUserGroup {
-	return &appUserGroup{
+func NewAppUserGroup(model Model, organizationID OrganizationID, key, name, description string) (AppUserGroup, error) {
+	m := &appUserGroup{
 		Model:          model,
 		OrganizationID: organizationID,
 		Key:            key,
 		Name:           name,
 		Description:    description,
 	}
+
+	v := validator.New()
+	return m, v.Struct(m)
 }
 
 func (g *appUserGroup) GetOrganizationID() OrganizationID {

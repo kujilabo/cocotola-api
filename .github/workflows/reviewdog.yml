@@ -37,7 +37,7 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
-          golangci_lint_flags: "--disable-all -E errcheck"
+          golangci_lint_flags: "--disable-all -E errcheck --timeout=10m"
           tool_name: errcheck
           filter_mode: nofilter
           fail_on_error: true
@@ -52,24 +52,24 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
-          golangci_lint_flags: "--disable-all -E gosec"
+          golangci_lint_flags: "--disable-all -E gosec --timeout=10m"
           tool_name: gosec
           fail_on_error: true
 
-  dupl:
-    name: runner / dupl
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: dupl
-        uses: reviewdog/action-golangci-lint@v1
-        with:
-          github_token: ${{ secrets.REVIEWDOG_TOKEN }}
-          reporter: github-pr-review
-          golangci_lint_flags: "--disable-all -E dupl"
-          tool_name: dupl
-          filter_mode: nofilter
-          fail_on_error: true
+  # dupl:
+  #   name: runner / dupl
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: dupl
+  #       uses: reviewdog/action-golangci-lint@v1
+  #       with:
+  #         github_token: ${{ secrets.REVIEWDOG_TOKEN }}
+  #         reporter: github-pr-review
+  #         golangci_lint_flags: "--disable-all -E dupl --timeout=10m"
+  #         tool_name: dupl
+  #         filter_mode: nofilter
+  #         fail_on_error: true
 
   gofmt:
     name: runner / gofmt
@@ -81,10 +81,56 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
-          golangci_lint_flags: "--disable-all -E gofmt"
+          golangci_lint_flags: "--disable-all -E gofmt --timeout=10m"
           tool_name: gofmt
           filter_mode: nofilter
           fail_on_error: true
+
+  unconvert:
+    name: runner / unconvert
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: unconvert
+        uses: reviewdog/action-golangci-lint@v1
+        with:
+          github_token: ${{ secrets.REVIEWDOG_TOKEN }}
+          reporter: github-pr-review
+          golangci_lint_flags: "--disable-all -E unconvert --timeout=10m"
+          tool_name: unconvert
+          filter_mode: nofilter
+          fail_on_error: true
+
+  gomnd:
+    name: runner / gomnd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: gomnd
+        uses: reviewdog/action-golangci-lint@v1
+        with:
+          github_token: ${{ secrets.REVIEWDOG_TOKEN }}
+          reporter: github-pr-review
+          golangci_lint_flags: "--disable-all -E gomnd --timeout=10m"
+          tool_name: gomnd
+          filter_mode: nofilter
+          fail_on_error: true
+
+  errorlint:
+    name: runner / errorlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: errorlint
+        uses: reviewdog/action-golangci-lint@v1
+        with:
+          github_token: ${{ secrets.REVIEWDOG_TOKEN }}
+          reporter: github-pr-review
+          golangci_lint_flags: "--disable-all -E errorlint --timeout=10m"
+          tool_name: errorlint
+          filter_mode: nofilter
+          fail_on_error: true
+
 
   gocyclo:
     name: runner / gocyclo
@@ -96,7 +142,7 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
-          golangci_lint_flags: "--config=.github/.golangci.yml --disable-all --tests=false -E gocyclo"
+          golangci_lint_flags: "--config=.github/.golangci.yml --disable-all --tests=false -E gocyclo --timeout=10m"
           tool_name: gocyclo
           filter_mode: nofilter
           fail_on_error: true
@@ -111,7 +157,7 @@ jobs:
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
-          golangci_lint_flags: "--disable-all -E goimports"
+          golangci_lint_flags: "--disable-all -E goimports --timeout=10m"
           tool_name: goimports
           fail_on_error: true
 

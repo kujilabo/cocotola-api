@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 
+	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -47,11 +47,7 @@ func (r *groupUserRepository) AddGroupUser(ctx context.Context, operator domain.
 		AppUserID:      uint(appUserID),
 	}
 	if result := r.db.Create(&groupUser); result.Error != nil {
-		dbErr, ok := result.Error.(*mysql.MySQLError)
-		if ok && dbErr.Number == 1062 {
-			return domain.ErrAppUserAlreadyExists
-		}
-		return result.Error
+		return libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
 	}
 	return nil
 }

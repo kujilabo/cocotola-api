@@ -6,8 +6,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var ErrSpaceNotFound = xerrors.New("Space not found")
-var ErrSpaceAlreadyExists = xerrors.New("Space already exists")
+var ErrSpaceNotFound = xerrors.New("space not found")
+var ErrSpaceAlreadyExists = xerrors.New("space already exists")
 
 type SpaceRepository interface {
 	FindDefaultSpace(ctx context.Context, operator AppUser) (Space, error)

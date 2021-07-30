@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -54,8 +55,8 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 	}
 
 	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
-			log.Fatal(fmt.Errorf("failed to Up. err: %w", err))
+		if !errors.Is(err, migrate.ErrNoChange) {
+			log.Fatal(fmt.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
 		}
 	}
 }

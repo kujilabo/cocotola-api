@@ -3,6 +3,10 @@ module github.com/kujilabo/cocotola-api
 go 1.16
 
 require (
+	github.com/Azure/azure-sdk-for-go v56.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.19
+	github.com/Azure/go-autorest/autorest/to v0.4.0
+	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/casbin/casbin/v2 v2.34.1
 	github.com/casbin/gorm-adapter/v3 v3.3.2
@@ -10,6 +14,7 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/google/go-cmp v0.5.1

@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/go-playground/validator"
+)
 
 type Model interface {
 	GetID() uint
@@ -12,16 +16,16 @@ type Model interface {
 }
 
 type model struct {
-	ID        uint
-	Version   int
+	ID        uint `validate:"required,gte=1"`
+	Version   int  `validate:"required,gte=1"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	CreatedBy uint
-	UpdatedBy uint
+	CreatedBy uint `validate:"required,gte=1"`
+	UpdatedBy uint `validate:"required,gte=1"`
 }
 
-func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, updatedBy uint) Model {
-	return &model{
+func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, updatedBy uint) (Model, error) {
+	m := &model{
 		ID:        id,
 		Version:   version,
 		CreatedAt: createdAt,
@@ -29,6 +33,9 @@ func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, u
 		CreatedBy: createdBy,
 		UpdatedBy: updatedBy,
 	}
+
+	v := validator.New()
+	return m, v.Struct(m)
 }
 
 func (m *model) GetID() uint {

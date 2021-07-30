@@ -39,7 +39,9 @@ func TestGetOrganization(t *testing.T) {
 		assert.Greater(t, int(uint(orgID)), 0)
 
 		// get organization registered
-		user, err := domain.NewAppUser(nil, domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1), orgID, "login_id", "username", []string{}, map[string]string{})
+		model, err := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+		assert.NoError(t, err)
+		user, err := domain.NewAppUser(nil, model, orgID, "login_id", "username", []string{}, map[string]string{})
 		assert.NoError(t, err)
 		{
 			org, err := orgRepo.GetOrganization(bg, user)
@@ -48,7 +50,7 @@ func TestGetOrganization(t *testing.T) {
 		}
 
 		// get organization unregistered
-		otherUser, err := domain.NewAppUser(nil, domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1), domain.OrganizationID(orgID+1), "login_id", "username", []string{}, map[string]string{})
+		otherUser, err := domain.NewAppUser(nil, model, orgID+1, "login_id", "username", []string{}, map[string]string{})
 		assert.NoError(t, err)
 		{
 			_, err := orgRepo.GetOrganization(bg, otherUser)

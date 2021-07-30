@@ -5,16 +5,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 
+	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type userSpaceRepository struct {
 	db *gorm.DB
 	rf domain.RepositoryFactory
-	// gh domain.GatewayHolder
 }
 
 type userSpaceEntity struct {
@@ -35,7 +34,6 @@ func NewUserSpaceRepository(rf domain.RepositoryFactory, db *gorm.DB) domain.Use
 	return &userSpaceRepository{
 		db: db,
 		rf: rf,
-		// gh: gh,
 	}
 }
 
@@ -47,12 +45,9 @@ func (r *userSpaceRepository) Add(ctx context.Context, operator domain.AppUser, 
 		AppUserID:      operator.GetID(),
 		SpaceID:        uint(spaceID),
 	}); result.Error != nil {
-		dbErr, ok := result.Error.(*mysql.MySQLError)
-		if ok && dbErr.Number == 1062 {
-			return nil
-		}
-		return result.Error
+		return libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
 	}
+
 	return nil
 }
 
@@ -77,7 +72,9 @@ func (r *userSpaceRepository) IsBelongedTo(ctx context.Context, operator domain.
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
+
 		return false, result.Error
 	}
+
 	return true, nil
 }
