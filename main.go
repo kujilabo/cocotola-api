@@ -155,31 +155,9 @@ func main() {
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUsedrCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
-		logger := log.FromContext(ctx)
-		logger.Infof("%s", appUser.GetLoginID())
-
-		if appUser.GetLoginID() == cfg.App.TestUserEmail {
-			logger.Info("%s", appUser.GetLoginID())
-			student, err := appD.NewStudent(repoFunc(db), userRepoFunc(db), appUser)
-			if err != nil {
-				return err
-			}
-
-			param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, "Example", "")
-			if err != nil {
-				return fmt.Errorf("failed to AddWorkbook")
-			}
-
-			workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
-			if err != nil {
-				return fmt.Errorf("failed to AddWorkbook")
-			}
-
-			logger.Infof("Example %d", workbookID)
-		}
-
-		return nil
+		return callback(ctx, cfg.App.TestUserEmail, repoFunc(db), userRepoFunc(db), organizationName, appUser)
 	}
+
 	googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUsedrCallback)
 	authHandler := authH.NewAuthHandler(authTokenManager)
 	googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
@@ -287,6 +265,33 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 		return nil
 	}); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func callback(ctx context.Context, testUserEmail string, repo appD.RepositoryFactory, userRepo userD.RepositoryFactory, organizationName string, appUser userD.AppUser) error {
+	logger := log.FromContext(ctx)
+	logger.Infof("%s", appUser.GetLoginID())
+
+	if appUser.GetLoginID() == testUserEmail {
+		logger.Info("%s", appUser.GetLoginID())
+		student, err := appD.NewStudent(repo, userRepo, appUser)
+		if err != nil {
+			return err
+		}
+
+		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, "Example", "")
+		if err != nil {
+			return fmt.Errorf("failed to AddWorkbook")
+		}
+
+		workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
+		if err != nil {
+			return fmt.Errorf("failed to AddWorkbook")
+		}
+
+		logger.Infof("Example %d", workbookID)
 	}
 
 	return nil

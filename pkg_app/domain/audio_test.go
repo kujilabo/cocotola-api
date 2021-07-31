@@ -37,7 +37,7 @@ func TestNewAudio(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name: "lenght of lang is invalid",
+			name: "length of lang is invalid",
 			args: args{
 				id:           1,
 				lang:         "us",
