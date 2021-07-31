@@ -22,14 +22,21 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 
 	"github.com/kujilabo/cocotola-api/docs"
+	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
-	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
+	appH "github.com/kujilabo/cocotola-api/pkg_app/handler"
 	authA "github.com/kujilabo/cocotola-api/pkg_auth/application"
 	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
 	authH "github.com/kujilabo/cocotola-api/pkg_auth/handler"
+	authM "github.com/kujilabo/cocotola-api/pkg_auth/handler/middleware"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
+	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
+	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
@@ -110,15 +117,42 @@ func main() {
 		c.Status(http.StatusOK)
 	})
 
+	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
+
+	translatorClient := pluginCommonGateway.NewAzureTranslatorClient(cfg.Azure.SubscriptionKey)
+	translatorRepository := pluginCommonGateway.NewAzureTranslationRepository(db)
+	translator := pluginCommonGateway.NewAzureCachedTranslatorClient(translatorClient, translatorRepository)
+
+	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator)
+	newProblemProcessor := map[string]appD.ProblemAddProcessor{
+		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+	}
+
+	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
+	}
+	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
+		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+	}
+
+	pf := appD.NewProcessorFactory(newProblemProcessor, problemRemoveProcessor)
+	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
+		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemRepository,
+	}
+
 	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
 		return userG.NewRepositoryFactory(db)
 	}
+	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
+		return appG.NewRepositoryFactory(db, userRepoFunc, pf, problemRepositories)
+	}
+
 	signingKey := []byte(cfg.Auth.SigningKey)
 	signingMethod := jwt.SigningMethodHS256
 	authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(cfg.Auth.AccessTokenTTLMin)*time.Minute, time.Duration(cfg.Auth.RefreshTokenTTLHour)*time.Hour)
 
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
-	// authMiddleware := authM.NewAuthMiddleware(signingKey)
+	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUsedrCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
 		logger := log.FromContext(ctx)
@@ -137,6 +171,14 @@ func main() {
 		v1auth := v1.Group("auth")
 		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
 		v1auth.POST("refresh_token", authHandler.RefreshToken)
+
+		privateWorkbookService := application.NewPrivateWorkbookService(db, repoFunc, userRepoFunc)
+		v1Workbook := v1.Group("private/workbook")
+		v1Workbook.Use(authMiddleware)
+		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
+		v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
+		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
+		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -190,7 +232,7 @@ func initDB() (*gorm.DB, *sql.DB, error) {
 		return nil, nil, err
 	}
 
-	if err := gateway.MigrateSQLiteDB(db); err != nil {
+	if err := appG.MigrateSQLiteDB(db); err != nil {
 		return nil, nil, err
 	}
 

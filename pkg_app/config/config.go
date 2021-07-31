@@ -25,6 +25,15 @@ type AuthConfig struct {
 	GoogleClientSecret  string `yaml:"googleClientSecret" validate:"required"`
 }
 
+type GoogleConfig struct {
+	SynthesizerKey        string `yaml:"synthesizerKey" validate:"required"`
+	SynthesizerTimeoutSec int    `yaml:"synthesizerTimeoutSec" validate:"gte=1"`
+}
+
+type AzureConfig struct {
+	SubscriptionKey string `yaml:"subscriptionKey" validate:"required"`
+}
+
 type CORSConfig struct {
 	AllowOrigins []string `yaml:"allowOrigins"`
 }
@@ -46,6 +55,8 @@ type DebugConfig struct {
 type Config struct {
 	App      *AppConfig      `yaml:"app" validate:"required"`
 	Auth     *AuthConfig     `yaml:"auth" validate:"required"`
+	Google   *GoogleConfig   `yaml:"google" validate:"required"`
+	Azure    *AzureConfig    `yaml:"azure" validate:"required"`
 	CORS     *CORSConfig     `yaml:"cors" validate:"required"`
 	Shutdown *ShutdownConfig `yaml:"shutdown" validate:"required"`
 	Log      *LogConfig      `yaml:"log" validate:"required"`

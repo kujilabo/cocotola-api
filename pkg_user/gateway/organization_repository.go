@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -29,7 +30,12 @@ func (e *organizationEntity) TableName() string {
 }
 
 func (e *organizationEntity) toModel() (domain.Organization, error) {
-	return domain.NewOrganization(domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy), e.Name)
+	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.NewOrganization(model, e.Name)
 }
 
 func NewOrganizationRepository(db *gorm.DB) domain.OrganizationRepository {
@@ -70,13 +76,14 @@ func (r *organizationRepository) FindOrganizationByName(ctx context.Context, ope
 
 func (r *organizationRepository) AddOrganization(ctx context.Context, operator domain.SystemAdmin, param domain.OrganizationAddParameter) (domain.OrganizationID, error) {
 	organization := organizationEntity{
+		Version:   1,
 		CreatedBy: operator.GetID(),
 		UpdatedBy: operator.GetID(),
 		Name:      param.GetName(),
 	}
 
 	if result := r.db.Create(&organization); result.Error != nil {
-		return 0, convertDuplicatedError(result.Error, domain.ErrOrganizationAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrOrganizationAlreadyExists)
 	}
 
 	return domain.OrganizationID(organization.ID), nil

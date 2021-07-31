@@ -8,7 +8,8 @@ import (
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
-	"github.com/kujilabo/cocotola-api/pkg_lib/password_helper"
+	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
+	"github.com/kujilabo/cocotola-api/pkg_lib/passwordhelper"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -92,7 +93,10 @@ func (e *appUserEntity) toSystemOwner(rf domain.RepositoryFactory) (domain.Syste
 		return nil, xerrors.Errorf("invalid system owner. loginID: %s", e.LoginID)
 	}
 
-	model := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
 
 	appUser, err := domain.NewAppUser(rf, model, domain.OrganizationID(e.OrganizationID), e.LoginID, e.Username, []string{"SystemOwner"}, map[string]string{})
 	if err != nil {
@@ -103,13 +107,19 @@ func (e *appUserEntity) toSystemOwner(rf domain.RepositoryFactory) (domain.Syste
 }
 
 func (e *appUserEntity) toAppUser(rf domain.RepositoryFactory, roles []string, properties map[string]string) (domain.AppUser, error) {
-	model := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
 
 	return domain.NewAppUser(rf, model, domain.OrganizationID(e.OrganizationID), e.LoginID, e.Username, roles, properties)
 }
 
 func (e *appUserEntity) toOwner(rf domain.RepositoryFactory, roles []string, properties map[string]string) (domain.Owner, error) {
-	model := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
 
 	appUser, err := domain.NewAppUser(rf, model, domain.OrganizationID(e.OrganizationID), e.LoginID, e.Username, roles, properties)
 	if err != nil {
@@ -133,7 +143,6 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context,
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, xerrors.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, domain.ErrSystemOwnerNotFound)
-
 		}
 		return nil, result.Error
 	}
@@ -150,6 +159,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationName(ctx context.Contex
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, xerrors.Errorf("system owner not found. organization name: %s, err: %w", organizationName, domain.ErrSystemOwnerNotFound)
 		}
+
 		return nil, result.Error
 	}
 	return appUser.toSystemOwner(r.rf)
@@ -164,6 +174,7 @@ func (r *appUserRepository) FindAppUserByID(ctx context.Context, operator domain
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrAppUserNotFound
 		}
+
 		return nil, result.Error
 	}
 
@@ -185,6 +196,7 @@ func (r *appUserRepository) FindAppUserByLoginID(ctx context.Context, operator d
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrAppUserNotFound
 		}
+
 		return nil, result.Error
 	}
 
@@ -203,6 +215,7 @@ func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator dom
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrAppUserNotFound
 		}
+
 		return nil, result.Error
 	}
 
@@ -214,7 +227,7 @@ func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator dom
 
 func (r *appUserRepository) addAppUser(ctx context.Context, appUserEntity *appUserEntity) (domain.AppUserID, error) {
 	if result := r.db.Create(&appUserEntity); result.Error != nil {
-		return 0, convertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
 	}
 	return domain.AppUserID(appUserEntity.ID), nil
 }
@@ -223,14 +236,16 @@ func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.Owne
 	hashedPassword := ""
 	password, ok := param.GetProperties()["password"]
 	if ok {
-		hashed, err := password_helper.HashPassword(password)
+		hashed, err := passwordhelper.HashPassword(password)
 		if err != nil {
 			return 0, err
 		}
+
 		hashedPassword = hashed
 	}
 
 	appUser := appUserEntity{
+		Version:        1,
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
 		OrganizationID: uint(operator.GetOrganizationID()),
@@ -244,6 +259,9 @@ func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.Owne
 
 func (r *appUserRepository) AddSystemOwner(ctx context.Context, operator domain.SystemAdmin, organizationID domain.OrganizationID) (domain.AppUserID, error) {
 	appUserEntity := appUserEntity{
+		Version:        1,
+		CreatedBy:      operator.GetID(),
+		UpdatedBy:      operator.GetID(),
 		OrganizationID: uint(organizationID),
 		LoginID:        SystemOwnerLoginID,
 		Username:       "SystemOwner",
@@ -253,12 +271,13 @@ func (r *appUserRepository) AddSystemOwner(ctx context.Context, operator domain.
 }
 
 func (r *appUserRepository) AddFirstOwner(ctx context.Context, operator domain.SystemOwner, param domain.FirstOwnerAddParameter) (domain.AppUserID, error) {
-	hashedPassword, err := password_helper.HashPassword(param.GetPassword())
+	hashedPassword, err := passwordhelper.HashPassword(param.GetPassword())
 	if err != nil {
 		return 0, err
 	}
 
 	appUser := appUserEntity{
+		Version:        1,
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
 		OrganizationID: uint(operator.GetOrganizationID()),

@@ -1,4 +1,4 @@
-package gin_helper
+package ginhelper
 
 import (
 	"strconv"
@@ -12,6 +12,7 @@ func GetUint(c *gin.Context, param string) (uint, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return uint(id), nil
 }
 
@@ -21,6 +22,7 @@ func GetInt(c *gin.Context, param string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 
@@ -34,6 +36,7 @@ func GetIntFromQuery(c *gin.Context, param string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 
@@ -47,5 +50,6 @@ func GetIntFromForm(c *gin.Context, param string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }

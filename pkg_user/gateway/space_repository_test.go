@@ -31,7 +31,8 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 			operator domain.AppUser
 		}
 
-		model := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+		model, err := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+		assert.NoError(t, err)
 		space, err := domain.NewSpace(model, orgID, 1, "default", "Default", "")
 		assert.NoError(t, err)
 		tests := []struct {
@@ -84,7 +85,8 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 			operator domain.AppUser
 		}
 
-		model := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+		model, err := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
+		assert.NoError(t, err)
 		space, err := domain.NewSpace(model, orgID, 1, strconv.Itoa(int(owner.GetID())), "Default", "")
 		assert.NoError(t, err)
 		tests := []struct {

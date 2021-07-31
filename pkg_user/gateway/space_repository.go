@@ -8,9 +8,13 @@ import (
 
 	"gorm.io/gorm"
 
+	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
+
+const SpaceTypeDefault = 1
+const SpaceTypePersonal = 2
 
 type spaceEntity struct {
 	ID             uint
@@ -31,7 +35,10 @@ func (e *spaceEntity) TableName() string {
 }
 
 func (e *spaceEntity) toSpace() (domain.Space, error) {
-	model := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+	if err != nil {
+		return nil, err
+	}
 
 	return domain.NewSpace(model, domain.OrganizationID(e.OrganizationID), e.Type, e.Key, e.Name, e.Description)
 }
@@ -52,7 +59,7 @@ func (r *spaceRepository) FindDefaultSpace(ctx context.Context, operator domain.
 	space := spaceEntity{}
 	result := r.db.Where(&spaceEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
-		Type:           1,
+		Type:           SpaceTypeDefault,
 		Key:            "default",
 	}).First(&space)
 	if result.Error != nil {
@@ -73,7 +80,7 @@ func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain
 	space := spaceEntity{}
 	if result := r.db.Where(&spaceEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
-		Type:           2,
+		Type:           SpaceTypePersonal,
 		Key:            strconv.Itoa(int(operator.GetID())),
 	}).First(&space); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -87,16 +94,17 @@ func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain
 
 func (r *spaceRepository) AddDefaultSpace(ctx context.Context, operator domain.SystemOwner) (uint, error) {
 	space := spaceEntity{
+		Version:        1,
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
 		OrganizationID: uint(operator.GetOrganizationID()),
-		Type:           1,
+		Type:           SpaceTypeDefault,
 		Key:            "default",
 		Name:           "Default",
 		Description:    "",
 	}
 	if result := r.db.Create(&space); result.Error != nil {
-		return 0, convertDuplicatedError(result.Error, domain.ErrSpaceAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrSpaceAlreadyExists)
 	}
 	return space.ID, nil
 }
@@ -104,17 +112,18 @@ func (r *spaceRepository) AddDefaultSpace(ctx context.Context, operator domain.S
 func (r *spaceRepository) AddPersonalSpace(ctx context.Context, operator domain.SystemOwner, appUser domain.AppUser) (domain.SpaceID, error) {
 	logger := log.FromContext(ctx)
 	space := spaceEntity{
+		Version:        1,
 		CreatedBy:      appUser.GetID(),
 		UpdatedBy:      appUser.GetID(),
 		OrganizationID: uint(appUser.GetOrganizationID()),
-		Type:           2,
+		Type:           SpaceTypePersonal,
 		Key:            strconv.Itoa(int(appUser.GetID())),
 		Name:           "Default",
 		Description:    "",
 	}
 	logger.Infof("space %+v", space)
 	if result := r.db.Create(&space); result.Error != nil {
-		return 0, convertDuplicatedError(result.Error, domain.ErrSpaceAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrSpaceAlreadyExists)
 	}
 	return domain.SpaceID(space.ID), nil
 }

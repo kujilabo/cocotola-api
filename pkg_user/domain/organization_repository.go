@@ -7,8 +7,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var ErrOrganizationNotFound = xerrors.New("Organization not found")
-var ErrOrganizationAlreadyExists = xerrors.New("Organization already exists")
+var ErrOrganizationNotFound = xerrors.New("organization not found")
+var ErrOrganizationAlreadyExists = xerrors.New("organization already exists")
 
 type FirstOwnerAddParameter interface {
 	GetLoginID() string

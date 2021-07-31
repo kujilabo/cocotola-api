@@ -60,7 +60,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		respBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err

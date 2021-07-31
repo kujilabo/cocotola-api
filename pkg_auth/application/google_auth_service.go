@@ -60,46 +60,46 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 	logger.Infof("googleuserIndo: %+v", googleUserInfo)
 
 	appUser, err := systemOwner.FindAppUserByLoginID(ctx, loginID)
-	if err != nil {
-		if errors.Is(err, user.ErrAppUserNotFound) {
-			logger.Info("Add student")
-			parameter, err := user.NewAppUserAddParameter(
-				googleUserInfo.Email,
-				googleUserInfo.Name,
-				[]string{""},
-				map[string]string{
-					"password":             "----",
-					"provider":             "google",
-					"providerId":           googleUserInfo.Email,
-					"providerAccessToken":  googleAuthResponse.AccessToken,
-					"providerRefreshToken": googleAuthResponse.RefreshToken,
-				},
-			)
-			if err != nil {
-				return nil, xerrors.Errorf("invalid AppUserAddParameter. err: %w", err)
-			}
+	if err == nil {
+		logger.Infof("user already exists. student: %+v", appUser)
+		return s.authTokenManager.CreateTokenSet(ctx, appUser, organization)
+	}
 
-			studentID, err := systemOwner.AddAppUser(ctx, parameter)
-			if err != nil {
-				return nil, xerrors.Errorf("failed to AddStudent. err: %w", err)
-			}
-
-			student2, err := systemOwner.FindAppUserByID(ctx, studentID)
-			if err != nil {
-				return nil, xerrors.Errorf("failed to FindStudentByID. err: %w", err)
-			}
-
-			if err := s.registerAppUserCallback(ctx, organizationName, student2); err != nil {
-				return nil, xerrors.Errorf("failed to registerStudentCallback. err: %w", err)
-			}
-
-			return s.authTokenManager.CreateTokenSet(ctx, student2, organization)
-		}
-
+	if !errors.Is(err, user.ErrAppUserNotFound) {
 		logger.Infof("Unsupported %v", err)
 		return nil, err
 	}
 
-	logger.Infof("user already exists. student: %+v", appUser)
-	return s.authTokenManager.CreateTokenSet(ctx, appUser, organization)
+	logger.Info("Add student")
+	parameter, err := user.NewAppUserAddParameter(
+		googleUserInfo.Email,
+		googleUserInfo.Name,
+		[]string{""},
+		map[string]string{
+			"password":             "----",
+			"provider":             "google",
+			"providerId":           googleUserInfo.Email,
+			"providerAccessToken":  googleAuthResponse.AccessToken,
+			"providerRefreshToken": googleAuthResponse.RefreshToken,
+		},
+	)
+	if err != nil {
+		return nil, xerrors.Errorf("invalid AppUserAddParameter. err: %w", err)
+	}
+
+	studentID, err := systemOwner.AddAppUser(ctx, parameter)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to AddStudent. err: %w", err)
+	}
+
+	student2, err := systemOwner.FindAppUserByID(ctx, studentID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to FindStudentByID. err: %w", err)
+	}
+
+	if err := s.registerAppUserCallback(ctx, organizationName, student2); err != nil {
+		return nil, xerrors.Errorf("failed to registerStudentCallback. err: %w", err)
+	}
+
+	return s.authTokenManager.CreateTokenSet(ctx, student2, organization)
 }

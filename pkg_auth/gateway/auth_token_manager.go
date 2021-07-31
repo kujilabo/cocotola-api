@@ -82,7 +82,7 @@ func (m *authTokenManager) createJWT(ctx context.Context, appUser user.AppUser, 
 func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string) (string, error) {
 	logger := log.FromContext(ctx)
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		return []byte(m.signingKey), nil
+		return m.signingKey, nil
 	}
 
 	currentToken, err := jwt.ParseWithClaims(tokenString, &AppUserClaims{}, keyFunc)
@@ -102,13 +102,22 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 
 	now := time.Now()
 	tmpID := uint(1)
-	userModel := user.NewModel(currentClaims.AppUserID, 1, now, now, tmpID, tmpID)
+	userModel, err := user.NewModel(currentClaims.AppUserID, 1, now, now, tmpID, tmpID)
+	if err != nil {
+		return "", err
+	}
+
 	appUser, err := user.NewAppUser(nil, userModel, user.OrganizationID(currentClaims.OrganizationID), currentClaims.LoginID, currentClaims.Username, []string{currentClaims.Role}, map[string]string{})
 	if err != nil {
 		return "", err
 	}
 
-	organization, err := user.NewOrganization(user.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID), currentClaims.OrganizationName)
+	orgModel, err := user.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID)
+	if err != nil {
+		return "", err
+	}
+
+	organization, err := user.NewOrganization(orgModel, currentClaims.OrganizationName)
 	if err != nil {
 		return "", err
 	}
