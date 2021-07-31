@@ -89,7 +89,7 @@ func main() {
 	// init db
 	db, sqlDB, err := initDB()
 	if err != nil {
-		fmt.Printf("Failed to InitDB. err: %+v1", err)
+		fmt.Printf("failed to InitDB. err: %+v", err)
 		panic(err)
 	}
 	defer sqlDB.Close()
@@ -160,7 +160,24 @@ func main() {
 
 		if appUser.GetLoginID() == cfg.App.TestUserEmail {
 			logger.Info("%s", appUser.GetLoginID())
+			student, err := appD.NewStudent(repoFunc(db), userRepoFunc(db), appUser)
+			if err != nil {
+				return err
+			}
+
+			param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, "Example", "")
+			if err != nil {
+				return fmt.Errorf("failed to AddWorkbook")
+			}
+
+			workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
+			if err != nil {
+				return fmt.Errorf("failed to AddWorkbook")
+			}
+
+			logger.Infof("Example %d", workbookID)
 		}
+
 		return nil
 	}
 	googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUsedrCallback)
@@ -217,7 +234,6 @@ func main() {
 }
 
 func initDB() (*gorm.DB, *sql.DB, error) {
-	// init db
 	db, err := libG.OpenSQLite("./app.db")
 	if err != nil {
 		return nil, nil, err

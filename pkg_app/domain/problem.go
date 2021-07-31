@@ -50,8 +50,8 @@ func (m *problem) GetProperties(ctx context.Context) map[string]interface{} {
 
 type ProblemWithResults interface {
 	Problem
-	Results() []bool
-	Level() int
+	GetResults() []bool
+	GetLevel() int
 }
 
 type problemWithResults struct {
@@ -68,10 +68,10 @@ func NewProblemWithResults(problem Problem, results []bool, level int) ProblemWi
 	}
 }
 
-func (m *problemWithResults) Results() []bool {
+func (m *problemWithResults) GetResults() []bool {
 	return m.results
 }
 
-func (m *problemWithResults) Level() int {
+func (m *problemWithResults) GetLevel() int {
 	return m.level
 }

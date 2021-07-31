@@ -12,15 +12,15 @@ import (
 )
 
 type ProblemService interface {
-	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param *domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error)
+	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param *domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error)
 
 	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error)
 
 	FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
 
-	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param *domain.ProblemAddParameter) (domain.ProblemID, error)
+	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error)
 
 	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error
 }
@@ -39,7 +39,7 @@ func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) domain.RepositoryFact
 	}
 }
 
-func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param *domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
+func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.repo(tx)
@@ -64,7 +64,7 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param *domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
+func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.repo(tx)
@@ -139,7 +139,7 @@ func (s *problemService) FindProblemIDs(ctx context.Context, organizationID user
 	return result, nil
 }
 
-func (s *problemService) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param *domain.ProblemAddParameter) (domain.ProblemID, error) {
+func (s *problemService) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	var result domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -149,7 +149,7 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
-		workbook, err := student.FindWorkbookByID(ctx, param.WorkbookID)
+		workbook, err := student.FindWorkbookByID(ctx, param.GetWorkbookID())
 		if err != nil {
 			return err
 		}

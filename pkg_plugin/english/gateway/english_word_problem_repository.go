@@ -81,21 +81,21 @@ type newEnglishWordProblemParam struct {
 	SentenceID2       uint
 }
 
-func toNewEnglishWordProblemParam(param *app.ProblemAddParameter) (*newEnglishWordProblemParam, error) {
-	audioID, err := strconv.Atoi(param.Properties["audioId"])
+func toNewEnglishWordProblemParam(param app.ProblemAddParameter) (*newEnglishWordProblemParam, error) {
+	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
 		return nil, err
 	}
-	pos, err := strconv.Atoi(param.Properties["pos"])
+	pos, err := strconv.Atoi(param.GetProperties()["pos"])
 	if err != nil {
 		return nil, err
 	}
 
 	m := &newEnglishWordProblemParam{
 		AudioID:    uint(audioID),
-		Text:       param.Properties["text"],
+		Text:       param.GetProperties()["text"],
 		Pos:        pos,
-		Translated: param.Properties["translated"],
+		Translated: param.GetProperties()["translated"],
 	}
 	v := validator.New()
 	return m, v.Struct(m)
@@ -113,12 +113,12 @@ func NewEnglishWordProblemRepository(db *gorm.DB, problemType string) (app.Probl
 	}, nil
 }
 
-func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param *app.ProblemSearchCondition) (*app.ProblemSearchResult, error) {
-	limit := param.PageSize
-	offset := (param.PageNo - 1) * param.PageSize
+func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (*app.ProblemSearchResult, error) {
+	limit := param.GetPageSize()
+	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishWordProblemEntity
 
-	where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.WorkbookID))
+	where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
 	if result := where.Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
@@ -144,16 +144,16 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 	}, nil
 }
 
-func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param *app.ProblemIDsCondition) (*app.ProblemSearchResult, error) {
+func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param app.ProblemIDsCondition) (*app.ProblemSearchResult, error) {
 	var problemEntities []englishWordProblemEntity
 
 	ids := make([]uint, 0)
-	for _, id := range param.IDs {
+	for _, id := range param.GetIDs() {
 		ids = append(ids, uint(id))
 	}
 
 	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(param.WorkbookID))
+	db = db.Where("workbook_id = ?", uint(param.GetWorkbookID()))
 	db = db.Where("id in ?", ids)
 	if result := db.Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
@@ -218,7 +218,7 @@ func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, opera
 	return ids, nil
 }
 
-func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator app.Student, param *app.ProblemAddParameter) (app.ProblemID, error) {
+func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 
 	problemParam, err := toNewEnglishWordProblemParam(param)
@@ -230,9 +230,9 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 		CreatedBy:         operator.GetID(),
 		UpdatedBy:         operator.GetID(),
 		OrganizationID:    uint(operator.GetOrganizationID()),
-		WorkbookID:        uint(param.WorkbookID),
+		WorkbookID:        uint(param.GetWorkbookID()),
 		AudioID:           problemParam.AudioID,
-		Number:            param.Number,
+		Number:            param.GetNumber(),
 		Text:              problemParam.Text,
 		Pos:               problemParam.Pos,
 		Phonetic:          problemParam.Phonetic,

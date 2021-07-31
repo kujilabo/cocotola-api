@@ -27,10 +27,10 @@ func ToWorkbookSearchResponse(result *domain.WorkbookSearchResult) (*entity.Work
 	}, nil
 }
 
-func ToWorkbookAddParameter(param *entity.WorkbookAddParameter) (*domain.WorkbookAddParameter, error) {
+func ToWorkbookAddParameter(param *entity.WorkbookAddParameter) (domain.WorkbookAddParameter, error) {
 	return domain.NewWorkbookAddParameter(param.ProblemType, param.Name, param.QuestionText)
 }
 
-func ToWorkbookUpdateParameter(param *entity.WorkbookUpdateParameter) (*domain.WorkbookUpdateParameter, error) {
+func ToWorkbookUpdateParameter(param *entity.WorkbookUpdateParameter) (domain.WorkbookUpdateParameter, error) {
 	return domain.NewWorkbookUpdateParameter(param.Name, param.QuestionText)
 }

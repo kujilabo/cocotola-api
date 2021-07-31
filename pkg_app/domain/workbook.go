@@ -13,12 +13,6 @@ import (
 
 type WorkbookID uint
 
-type WorkbookSearchCondition struct {
-	PageNo   int
-	PageSize int
-	SpaceIDs []user.SpaceID
-}
-
 type WorkbookSearchResult struct {
 	TotalCount int64
 	Results    []Workbook
@@ -39,19 +33,19 @@ type Workbook interface {
 	GetProblemType() string
 	GetQuestionText() string
 
-	FindProblems(ctx context.Context, operator Student, param *ProblemSearchCondition) (*ProblemSearchResult, error)
+	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, operator Student, param *ProblemIDsCondition) (*ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error)
 
 	FindProblemIDs(ctx context.Context, operator Student) ([]ProblemID, error)
 
 	FindProblemByID(ctx context.Context, operator Student, problemID ProblemID) (Problem, error)
 
-	AddProblem(ctx context.Context, operator Student, param *ProblemAddParameter) (ProblemID, error)
+	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error)
 
 	RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error
 
-	UpdateWorkbook(ctx context.Context, operator Student, version int, parameter *WorkbookUpdateParameter) error
+	UpdateWorkbook(ctx context.Context, operator Student, version int, parameter WorkbookUpdateParameter) error
 
 	RemoveWorkbook(ctx context.Context, operator Student, version int) error
 }
@@ -70,12 +64,10 @@ func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, mode
 	m := &workbook{
 		repo:             repo,
 		processorFactory: processorFactory,
-		// gh:         gh,
-		// operator:   operator,
-		privileges: privileges,
-		Model:      model,
-		spaceID:    spaceID,
-		ownerID:    ownerID,
+		privileges:       privileges,
+		Model:            model,
+		spaceID:          spaceID,
+		ownerID:          ownerID,
 		Properties: workbookProperties{
 			Name:         name,
 			ProblemType:  problemType,
@@ -107,7 +99,7 @@ func (m *workbook) GetQuestionText() string {
 	return m.Properties.QuestionText
 }
 
-func (m *workbook) FindProblems(ctx context.Context, operator Student, param *ProblemSearchCondition) (*ProblemSearchResult, error) {
+func (m *workbook) FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error) {
 	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
@@ -115,7 +107,7 @@ func (m *workbook) FindProblems(ctx context.Context, operator Student, param *Pr
 	return problemRepo.FindProblems(ctx, operator, param)
 }
 
-func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param *ProblemIDsCondition) (*ProblemSearchResult, error) {
+func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error) {
 	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
@@ -139,7 +131,7 @@ func (m *workbook) FindProblemByID(ctx context.Context, operator Student, proble
 	return problemRepo.FindProblemByID(ctx, operator, WorkbookID(m.GetID()), problemID)
 }
 
-func (m *workbook) AddProblem(ctx context.Context, operator Student, param *ProblemAddParameter) (ProblemID, error) {
+func (m *workbook) AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbook.AddProblem")
 
@@ -147,9 +139,9 @@ func (m *workbook) AddProblem(ctx context.Context, operator Student, param *Prob
 		return 0, errors.New("no update privilege")
 	}
 
-	processor, err := m.processorFactory.NewProblemAddProcessor(param.ProblemType)
+	processor, err := m.processorFactory.NewProblemAddProcessor(param.GetProblemType())
 	if err != nil {
-		return 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", param.ProblemType, err)
+		return 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", param.GetProblemType(), err)
 	}
 
 	logger.Infof("processor.AddProblem")
@@ -173,7 +165,7 @@ func (m *workbook) RemoveProblem(ctx context.Context, operator Student, problemI
 
 }
 
-func (m *workbook) UpdateWorkbook(ctx context.Context, operator Student, version int, parameter *WorkbookUpdateParameter) error {
+func (m *workbook) UpdateWorkbook(ctx context.Context, operator Student, version int, parameter WorkbookUpdateParameter) error {
 	if !m.privileges.HasPrivilege(PrivilegeUpdate) {
 		return ErrWorkbookPermissionDenied
 	}

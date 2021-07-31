@@ -18,9 +18,9 @@ type PrivateWorkbookService interface {
 
 	FindWorkbookByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workBookID domain.WorkbookID) (domain.Workbook, error)
 
-	AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter *domain.WorkbookAddParameter) (domain.WorkbookID, error)
+	AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter domain.WorkbookAddParameter) (domain.WorkbookID, error)
 
-	UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter *domain.WorkbookUpdateParameter) error
+	UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter domain.WorkbookUpdateParameter) error
 
 	RemoveWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int) error
 }
@@ -49,10 +49,12 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
 
-		tmpResult, err := student.FindWorkbooksFromPersonalSpace(ctx, &domain.WorkbookSearchCondition{
-			PageNo:   DefaultPageNo,
-			PageSize: DefaultPageSize,
-		})
+		condition, err := domain.NewWorkbookSearchCondition(DefaultPageNo, DefaultPageSize, []user.SpaceID{})
+		if err != nil {
+			return xerrors.Errorf("failed to FindWorkbooksFromPersonalSpace. err: %w", err)
+		}
+
+		tmpResult, err := student.FindWorkbooksFromPersonalSpace(ctx, condition)
 		if err != nil {
 			return xerrors.Errorf("failed to FindWorkbooksFromPersonalSpace. err: %w", err)
 		}
@@ -88,7 +90,7 @@ func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter *domain.WorkbookAddParameter) (domain.WorkbookID, error) {
+func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter domain.WorkbookAddParameter) (domain.WorkbookID, error) {
 	var result domain.WorkbookID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.repo(tx)
@@ -111,7 +113,7 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 	return result, nil
 }
 
-func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter *domain.WorkbookUpdateParameter) error {
+func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter domain.WorkbookUpdateParameter) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.repo(tx)
 		userRepo := s.userRepo(tx)

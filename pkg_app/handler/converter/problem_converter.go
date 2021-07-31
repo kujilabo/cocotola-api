@@ -8,13 +8,8 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 )
 
-func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemSearchParameter, workbookID domain.WorkbookID) (*domain.ProblemSearchCondition, error) {
-	return &domain.ProblemSearchCondition{
-		PageNo:     param.PageNo,
-		PageSize:   param.PageSize,
-		WorkbookID: workbookID,
-		// ProblemType: problemType,
-	}, nil
+func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemSearchParameter, workbookID domain.WorkbookID) (domain.ProblemSearchCondition, error) {
+	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, "")
 }
 
 func ToProblemSearchResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemSearchResponse, error) {
@@ -74,27 +69,20 @@ func ToProblemIDs(ctx context.Context, ids []domain.ProblemID) (*entity.ProblemI
 	}, nil
 }
 
-func ToProblemIDsCondition(ctx context.Context, param *entity.ProblemIDsParameter, workbookID domain.WorkbookID) (*domain.ProblemIDsCondition, error) {
+func ToProblemIDsCondition(ctx context.Context, param *entity.ProblemIDsParameter, workbookID domain.WorkbookID) (domain.ProblemIDsCondition, error) {
 	ids := make([]domain.ProblemID, 0)
 	for _, id := range param.IDs {
 		ids = append(ids, domain.ProblemID(id))
 	}
-	return &domain.ProblemIDsCondition{
-		WorkbookID: workbookID,
-		IDs:        ids,
-	}, nil
+	return domain.NewProblemIDsCondition(workbookID, ids)
+
 }
 
-func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAddParameter) (*domain.ProblemAddParameter, error) {
+func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAddParameter) (domain.ProblemAddParameter, error) {
 	var properties map[string]string
 	if err := json.Unmarshal(param.Properties, &properties); err != nil {
 		return nil, err
 	}
 
-	return &domain.ProblemAddParameter{
-		WorkbookID:  workbookID,
-		Number:      param.Number,
-		ProblemType: param.ProblemType,
-		Properties:  properties,
-	}, nil
+	return domain.NewProblemAddParameter(workbookID, param.Number, param.ProblemType, properties)
 }

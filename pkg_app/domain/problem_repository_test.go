@@ -3,17 +3,10 @@ package domain
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewProblemAddParameter(t *testing.T) {
-	m, err := NewProblemAddParameter(WorkbookID(1), 1, "a", map[string]string{})
-	assert.NoError(t, err)
-	assert.Equal(t, 1, m.Number)
-}
-
-func TestNewNewProlemParameter(t *testing.T) {
+func TestNewProlemAddParameter(t *testing.T) {
 	type args struct {
 		workbookID  WorkbookID
 		number      int
@@ -21,10 +14,13 @@ func TestNewNewProlemParameter(t *testing.T) {
 		properties  map[string]string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *ProblemAddParameter
-		wantErr bool
+		name             string
+		args             args
+		wantWorkbookID   WorkbookID
+		wantNumber       int
+		wantProblemTyhpe string
+		wantProperties   map[string]string
+		wantErr          bool
 	}{
 		{
 			name: "workbookID is zero",
@@ -34,8 +30,11 @@ func TestNewNewProlemParameter(t *testing.T) {
 				problemType: "a",
 				properties:  map[string]string{},
 			},
-			want:    &ProblemAddParameter{WorkbookID(0), 1, "a", map[string]string{}},
-			wantErr: true,
+			wantWorkbookID:   WorkbookID(0),
+			wantNumber:       1,
+			wantProblemTyhpe: "a",
+			wantProperties:   map[string]string{},
+			wantErr:          true,
 		},
 		{
 			name: "parameters are valid",
@@ -45,8 +44,11 @@ func TestNewNewProlemParameter(t *testing.T) {
 				problemType: "a",
 				properties:  map[string]string{},
 			},
-			want:    &ProblemAddParameter{WorkbookID(1), 1, "a", map[string]string{}},
-			wantErr: false,
+			wantWorkbookID:   WorkbookID(1),
+			wantNumber:       1,
+			wantProblemTyhpe: "a",
+			wantProperties:   map[string]string{},
+			wantErr:          false,
 		},
 	}
 	for _, tt := range tests {
@@ -56,9 +58,10 @@ func TestNewNewProlemParameter(t *testing.T) {
 				t.Errorf("NewNewProlemParameter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("MakeGatewayInfo() mismatch (-want +got):\n%s", diff)
-			}
+			assert.Equal(t, tt.wantWorkbookID, got.GetWorkbookID())
+			assert.Equal(t, tt.wantNumber, got.GetNumber())
+			assert.Equal(t, tt.wantProblemTyhpe, got.GetProblemType())
+			assert.Equal(t, tt.wantProperties, got.GetProperties())
 		})
 	}
 }

@@ -29,15 +29,15 @@ func migrateDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) 
 	if err != nil {
 		return err
 	}
+
 	m, err := migrate.NewWithDatabaseInstance("file://"+dir, driverName, driver)
 	if err != nil {
 		return err
 	}
 
-	if err := m.Up(); err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			return err
-		}
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+
 	}
 
 	return nil

@@ -18,18 +18,19 @@ type englishWordProblemAddParemeter struct {
 	Translated string
 }
 
-func toEnglishWordProblemAddParemeter(param *app.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
-	posS := param.Properties["pos"]
+func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
+	posS := param.GetProperties()["pos"]
 	pos, err := strconv.Atoi(posS)
 	if err != nil {
 		return nil, xerrors.Errorf("faield to cast to int. err: %w", err)
 	}
 
 	m := &englishWordProblemAddParemeter{
-		Text:       param.Properties["text"],
+		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
-		Translated: param.Properties["translated"],
+		Translated: param.GetProperties()["translated"],
 	}
+
 	v := validator.New()
 	return m, v.Struct(m)
 }
@@ -51,11 +52,11 @@ func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator p
 	}
 }
 
-func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param *app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
-	problemRepo, err := repo.NewProblemRepository(ctx, param.ProblemType)
+	problemRepo, err := repo.NewProblemRepository(ctx, param.GetProblemType())
 	if err != nil {
 		return 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
@@ -80,43 +81,44 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 		translated, err := p.translate(ctx, extractedParam.Text, app.Lang2EN, app.Lang2JA)
 		if err != nil {
 			logger.Errorf("translate err: %v", err)
-			newParam := app.ProblemAddParameter{
-				WorkbookID:  param.WorkbookID,
-				Number:      param.Number,
-				ProblemType: param.ProblemType,
-				Properties: map[string]string{
-					"text":       extractedParam.Text,
-					"translated": extractedParam.Translated,
-					"pos":        strconv.Itoa(int(extractedParam.Pos)),
-					"audioId":    strconv.Itoa(int(audioID)),
-				},
+			properties := map[string]string{
+				"text":       extractedParam.Text,
+				"translated": extractedParam.Translated,
+				"pos":        strconv.Itoa(int(extractedParam.Pos)),
+				"audioId":    strconv.Itoa(int(audioID)),
 			}
-			problemID, err := problemRepo.AddProblem(ctx, operator, &newParam)
+			newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
+			if err != nil {
+				return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+			}
+
+			problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 			if err != nil {
 				return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 			}
+
 			return problemID, nil
 		}
 
 		for _, t := range translated {
 			extractedParam.Pos = t.Pos
 			extractedParam.Translated = t.Target
-			newParam := app.ProblemAddParameter{
-				WorkbookID:  param.WorkbookID,
-				Number:      param.Number,
-				ProblemType: param.ProblemType,
-				Properties: map[string]string{
-					"text":       extractedParam.Text,
-					"translated": extractedParam.Translated,
-					"pos":        strconv.Itoa(int(extractedParam.Pos)),
-					"audioId":    strconv.Itoa(int(audioID)),
-				},
+			properties := map[string]string{
+				"text":       extractedParam.Text,
+				"translated": extractedParam.Translated,
+				"pos":        strconv.Itoa(int(extractedParam.Pos)),
+				"audioId":    strconv.Itoa(int(audioID)),
 			}
-			_, err := problemRepo.AddProblem(ctx, operator, &newParam)
+			newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
 			if err != nil {
+				return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+			}
+
+			if _, err := problemRepo.AddProblem(ctx, operator, newParam); err != nil {
 				return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 			}
 		}
+
 		return 0, nil
 	}
 
@@ -129,18 +131,18 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 		}
 	}
 
-	newParam := app.ProblemAddParameter{
-		WorkbookID:  param.WorkbookID,
-		Number:      param.Number,
-		ProblemType: param.ProblemType,
-		Properties: map[string]string{
-			"text":       extractedParam.Text,
-			"translated": extractedParam.Translated,
-			"pos":        strconv.Itoa(int(extractedParam.Pos)),
-			"audioId":    strconv.Itoa(int(audioID)),
-		},
+	properties := map[string]string{
+		"text":       extractedParam.Text,
+		"translated": extractedParam.Translated,
+		"pos":        strconv.Itoa(int(extractedParam.Pos)),
+		"audioId":    strconv.Itoa(int(audioID)),
 	}
-	problemID, err := problemRepo.AddProblem(ctx, operator, &newParam)
+	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+	}
+
+	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 	}
