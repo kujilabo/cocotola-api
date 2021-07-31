@@ -22,7 +22,7 @@ func (e *audioEntity) TableName() string {
 }
 
 func (e *audioEntity) toAudio() (domain.Audio, error) {
-	return domain.NewAudio(e.ID, e.Lang, e.Text, e.AudioContent)
+	return domain.NewAudio(e.ID, domain.Lang5(e.Lang), e.Text, e.AudioContent)
 }
 
 type audioRepository struct {

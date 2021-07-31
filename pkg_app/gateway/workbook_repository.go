@@ -92,11 +92,11 @@ func (r *workbookRepository) toProblemTypeID(problemType string) uint {
 	return 0
 }
 
-func (r *workbookRepository) FindWorkbooks(ctx context.Context, operator domain.Student, param *domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
+func (r *workbookRepository) FindWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbookRepository.FindWorkbooks %v", operator)
-	limit := param.PageSize
-	offset := (param.PageNo - 1) * param.PageSize
+	limit := param.GetPageSize()
+	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	// var workbooks []workbookEntity
 
 	// // SELECT t1.* FROM development.workbook t1 INNER JOIN user_workbook t2 on t1.id= t2.workbook_id where t2.app_user_id = 5;
@@ -309,10 +309,10 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 // 	}, nil
 // }
 
-func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.Student, spaceID user.SpaceID, param *domain.WorkbookAddParameter) (domain.WorkbookID, error) {
-	problemTypeID := r.toProblemTypeID(param.ProblemType)
+func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.Student, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
+	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
-		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.ProblemType)
+		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
 	}
 	workbook := workbookEntity{
 		Version:        1,
@@ -322,8 +322,8 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.St
 		SpaceID:        uint(spaceID),
 		OwnerID:        operator.GetID(),
 		ProblemTypeID:  problemTypeID,
-		Name:           param.Name,
-		QuestionText:   param.QuestionText,
+		Name:           param.GetName(),
+		QuestionText:   param.GetQuestionText(),
 	}
 	if result := r.db.Create(&workbook); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrWorkbookAlreadyExists)
@@ -370,10 +370,10 @@ func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain
 	return nil
 }
 
-func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.Student, id domain.WorkbookID, version int, param *domain.WorkbookUpdateParameter) error {
+func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.Student, id domain.WorkbookID, version int, param domain.WorkbookUpdateParameter) error {
 	workbook := workbookEntity{
-		Name:         param.Name,
-		QuestionText: param.QuestionText,
+		Name:         param.GetName(),
+		QuestionText: param.GetQuestionText(),
 	}
 	if result := r.db.Model(&workbookEntity{}).
 		Where("organization_id = ? and id = ? and version = ?",

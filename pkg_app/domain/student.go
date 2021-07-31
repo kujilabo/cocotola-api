@@ -15,13 +15,13 @@ type Student interface {
 	GetDefaultSpace(ctx context.Context) (user.Space, error)
 	GetPersonalSpace(ctx context.Context) (user.Space, error)
 
-	FindWorkbooksFromPersonalSpace(ctx context.Context, condition *WorkbookSearchCondition) (*WorkbookSearchResult, error)
+	FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error)
 
 	FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error)
 
-	AddWorkbookToPersonalSpace(ctx context.Context, parameter *WorkbookAddParameter) (WorkbookID, error)
+	AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error)
 
-	UpdateWorkbook(ctx context.Context, workbookID WorkbookID, version int, parameter *WorkbookUpdateParameter) error
+	UpdateWorkbook(ctx context.Context, workbookID WorkbookID, version int, parameter WorkbookUpdateParameter) error
 
 	RemoveWorkbook(ctx context.Context, id WorkbookID, version int) error
 
@@ -59,17 +59,16 @@ func (s *student) GetPersonalSpace(ctx context.Context) (user.Space, error) {
 	return s.userRepo.NewSpaceRepository().FindPersonalSpace(ctx, s)
 }
 
-func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition *WorkbookSearchCondition) (*WorkbookSearchResult, error) {
+func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	// specify space
-	newCondition := WorkbookSearchCondition{
-		PageNo:   condition.PageNo,
-		PageSize: condition.PageSize,
-		SpaceIDs: []user.SpaceID{user.SpaceID(space.GetID())},
+	newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []user.SpaceID{user.SpaceID(space.GetID())})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
@@ -77,7 +76,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	return workbookRepo.FindWorkbooks(ctx, s, &newCondition)
+	return workbookRepo.FindWorkbooks(ctx, s, newCondition)
 }
 
 func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error) {
@@ -89,15 +88,15 @@ func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook
 	return workbookRepo.FindWorkbookByID(ctx, s, id)
 }
 
-func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter *WorkbookAddParameter) (WorkbookID, error) {
+func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to GetPersonalSpace. err: %v", err)
+		return 0, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %v", err)
+		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	workbookID, err := workbookRepo.AddWorkbook(ctx, s, user.SpaceID(space.GetID()), parameter)
@@ -107,7 +106,7 @@ func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter *Wor
 	return workbookID, nil
 }
 
-func (s *student) UpdateWorkbook(ctx context.Context, workbookID WorkbookID, version int, parameter *WorkbookUpdateParameter) error {
+func (s *student) UpdateWorkbook(ctx context.Context, workbookID WorkbookID, version int, parameter WorkbookUpdateParameter) error {
 	workbook, err := s.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
 		return err

@@ -5,7 +5,7 @@ import (
 )
 
 type ProblemAddProcessor interface {
-	AddProblem(ctx context.Context, repo RepositoryFactory, operator Student, param *ProblemAddParameter) (ProblemID, error)
+	AddProblem(ctx context.Context, repo RepositoryFactory, operator Student, param ProblemAddParameter) (ProblemID, error)
 }
 
 type ProblemRemoveProcessor interface {

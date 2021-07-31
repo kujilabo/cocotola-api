@@ -6,19 +6,19 @@ type AudioID uint
 
 type Audio interface {
 	GetID() uint
-	GetLang() string
+	GetLang() Lang5
 	GetText() string
 	GetAudioContent() string
 }
 
 type audio struct {
 	ID           uint   `validate:"required"`
-	Lang         string `validate:"required"`
+	Lang         Lang5  `validate:"required,len=5"`
 	Text         string `validate:"required"`
 	AudioContent string `validate:"required"`
 }
 
-func NewAudio(id uint, lang, text, audioContent string) (Audio, error) {
+func NewAudio(id uint, lang Lang5, text, audioContent string) (Audio, error) {
 	m := &audio{
 		ID:           id,
 		Lang:         lang,
@@ -34,7 +34,7 @@ func (a *audio) GetID() uint {
 	return a.ID
 }
 
-func (a *audio) GetLang() string {
+func (a *audio) GetLang() Lang5 {
 	return a.Lang
 }
 
