@@ -7,19 +7,22 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type repositoryFactory struct {
 	db                  *gorm.DB
+	driverName          string
 	userRepo            func(db *gorm.DB) user.RepositoryFactory
 	pf                  domain.ProcessorFactory
 	problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)
 }
 
-func NewRepositoryFactory(db *gorm.DB, userRepo func(db *gorm.DB) user.RepositoryFactory, pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) domain.RepositoryFactory {
+func NewRepositoryFactory(db *gorm.DB, driverName string, userRepo func(db *gorm.DB) user.RepositoryFactory, pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) domain.RepositoryFactory {
 	return &repositoryFactory{
 		db:                  db,
+		driverName:          driverName,
 		userRepo:            userRepo,
 		pf:                  pf,
 		problemRepositories: problemRepositories,
@@ -27,7 +30,17 @@ func NewRepositoryFactory(db *gorm.DB, userRepo func(db *gorm.DB) user.Repositor
 }
 
 func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.WorkbookRepository, error) {
-	return NewWorkbookRepository(ctx, f, f.userRepo(f.db), f.pf, f.db)
+	problemTypeRepo, err := f.NewProblemTypeRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logger := log.FromContext(ctx)
+	logger.Infof("problem types: %+v", problemTypes)
+	return NewWorkbookRepository(ctx, f.driverName, f, f.userRepo(f.db), f.pf, f.db, problemTypes), nil
 }
 
 func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (domain.ProblemRepository, error) {

@@ -36,6 +36,18 @@ func NewRBACRepository(db *gorm.DB) domain.RBACRepository {
 	}
 }
 
+func (r *rbacRepository) Init() error {
+	a, err := gormadapter.NewAdapterByDB(r.db)
+	if err != nil {
+		return err
+	}
+	m, err := model.NewModelFromString(conf)
+	if err != nil {
+		return err
+	}
+	return a.SavePolicy(m)
+}
+
 func (r *rbacRepository) initEnforcer() (*casbin.Enforcer, error) {
 	a, err := gormadapter.NewAdapterByDB(r.db)
 	if err != nil {

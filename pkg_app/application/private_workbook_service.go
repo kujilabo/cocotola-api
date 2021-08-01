@@ -51,7 +51,7 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 
 		condition, err := domain.NewWorkbookSearchCondition(DefaultPageNo, DefaultPageSize, []user.SpaceID{})
 		if err != nil {
-			return xerrors.Errorf("failed to FindWorkbooksFromPersonalSpace. err: %w", err)
+			return xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 		}
 
 		tmpResult, err := student.FindWorkbooksFromPersonalSpace(ctx, condition)
