@@ -76,7 +76,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	return workbookRepo.FindWorkbooks(ctx, s, newCondition)
+	return workbookRepo.FindPersonalWorkbooks(ctx, s, newCondition)
 }
 
 func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error) {
@@ -103,6 +103,7 @@ func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter Work
 	if err != nil {
 		return 0, xerrors.Errorf("failed to AddWorkbook. err: %w", err)
 	}
+
 	return workbookID, nil
 }
 

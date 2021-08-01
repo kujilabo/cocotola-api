@@ -17,10 +17,10 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
-	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.5
 	github.com/onrik/gorm-logrus v0.3.0
+	github.com/pecolynx/casbin-query v0.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.6.1
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14

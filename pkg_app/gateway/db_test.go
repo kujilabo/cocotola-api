@@ -12,25 +12,26 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
-	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
-func dbList() []*gorm.DB {
-	dbList := make([]*gorm.DB, 0)
+func dbList() map[string]*gorm.DB {
+	dbList := make(map[string]*gorm.DB)
 	m, err := openMySQLForTest()
 	if err != nil {
 		panic(err)
 	}
 
-	dbList = append(dbList, m)
+	dbList["mysql"] = m
 
 	s, err := openSQLiteForTest()
 	if err != nil {
 		panic(err)
 	}
-	dbList = append(dbList, s)
+	dbList["sqlite3"] = s
 
 	return dbList
 }
@@ -46,7 +47,7 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 	if err != nil {
 		log.Fatal(err)
 	}
-	pos := strings.Index(wd, "pkg_user")
+	pos := strings.Index(wd, "pkg_app")
 	dir := wd[0:pos] + "sqls/" + driverName
 
 	driver, err := withInstance(sqlDB)
@@ -65,28 +66,31 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 	}
 }
 
-func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, domain.Owner) {
+func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, userD.SystemOwner, userD.Owner) {
+	log.Println("testInitOrganization")
 	bg := context.Background()
-	sysAd := domain.SystemAdminInstance()
-
-	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
-	assert.NoError(t, err)
-	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
-	assert.NoError(t, err)
+	sysAd := userD.SystemAdminInstance()
 
 	// delete all organizations
-	db.Where("true").Delete(&spaceEntity{})
-	db.Where("true").Delete(&appUserEntity{})
-	db.Where("true").Delete(&organizationEntity{})
+	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")
+	assert.NoError(t, result.Error)
+	result = db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from app_user")
+	assert.NoError(t, result.Error)
+	result = db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from organization")
+	assert.NoError(t, result.Error)
 
-	orgRepo := NewOrganizationRepository(db)
+	firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
+	assert.NoError(t, err)
+	orgAddParam, err := userD.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
+	assert.NoError(t, err)
+	orgRepo := userG.NewOrganizationRepository(db)
 
 	// register new organization
 	orgID, err := orgRepo.AddOrganization(bg, sysAd, orgAddParam)
 	assert.NoError(t, err)
 	assert.Greater(t, int(uint(orgID)), 0)
 
-	appUserRepo := NewAppUserRepository(nil, db)
+	appUserRepo := userG.NewAppUserRepository(nil, db)
 	sysOwnerID, err := appUserRepo.AddSystemOwner(bg, sysAd, orgID)
 	assert.NoError(t, err)
 	assert.Greater(t, int(uint(sysOwnerID)), 0)
@@ -102,17 +106,17 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	firstOwner, err := appUserRepo.FindOwnerByLoginID(bg, sysOwner, "OWNER_ID")
 	assert.NoError(t, err)
 
-	spaceRepo := NewSpaceRepository(db)
+	spaceRepo := userG.NewSpaceRepository(db)
 	_, err = spaceRepo.AddDefaultSpace(bg, sysOwner)
 	assert.NoError(t, err)
 	_, err = spaceRepo.AddPersonalSpace(bg, sysOwner, firstOwner)
 	assert.NoError(t, err)
 
-	return orgID, firstOwner
+	return orgID, sysOwner, firstOwner
 }
 
-func testNewAppUserAddParameter(t *testing.T, loginID, username string) domain.AppUserAddParameter {
-	p, err := domain.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
+func testNewAppUserAddParameter(t *testing.T, loginID, username string) userD.AppUserAddParameter {
+	p, err := userD.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
 	assert.NoError(t, err)
 	return p
 }

@@ -31,6 +31,7 @@ import (
 	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
 	authH "github.com/kujilabo/cocotola-api/pkg_auth/handler"
 	authM "github.com/kujilabo/cocotola-api/pkg_auth/handler/middleware"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -87,7 +88,7 @@ func main() {
 	}
 
 	// init db
-	db, sqlDB, err := initDB()
+	db, sqlDB, err := initDB(cfg.DB)
 	if err != nil {
 		fmt.Printf("failed to InitDB. err: %+v", err)
 		panic(err)
@@ -144,7 +145,7 @@ func main() {
 		return userG.NewRepositoryFactory(db)
 	}
 	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
-		return appG.NewRepositoryFactory(db, userRepoFunc, pf, problemRepositories)
+		return appG.NewRepositoryFactory(db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
 	}
 
 	signingKey := []byte(cfg.Auth.SigningKey)
@@ -158,22 +159,45 @@ func main() {
 		return callback(ctx, cfg.App.TestUserEmail, repoFunc(db), userRepoFunc(db), organizationName, appUser)
 	}
 
-	googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUsedrCallback)
-	authHandler := authH.NewAuthHandler(authTokenManager)
-	googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
 	v1 := router.Group("v1")
 	{
 		v1auth := v1.Group("auth")
+		googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUsedrCallback)
+		authHandler := authH.NewAuthHandler(authTokenManager)
+		googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
 		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
 		v1auth.POST("refresh_token", authHandler.RefreshToken)
 
 		privateWorkbookService := application.NewPrivateWorkbookService(db, repoFunc, userRepoFunc)
+		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
 		v1Workbook := v1.Group("private/workbook")
 		v1Workbook.Use(authMiddleware)
-		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
 		v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
 		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
+
+		problemService := application.NewProblemService(db, repoFunc, userRepoFunc)
+		problemHandler := appH.NewProblemHandler(problemService)
+		v1Problem := v1.Group("workbook/:workbookID")
+		v1Problem.Use(authMiddleware)
+		v1Problem.POST("problem", problemHandler.AddProblem)
+		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
+		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
+		v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
+		v1Problem.POST("problem/search", problemHandler.FindProblems)
+		v1Problem.POST("problem/search_ids", problemHandler.FindProblemsByProblemIDs)
+
+		studyService := application.NewStudyService(db, repoFunc, userRepoFunc)
+		studyHandler := appH.NewStudyHandler(studyService)
+		v1Study := v1.Group("study/workbook/:workbookID")
+		v1Study.Use(authMiddleware)
+		v1Study.GET("study_type/:studyType", studyHandler.FindRecordbook)
+
+		audioService := application.NewAudioService(db, repoFunc)
+		audioHandler := appH.NewAudioHandler(audioService)
+		v1Audio := v1.Group("audio")
+		v1Audio.Use(authMiddleware)
+		v1Audio.GET(":audioID", audioHandler.FindAudioByID)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -211,34 +235,37 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initDB() (*gorm.DB, *sql.DB, error) {
-	db, err := libG.OpenSQLite("./app.db")
-	if err != nil {
-		return nil, nil, err
-	}
+func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
+	switch cfg.DriverName {
+	case "sqlite3":
+		db, err := libG.OpenSQLite("./" + cfg.SQLite3.File)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, nil, err
-	}
+		sqlDB, err := db.DB()
+		if err != nil {
+			return nil, nil, err
+		}
 
-	if err := sqlDB.Ping(); err != nil {
-		return nil, nil, err
-	}
+		if err := sqlDB.Ping(); err != nil {
+			return nil, nil, err
+		}
 
-	if err := appG.MigrateSQLiteDB(db); err != nil {
-		return nil, nil, err
-	}
+		if err := appG.MigrateSQLiteDB(db); err != nil {
+			return nil, nil, err
+		}
 
-	return db, sqlDB, nil
+		return db, sqlDB, nil
+	default:
+		return nil, nil, libD.ErrInvalidArgument
+	}
 }
 
 func initApp(ctx context.Context, db *gorm.DB, password string) error {
 	logger := log.FromContext(ctx)
 	systemAdmin := userD.SystemAdminInstance()
-	// repository := gateway.NewRepository(db)
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		// repositoryFactory := gateway.NewRepositoryFactory(db, gh)
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
 			if !xerrors.Is(err, userD.ErrOrganizationNotFound) {
@@ -249,15 +276,17 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 			if err != nil {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
-			organizationAddParameter, err := userD.NewOrganizationAddParameter(
-				"cocotola", firstOwnerAddParam)
+
+			organizationAddParameter, err := userD.NewOrganizationAddParameter("cocotola", firstOwnerAddParam)
 			if err != nil {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
+
 			organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
 			if err != nil {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
+
 			logger.Infof("organizationID: %d", organizationID)
 			return nil
 		}

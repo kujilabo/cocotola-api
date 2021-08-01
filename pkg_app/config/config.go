@@ -16,6 +16,15 @@ type AppConfig struct {
 	TestUserEmail string `yaml:"testUserEmail" validate:"required"`
 }
 
+type SQLite3Config struct {
+	File string `yaml:"file" validate:"required"`
+}
+
+type DBConfig struct {
+	DriverName string         `yaml:"driverName"`
+	SQLite3    *SQLite3Config `yaml:"sqlite3"`
+}
+
 type AuthConfig struct {
 	SigningKey          string `yaml:"signingKey"`
 	AccessTokenTTLMin   int    `yaml:"accessTokenTtlMin" validate:"gte=1"`
@@ -54,6 +63,7 @@ type DebugConfig struct {
 
 type Config struct {
 	App      *AppConfig      `yaml:"app" validate:"required"`
+	DB       *DBConfig       `yaml:"db" validate:"required"`
 	Auth     *AuthConfig     `yaml:"auth" validate:"required"`
 	Google   *GoogleConfig   `yaml:"google" validate:"required"`
 	Azure    *AzureConfig    `yaml:"azure" validate:"required"`

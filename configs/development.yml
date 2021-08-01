@@ -2,6 +2,10 @@
 app:
   ownerPassword: password
   testUserEmail: $TEST_USER_EMAIL
+db:
+  driverName: sqlite3
+  sqlite3:
+    file: app.db
 auth:
   signingKey: ah5T9Y9V2JPU74fhCtHQfDqLp3Zg8ZNc
   accessTokenTtlMin: 5

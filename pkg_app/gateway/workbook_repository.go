@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -10,9 +11,11 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	casbinquery "github.com/pecolynx/casbin-query"
 )
 
 type workbookEntity struct {
@@ -47,6 +50,7 @@ func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.Proce
 }
 
 type workbookRepository struct {
+	driverName   string
 	db           *gorm.DB
 	rf           domain.RepositoryFactory
 	userRepo     user.RepositoryFactory
@@ -54,24 +58,15 @@ type workbookRepository struct {
 	problemTypes []domain.ProblemType
 }
 
-func NewWorkbookRepository(ctx context.Context, rf domain.RepositoryFactory, userRepo user.RepositoryFactory, pf domain.ProcessorFactory, db *gorm.DB) (domain.WorkbookRepository, error) {
-	problemTypeRepo, err := rf.NewProblemTypeRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	logger := log.FromContext(ctx)
-	logger.Infof("problem types: %+v", problemTypes)
+func NewWorkbookRepository(ctx context.Context, driverName string, rf domain.RepositoryFactory, userRepo user.RepositoryFactory, pf domain.ProcessorFactory, db *gorm.DB, problemTypes []domain.ProblemType) domain.WorkbookRepository {
 	return &workbookRepository{
+		driverName:   driverName,
 		db:           db,
 		rf:           rf,
 		userRepo:     userRepo,
 		pf:           pf,
 		problemTypes: problemTypes,
-	}, nil
+	}
 }
 
 func (r *workbookRepository) toProblemType(problemTypeID uint) string {
@@ -92,59 +87,28 @@ func (r *workbookRepository) toProblemTypeID(problemType string) uint {
 	return 0
 }
 
-func (r *workbookRepository) FindWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
+func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbookRepository.FindWorkbooks %v", operator)
+	if param == nil {
+		return nil, libD.ErrInvalidArgument
+	}
+
 	limit := param.GetPageSize()
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
-	// var workbooks []workbookEntity
+	workbooks := []workbookEntity{}
 
-	// // SELECT t1.* FROM development.workbook t1 INNER JOIN user_workbook t2 on t1.id= t2.workbook_id where t2.app_user_id = 5;
-	// db := r.db.Where("organization_id = ?", operator.OrganizationID())
-	// db = db.Where("created_by = ?", operator.ID())
+	objectColumnName := "name"
+	subQuery, err := casbinquery.QueryObject(r.db, r.driverName, objectColumnName, "user_"+strconv.Itoa(int(operator.GetID())), "read")
+	if err != nil {
+		return nil, err
+	}
 
-	// if result := db.Limit(limit).Offset(offset).Find(&workbooks); result.Error != nil {
-	// 	return nil, result.Error
-	// }
-	// var count int
-	// if result := db.Model(workbookEntity{}).Count(&count); result.Error != nil {
-	// 	return nil, result.Error
-	// }
-	// priv := domain.NewPrivileges(domain.PrivRead)
-	// results := make([]domain.Workbook, len(workbooks))
-	// for i, e := range workbooks {
-	// 	w, err := e.toWorkbook(r.rf, r.gh, operator, priv)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	results[i] = w
-	// }
-	// return &domain.WorkbookSearchResult{
-	// 	TotalCount: count,
-	// 	Results:    results,
-	// }, nil
-
-	workbooks := make([]workbookEntity, 0)
-	{
-		// db := r.db.Raw("select t0.* from workbook t0 where organization_id  = ? and created_by = ? "+
-		// 	"union select t1.* from .workbook t1 "+
-		// 	"inner join user_workbook t2 on t1.id= t2.workbook_id "+
-		// 	"where t2.app_user_id = ?", operator.GetOrganizationID(), operator.GetID(), operator.GetID())
-		// rows, err := db.Limit(limit).Offset(offset).Rows()
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// defer rows.Close()
-
-		// for rows.Next() {
-		// 	workbook := r.scan(rows)
-		// 	logger.Infof("workbook: %+v", *workbook)
-		// 	workbooks = append(workbooks, *workbook)
-		// }
-		if err := r.db.Where("organization_id  = ? and created_by = ?", operator.GetOrganizationID(), operator.GetID()).Find(&workbooks).
-			Limit(limit).Offset(offset).Error; err != nil {
-			return nil, err
-		}
+	if result := r.db.Model(&workbookEntity{}).
+		Joins("inner join (?) AS t3 ON `workbook`.`id`= t3."+objectColumnName, subQuery).
+		Order("`workbook`.`name`").Limit(limit).Offset(offset).
+		Scan(&workbooks); result.Error != nil {
+		return nil, result.Error
 	}
 
 	results := make([]domain.Workbook, len(workbooks))
@@ -158,20 +122,18 @@ func (r *workbookRepository) FindWorkbooks(ctx context.Context, operator domain.
 	}
 
 	var count int64
-	{
-		rows, err := r.db.Raw("select count(*) from workbook t1 where organization_id  = ? and created_by = ? union select count(*) from .workbook t1 inner join user_workbook t2 on t1.id= t2.workbook_id where t2.app_user_id = ?", operator.GetOrganizationID(), operator.GetID(), operator.GetID()).Rows()
-		if err != nil {
+	rows, err := r.db.Raw("select count(*) from workbook inner join (?) AS t3 ON `workbook`.`id`= t3."+objectColumnName, subQuery).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c int64
+		if err := rows.Scan(&c); err != nil {
 			return nil, err
 		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var c int64
-			if err := rows.Scan(&c); err != nil {
-				return nil, err
-			}
-			count += c
-		}
+		count += c
 	}
 
 	return &domain.WorkbookSearchResult{

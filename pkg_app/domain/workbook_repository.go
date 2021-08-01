@@ -112,7 +112,7 @@ func (p *workbookUpdateParameter) GetQuestionText() string {
 }
 
 type WorkbookRepository interface {
-	FindWorkbooks(ctx context.Context, operator Student, param WorkbookSearchCondition) (*WorkbookSearchResult, error)
+	FindPersonalWorkbooks(ctx context.Context, operator Student, param WorkbookSearchCondition) (*WorkbookSearchResult, error)
 
 	FindWorkbookByID(ctx context.Context, operator Student, id WorkbookID) (Workbook, error)
 
