@@ -23,6 +23,8 @@ type ProblemService interface {
 	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error)
 
 	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error
+
+	ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error
 }
 
 type problemService struct {
@@ -207,4 +209,85 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 		return err
 	}
 	return nil
+}
+
+func (s *problemService) ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error {
+	logger := log.FromContext(ctx)
+	logger.Debug("ProblemService.RemoveProblem")
+
+	var problemType string
+	{
+		repo := s.repo(s.db)
+		userRepo := s.userRepo(s.db)
+		_, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
+		if err != nil {
+			return err
+		}
+		problemType = workbook.GetProblemType()
+	}
+	iterator, err := newIterator(workbookID, problemType)
+	if err != nil {
+		return err
+	}
+
+	for {
+		param, err := iterator.Next()
+		if err != nil {
+			return err
+		}
+		if param == nil {
+			return nil
+		}
+
+		if err := s.db.Transaction(func(tx *gorm.DB) error {
+			repo := s.repo(tx)
+			userRepo := s.userRepo(tx)
+			student, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
+			if err != nil {
+				return err
+			}
+
+			id, err := s.addProblem(ctx, student, workbook, param)
+			if err != nil {
+				return err
+			}
+			logger.Infof("%d", id)
+
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+}
+
+func (s *problemService) findStudentAndWorkbook(ctx context.Context, repo domain.RepositoryFactory, userRepo user.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
+	student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+	}
+	workbook, err := student.FindWorkbookByID(ctx, workbookID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return student, workbook, nil
+}
+
+func (s *problemService) addProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, param domain.ProblemAddParameter) (domain.ProblemID, error) {
+	problemType := workbook.GetProblemType()
+	sizeLimitName := problemType + "Size"
+	updateLimitName := problemType + "Update"
+	if err := student.CheckLimit(ctx, sizeLimitName); err != nil {
+		return 0, err
+	}
+	if err := student.CheckLimit(ctx, updateLimitName); err != nil {
+		return 0, err
+	}
+	id, err := workbook.AddProblem(ctx, student, param)
+	if err != nil {
+		return 0, err
+	}
+	if err := student.IncrementQuotaUsage(ctx, sizeLimitName); err != nil {
+		return 0, err
+	}
+	return id, nil
 }

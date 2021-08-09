@@ -87,7 +87,7 @@ type ProblemSearchCondition interface {
 type problemSearchCondition struct {
 	WorkbookID WorkbookID
 	PageNo     int `validate:"required,gte=1"`
-	PageSize   int `validate:"required,gte=1,lte=100"`
+	PageSize   int `validate:"required,gte=1,lte=1000"`
 	Keyword    string
 }
 

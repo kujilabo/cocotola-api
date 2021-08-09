@@ -124,21 +124,35 @@ func main() {
 	translatorRepository := pluginCommonGateway.NewAzureTranslationRepository(db)
 	translator := pluginCommonGateway.NewAzureCachedTranslatorClient(translatorClient, translatorRepository)
 
-	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator)
-	newProblemProcessor := map[string]appD.ProblemAddProcessor{
+	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
+	problemAddProcessor := map[string]appD.ProblemAddProcessor{
+		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+	}
+	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
+		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+	}
+	problemImportProcessor := map[string]appD.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
 
 	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
 	}
-	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
-		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+	englishPhraseProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(newProblemProcessor, problemRemoveProcessor)
+	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
-		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemRepository,
+		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemRepository,
+		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
+	}
+
+	newIterator := func(workbookID appD.WorkbookID, problemType string) (appD.ProblemAddParameterIterator, error) {
+		return nil, nil
 	}
 
 	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
@@ -177,7 +191,7 @@ func main() {
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 
 		problemService := application.NewProblemService(db, repoFunc, userRepoFunc)
-		problemHandler := appH.NewProblemHandler(problemService)
+		problemHandler := appH.NewProblemHandler(problemService, newIterator)
 		v1Problem := v1.Group("workbook/:workbookID")
 		v1Problem.Use(authMiddleware)
 		v1Problem.POST("problem", problemHandler.AddProblem)
