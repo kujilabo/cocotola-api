@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 )
 
@@ -11,7 +12,7 @@ func ReadCSV(fileReader io.Reader, fn func(i int, line []string) error) error {
 	for {
 		var line []string
 		line, err := csvReader.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

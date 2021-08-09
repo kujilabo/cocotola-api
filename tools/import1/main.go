@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,7 +16,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
@@ -26,6 +26,10 @@ import (
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
+
+var defaultPageNo = 1
+var defaultPageSize = 1000
+var columnLength = 2
 
 func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
 	switch cfg.DriverName {
@@ -59,13 +63,11 @@ func importDir() string {
 	if err != nil {
 		panic(err)
 	}
+
 	return path.Join(wd, "tools", "import1")
 }
 
-func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator app.Student, repo app.RepositoryFactory, processor app.ProblemAddProcessor) error {
-
-	fmt.Println("registerEnglishPhraseProblems")
-	csvFilePath := importDir() + "/flush_sentence.csv"
+func checkFile(csvFilePath string) error {
 	file, err := os.Open(csvFilePath)
 	if err != nil {
 		return err
@@ -77,106 +79,138 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 	for {
 		var line []string
 		line, err = reader.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
+
 		if err != nil {
 			return err
 		}
 
-		if len(line) != 2 {
+		if len(line) != columnLength {
 			return fmt.Errorf("invalid umber of column. row: %d", i)
 		}
+
 		i++
 	}
 
-	// workbookRepo, err := repo.NewWorkbookRepository(ctx)
-	// if err != nil {
-	// 	return err
-	// }
+	return nil
+}
 
-	workbookName := "flush sentence"
+func initWorkbook(ctx context.Context, operator appD.Student, workbookName string) (appD.Workbook, error) {
 	workbook, err := operator.FindWorkbookByName(ctx, workbookName)
 	if err != nil {
-		if err != app.ErrWorkbookNotFound {
-			return err
+		if !errors.Is(err, appD.ErrWorkbookNotFound) {
+			return nil, err
 		}
-		param, err := app.NewWorkbookAddParameter(pluginEnglishDomain.EnglishPhraseProblemType, workbookName, "")
+
+		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishPhraseProblemType, workbookName, "")
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		workbookID, err := operator.AddWorkbookToPersonalSpace(ctx, param)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		wb2, err := operator.FindWorkbookByID(ctx, workbookID)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
 		workbook = wb2
 	}
 
-	searchCondition, err := app.NewProblemSearchCondition(app.WorkbookID(workbook.GetID()), 1, 1000, "")
+	return workbook, nil
+}
+
+func initProblems(ctx context.Context, operator appD.Student, workbook appD.Workbook) (map[string]bool, error) {
+	searchCondition, err := appD.NewProblemSearchCondition(appD.WorkbookID(workbook.GetID()), defaultPageNo, defaultPageSize, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	problems, err := workbook.FindProblems(ctx, operator, searchCondition)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	problemMap := make(map[string]app.Problem)
+
+	problemMap := make(map[string]bool)
 	for _, p := range problems.Results {
 		m := p.GetProperties(ctx)
 		textObj, ok := m["text"]
 		if !ok {
-			return fmt.Errorf("text not found. %v", m)
+			return nil, fmt.Errorf("text not found. %v", m)
 		}
 		text, ok := textObj.(string)
 		if !ok {
-			return fmt.Errorf("text is not string. %v", m)
+			return nil, fmt.Errorf("text is not string. %v", m)
 		}
 
-		problemMap[text] = p
+		problemMap[text] = true
 	}
-	{
-		file, err := os.Open(csvFilePath)
+
+	return problemMap, nil
+}
+
+func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator appD.Student, repo appD.RepositoryFactory, processor appD.ProblemAddProcessor) error {
+
+	fmt.Println("registerEnglishPhraseProblems")
+	csvFilePath := importDir() + "/flush_sentence.csv"
+
+	if err := checkFile(csvFilePath); err != nil {
+		return err
+	}
+
+	workbookName := "flush sentence"
+	workbook, err := initWorkbook(ctx, operator, workbookName)
+	if err != nil {
+		return err
+	}
+
+	problemMap, err := initProblems(ctx, operator, workbook)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Open(csvFilePath)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	var i = 1
+	for {
+		var line []string
+		line, err = reader.Read()
 		if err != nil {
-			panic(err)
+			break
 		}
-		defer file.Close()
 
-		reader := csv.NewReader(file)
-		var i = 0
-		for {
-			var line []string
-			line, err = reader.Read()
-			if err != nil {
-				break
-			}
+		if line[0] == "#" {
+			continue
+		}
 
-			if line[0] == "#" {
-				continue
-			}
+		properties := map[string]string{
+			"text":       line[0],
+			"translated": line[1],
+		}
+		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, workbook.GetProblemType(), properties)
+		if err != nil {
+			return err
+		}
 
-			properties := map[string]string{
-				"text":       line[0],
-				"translated": line[1],
-			}
-			param, err := app.NewProblemAddParameter(app.WorkbookID(workbook.GetID()), 1, workbook.GetProblemType(), properties)
-			if err != nil {
+		if _, ok := problemMap[line[0]]; !ok {
+			if _, err := processor.AddProblem(ctx, repo, operator, param); err != nil {
 				return err
 			}
-
-			if _, ok := problemMap[line[0]]; !ok {
-				processor.AddProblem(ctx, repo, operator, param)
-			}
-
-			i++
 		}
+
+		i++
 	}
+
 	return nil
 }
 

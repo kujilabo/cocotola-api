@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 	"strconv"
 
@@ -28,13 +29,16 @@ func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, probl
 func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParameter, error) {
 	var line []string
 	line, err := r.reader.Read()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	pos, err := domain.ParsePos(line[0])
+	if err != nil {
+		return nil, err
+	}
 	properties := map[string]string{
 		"lang":       "ja",
 		"text":       line[1],

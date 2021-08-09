@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -272,7 +273,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 
 		file, err := c.FormFile("file")
 		if err != nil {
-			if err == http.ErrMissingFile {
+			if errors.Is(err, http.ErrMissingFile) {
 				logger.Warnf("err: %+v", err)
 				c.Status(http.StatusBadRequest)
 				return nil
