@@ -174,14 +174,14 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	}
 
 	rbacRepo := r.userRepo.NewRBACRepository()
-	workbookRoles := r.getAllWorkbookRoles(workbookID)
+	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
 	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
 	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
 	}
-	workbookObject := domain.NewWorkbookObject(workbookID)
-	privs := r.getAllWorkbookPrivileges()
+	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
+	privs := r.getAllWorkbookPrivileges() // TODO
 
 	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
 	if err != nil {
@@ -192,6 +192,36 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	// if err != nil {
 	// 	return nil, err
 	// }
+
+	logger := log.FromContext(ctx)
+	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())
+
+	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
+}
+
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, name string) (domain.Workbook, error) {
+	workbook := workbookEntity{}
+	if result := r.db.Where("name = ?", name).First(&workbook); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrWorkbookNotFound
+		}
+		return nil, result.Error
+	}
+
+	rbacRepo := r.userRepo.NewRBACRepository()
+	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
+	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
+	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
+	}
+	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
+	privs := r.getAllWorkbookPrivileges() // TODO
+
+	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+	}
 
 	logger := log.FromContext(ctx)
 	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())

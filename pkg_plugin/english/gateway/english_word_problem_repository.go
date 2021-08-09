@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/go-playground/validator"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
@@ -61,19 +63,19 @@ func (e *englishWordProblemEntity) toProblem() (domain.EnglishWordProblem, error
 	phrases := make([]domain.EnglishPhraseProblem, 0)
 	sentences := make([]domain.EnglishSentenceProblem, 0)
 
-	return domain.NewEnglishWordProblem(problem, app.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, e.Lang, e.Translated, phrases, sentences)
+	return domain.NewEnglishWordProblem(problem, app.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, app.Lang5(e.Lang), e.Translated, phrases, sentences)
 }
 
 type newEnglishWordProblemParam struct {
-	AudioID           uint
-	Text              string
-	Pos               int
+	AudioID           uint   `validate:"required"`
+	Text              string `validate:"required"`
+	Pos               int    `validate:"required"`
 	Phonetic          string
 	PresentThird      string
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              string
+	Lang              string `validate:"required"`
 	Translated        string
 	PhraseID1         uint
 	PhraseID2         uint
@@ -82,10 +84,27 @@ type newEnglishWordProblemParam struct {
 }
 
 func toNewEnglishWordProblemParam(param app.ProblemAddParameter) (*newEnglishWordProblemParam, error) {
+	if _, ok := param.GetProperties()["audioId"]; !ok {
+		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	if _, ok := param.GetProperties()["pos"]; !ok {
+		return nil, xerrors.Errorf("pos is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	if _, ok := param.GetProperties()["lang"]; !ok {
+		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	if _, ok := param.GetProperties()["text"]; !ok {
+		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
 		return nil, err
 	}
+
 	pos, err := strconv.Atoi(param.GetProperties()["pos"])
 	if err != nil {
 		return nil, err
@@ -93,6 +112,7 @@ func toNewEnglishWordProblemParam(param app.ProblemAddParameter) (*newEnglishWor
 
 	m := &newEnglishWordProblemParam{
 		AudioID:    uint(audioID),
+		Lang:       param.GetProperties()["lang"],
 		Text:       param.GetProperties()["text"],
 		Pos:        pos,
 		Translated: param.GetProperties()["translated"],
@@ -114,6 +134,8 @@ func NewEnglishWordProblemRepository(db *gorm.DB, problemType string) (app.Probl
 }
 
 func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (*app.ProblemSearchResult, error) {
+	logger := log.FromContext(ctx)
+	logger.Debugf("englishWordProblemRepository.FindProblems")
 	limit := param.GetPageSize()
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishWordProblemEntity
@@ -137,6 +159,8 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 	if result := where.Model(&englishWordProblemEntity{}).Count(&count); result.Error != nil {
 		return nil, result.Error
 	}
+
+	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
 
 	return &app.ProblemSearchResult{
 		TotalCount: count,

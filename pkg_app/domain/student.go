@@ -19,6 +19,8 @@ type Student interface {
 
 	FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error)
 
+	FindWorkbookByName(ctx context.Context, name string) (Workbook, error)
+
 	AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error)
 
 	UpdateWorkbook(ctx context.Context, workbookID WorkbookID, version int, parameter WorkbookUpdateParameter) error
@@ -86,6 +88,15 @@ func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook
 	}
 
 	return workbookRepo.FindWorkbookByID(ctx, s, id)
+}
+
+func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook, error) {
+	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+	}
+
+	return workbookRepo.FindWorkbookByName(ctx, s, name)
 }
 
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error) {

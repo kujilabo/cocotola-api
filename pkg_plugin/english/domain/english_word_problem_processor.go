@@ -2,17 +2,21 @@ package domain
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"strconv"
 
 	"github.com/go-playground/validator"
 	"golang.org/x/xerrors"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	plugin "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
 type englishWordProblemAddParemeter struct {
+	Lang       app.Lang2      `validate:"required"`
 	Text       string         `validate:"required"`
 	Pos        plugin.WordPos `validate:"required"`
 	Translated string
@@ -25,7 +29,21 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 		return nil, xerrors.Errorf("faield to cast to int. err: %w", err)
 	}
 
+	if _, ok := param.GetProperties()["text"]; !ok {
+		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	if _, ok := param.GetProperties()["translated"]; !ok {
+		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+	if _, ok := param.GetProperties()["lang"]; !ok {
+		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	fmt.Println(app.Lang2(param.GetProperties()["lang"]))
+
 	m := &englishWordProblemAddParemeter{
+		Lang:       app.Lang2(param.GetProperties()["lang"]),
 		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
 		Translated: param.GetProperties()["translated"],
@@ -38,17 +56,20 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 type EnglishWordProblemProcessor interface {
 	app.ProblemAddProcessor
 	app.ProblemRemoveProcessor
+	app.ProblemImportProcessor
 }
 
 type englishWordProblemProcessor struct {
-	synthesizer plugin.Synthesizer
-	translator  plugin.Translator
+	synthesizer                     plugin.Synthesizer
+	translator                      plugin.Translator
+	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator
 }
 
-func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator) EnglishWordProblemProcessor {
+func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator) EnglishWordProblemProcessor {
 	return &englishWordProblemProcessor{
-		synthesizer: synthesizer,
-		translator:  translator,
+		synthesizer:                     synthesizer,
+		translator:                      translator,
+		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
 }
 
@@ -76,9 +97,20 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 	}
 
 	if extractedParam.Translated == "" && extractedParam.Pos == plugin.PosOther {
-		return p.addMultipleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+		problemID, err := p.addMultipleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+		if err != nil {
+			return 0, xerrors.Errorf("failed to addMultipleProblem: err: %w", err)
+		}
+
+		return problemID, nil
 	}
-	return p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+
+	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+	}
+
+	return problemID, nil
 }
 
 func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, param app.ProblemAddParameter, extractedParam *englishWordProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
@@ -97,6 +129,7 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 	}
 
 	properties := map[string]string{
+		"lang":       string(extractedParam.Lang),
 		"text":       extractedParam.Text,
 		"translated": extractedParam.Translated,
 		"pos":        strconv.Itoa(int(extractedParam.Pos)),
@@ -177,6 +210,10 @@ func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, repo ap
 	}
 
 	return nil
+}
+
+func (p *englishWordProblemProcessor) CreateCSVReader(ctx context.Context, workbookID app.WorkbookID, problemType string, reader io.Reader) (app.ProblemAddParameterIterator, error) {
+	return p.newProblemAddParameterCSVReader(workbookID, problemType, reader), nil
 }
 
 func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, repo app.RepositoryFactory, text string) (app.AudioID, error) {

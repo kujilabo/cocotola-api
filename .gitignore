@@ -20,3 +20,5 @@ cocotola-api
 tmp/
 *.db
 export.sh
+
+*.csv

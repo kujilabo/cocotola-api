@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
@@ -27,7 +28,7 @@ type ProblemHandler interface {
 
 	FindProblemIDs(c *gin.Context)
 
-	// ImportProblems(c *gin.Context)
+	ImportProblems(c *gin.Context)
 
 	// UpdateProblem(c *gin.Context)
 
@@ -36,11 +37,13 @@ type ProblemHandler interface {
 
 type problemHandler struct {
 	problemService application.ProblemService
+	newIterator    func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)
 }
 
-func NewProblemHandler(problemService application.ProblemService) ProblemHandler {
+func NewProblemHandler(problemService application.ProblemService, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) ProblemHandler {
 	return &problemHandler{
 		problemService: problemService,
+		newIterator:    newIterator,
 	}
 }
 
@@ -244,6 +247,51 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 		}
 
 		c.Status(http.StatusNoContent)
+		return nil
+	}, h.errorHandle)
+}
+
+func (h *problemHandler) ImportProblems(c *gin.Context) {
+	ctx := c.Request.Context()
+	logger := log.FromContext(ctx)
+	logger.Infof("ImportProblems")
+
+	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
+
+		contentType := c.GetHeader("Content-Type")
+		if !strings.HasPrefix(contentType, "multipart/form-data") {
+			logger.Infof("contentType: %s", contentType)
+			c.Status(http.StatusOK)
+			return nil
+		}
+
+		file, err := c.FormFile("file")
+		if err != nil {
+			if err == http.ErrMissingFile {
+				logger.Warnf("err: %+v", err)
+				c.Status(http.StatusBadRequest)
+				return nil
+			}
+			return err
+		}
+
+		logger.Infof("fileName: %s", file.Filename)
+		multipartFile, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer multipartFile.Close()
+
+		if err := h.problemService.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), h.newIterator); err != nil {
+			return err
+		}
+
+		c.Status(http.StatusOK)
 		return nil
 	}, h.errorHandle)
 }

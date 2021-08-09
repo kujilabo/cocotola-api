@@ -3,31 +3,39 @@ package domain
 import (
 	"context"
 
+	"github.com/go-playground/validator"
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
+
+const EnglishPhraseProblemType = "english_phrase"
 
 type EnglishPhraseProblem interface {
 	app.Problem
 	GetAudioID() app.AudioID
 	GetText() string
+	GetLang() app.Lang5
+	GetTranslated() string
 }
 
 type englishPhraseProblem struct {
 	app.Problem
 	AudioID    app.AudioID
 	Text       string
-	Lang       string
+	Lang       app.Lang5
 	Translated string
 }
 
-func NewEnglishPhraseProblem(problem app.Problem, audioID app.AudioID, text, lang, translated string) (EnglishPhraseProblem, error) {
-	return &englishPhraseProblem{
+func NewEnglishPhraseProblem(problem app.Problem, audioID app.AudioID, text string, lang app.Lang5, translated string) (EnglishPhraseProblem, error) {
+	m := &englishPhraseProblem{
 		Problem:    problem,
 		AudioID:    audioID,
 		Text:       text,
 		Lang:       lang,
 		Translated: translated,
-	}, nil
+	}
+
+	v := validator.New()
+	return m, v.Struct(m)
 }
 
 func (m *englishPhraseProblem) GetAudioID() app.AudioID {
@@ -36,6 +44,13 @@ func (m *englishPhraseProblem) GetAudioID() app.AudioID {
 
 func (m *englishPhraseProblem) GetText() string {
 	return m.Text
+}
+
+func (m *englishPhraseProblem) GetLang() app.Lang5 {
+	return m.Lang
+}
+func (m *englishPhraseProblem) GetTranslated() string {
+	return m.Translated
 }
 
 func (m *englishPhraseProblem) Properties(ctx context.Context) map[string]interface{} {
