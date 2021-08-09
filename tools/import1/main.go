@@ -287,6 +287,10 @@ func main() {
 	}
 
 	appUser, err := userRepoFunc(db).NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
+	if err != nil {
+		panic(err)
+	}
+
 	student, err := appD.NewStudent(repoFunc(db), userRepoFunc(db), appUser)
 	if err != nil {
 		panic(err)
