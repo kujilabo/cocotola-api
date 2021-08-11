@@ -60,10 +60,15 @@ func (e *englishWordProblemEntity) toProblem() (domain.EnglishWordProblem, error
 		return nil, err
 	}
 
+	lang, err := app.NewLang5(e.Lang)
+	if err != nil {
+		return nil, err
+	}
+
 	phrases := make([]domain.EnglishPhraseProblem, 0)
 	sentences := make([]domain.EnglishSentenceProblem, 0)
 
-	return domain.NewEnglishWordProblem(problem, app.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, app.Lang5(e.Lang), e.Translated, phrases, sentences)
+	return domain.NewEnglishWordProblem(problem, app.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, lang, e.Translated, phrases, sentences)
 }
 
 type newEnglishWordProblemParam struct {

@@ -48,7 +48,12 @@ func (e *englishPhraseProblemEntity) toProblem() (domain.EnglishPhraseProblem, e
 		return nil, err
 	}
 
-	return domain.NewEnglishPhraseProblem(problem, app.AudioID(e.AudioID), e.Text, app.Lang5(e.Lang), e.Translated)
+	lang, err := app.NewLang5(e.Lang)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.NewEnglishPhraseProblem(problem, app.AudioID(e.AudioID), e.Text, lang, e.Translated)
 }
 
 type newEnglishPhraseProblemParam struct {

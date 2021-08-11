@@ -14,5 +14,5 @@ type AudioRepository interface {
 
 	FindByLangAndText(ctx context.Context, lang Lang5, text string) (Audio, error)
 
-	FindAudioID(ctx context.Context, lang Lang5, text string) (AudioID, error)
+	FindAudioIDByText(ctx context.Context, lang Lang5, text string) (AudioID, error)
 }

@@ -39,7 +39,7 @@ func (s *synthesizer) Synthesize(lang app.Lang5, text string) (string, error) {
 			"text": text,
 		},
 		"voice": m{
-			"languageCode": string(lang),
+			"languageCode": lang.String(),
 			"ssmlGender":   "FEMALE",
 		},
 		"audioConfig": m{
