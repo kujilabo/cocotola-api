@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strconv"
 
@@ -40,10 +39,13 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
-	fmt.Println(app.Lang2(param.GetProperties()["lang"]))
+	lang2, err := app.NewLang2(param.GetProperties()["lang"])
+	if err != nil {
+		return nil, err
+	}
 
 	m := &englishWordProblemAddParemeter{
-		Lang:       app.Lang2(param.GetProperties()["lang"]),
+		Lang:       lang2,
 		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
 		Translated: param.GetProperties()["translated"],
@@ -129,7 +131,7 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 	}
 
 	properties := map[string]string{
-		"lang":       string(extractedParam.Lang),
+		"lang":       extractedParam.Lang.String(),
 		"text":       extractedParam.Text,
 		"translated": extractedParam.Translated,
 		"pos":        strconv.Itoa(int(extractedParam.Pos)),
@@ -223,7 +225,7 @@ func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, repo a
 	}
 
 	{
-		id, err := audioRepo.FindAudioID(ctx, app.Lang5ENUS, text)
+		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
 		if err != nil {
 			if !xerrors.Is(err, app.ErrAudioNotFound) {
 				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)

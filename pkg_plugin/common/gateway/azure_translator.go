@@ -31,7 +31,7 @@ func NewAzureTranslatorClient(subscriptionKey string) domain.Translator {
 }
 
 func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]domain.TranslationResult, error) {
-	result, err := c.client.DictionaryLookup(context.Background(), string(fromLang), string(toLang), []translatortext.DictionaryLookupTextInput{{Text: to.StringPtr(text)}}, "")
+	result, err := c.client.DictionaryLookup(context.Background(), fromLang.String(), toLang.String(), []translatortext.DictionaryLookupTextInput{{Text: to.StringPtr(text)}}, "")
 	if err != nil {
 		return nil, err
 	}

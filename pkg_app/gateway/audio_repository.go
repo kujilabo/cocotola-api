@@ -22,7 +22,12 @@ func (e *audioEntity) TableName() string {
 }
 
 func (e *audioEntity) toAudio() (domain.Audio, error) {
-	return domain.NewAudio(e.ID, domain.Lang5(e.Lang), e.Text, e.AudioContent)
+	lang5, err := domain.NewLang5(e.Lang)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.NewAudio(e.ID, lang5, e.Text, e.AudioContent)
 }
 
 type audioRepository struct {
@@ -37,7 +42,7 @@ func NewAudioRepository(db *gorm.DB) domain.AudioRepository {
 
 func (r *audioRepository) AddAudio(ctx context.Context, lang domain.Lang5, text, audioContent string) (domain.AudioID, error) {
 	entity := audioEntity{
-		Lang:         string(lang),
+		Lang:         lang.String(),
 		Text:         text,
 		AudioContent: audioContent,
 	}
@@ -60,15 +65,15 @@ func (r *audioRepository) FindAudioByAudioID(ctx context.Context, audioID domain
 
 func (r *audioRepository) FindByLangAndText(ctx context.Context, lang domain.Lang5, text string) (domain.Audio, error) {
 	entity := audioEntity{}
-	if result := r.db.Where("lang = ? and text = ?", string(lang), text).First(&entity); result.Error != nil {
+	if result := r.db.Where("lang = ? and text = ?", lang.String(), text).First(&entity); result.Error != nil {
 		return nil, result.Error
 	}
 	return entity.toAudio()
 }
 
-func (r *audioRepository) FindAudioID(ctx context.Context, lang domain.Lang5, text string) (domain.AudioID, error) {
+func (r *audioRepository) FindAudioIDByText(ctx context.Context, lang domain.Lang5, text string) (domain.AudioID, error) {
 	entity := audioEntity{}
-	if result := r.db.Where("lang = ? and text = ?", string(lang), text).First(&entity); result.Error != nil {
+	if result := r.db.Where("lang = ? and text = ?", lang.String(), text).First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return 0, domain.ErrAudioNotFound
 		}

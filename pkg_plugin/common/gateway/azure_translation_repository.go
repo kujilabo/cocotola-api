@@ -40,7 +40,7 @@ func (r *azureTranslationRepository) Add(ctx context.Context, text string, lang 
 
 	entity := azureTranslationEntity{
 		Text:   text,
-		Lang:   string(lang),
+		Lang:   lang.String(),
 		Result: string(resultBytes),
 	}
 
@@ -56,7 +56,7 @@ func (r *azureTranslationRepository) Find(ctx context.Context, text string, lang
 
 	if result := r.db.Where(&azureTranslationEntity{
 		Text: text,
-		Lang: string(lang),
+		Lang: lang.String(),
 	}).First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrAzureTranslationNotFound
@@ -106,7 +106,7 @@ func (r *azureTranslationRepository) Contain(ctx context.Context, text string, l
 
 	if result := r.db.Where(&azureTranslationEntity{
 		Text: text,
-		Lang: string(lang),
+		Lang: lang.String(),
 	}).First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return false, nil

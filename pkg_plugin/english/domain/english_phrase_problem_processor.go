@@ -131,7 +131,7 @@ func (p *englishPhraseProblemProcessor) findOrAddAudio(ctx context.Context, repo
 	}
 
 	{
-		id, err := audioRepo.FindAudioID(ctx, app.Lang5ENUS, text)
+		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
 		if err != nil {
 			if !xerrors.Is(err, app.ErrAudioNotFound) {
 				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)

@@ -9,7 +9,7 @@ import (
 func TestNewAudio(t *testing.T) {
 	type args struct {
 		id           uint
-		lang         Lang5
+		lang         string
 		text         string
 		audioContent string
 	}
@@ -26,25 +26,15 @@ func TestNewAudio(t *testing.T) {
 			name: "valid",
 			args: args{
 				id:           1,
-				lang:         "us-US",
+				lang:         "en-US",
 				text:         "Hello",
 				audioContent: "HELLO_CONTENT",
 			},
 			wantID:      1,
-			wantLang:    Lang5("us-US"),
+			wantLang:    Lang5ENUS,
 			wantText:    "Hello",
 			wantContent: "HELLO_CONTENT",
 			wantErr:     false,
-		},
-		{
-			name: "length of lang is invalid",
-			args: args{
-				id:           1,
-				lang:         "us",
-				text:         "Hello",
-				audioContent: "HELLO_CONTENT",
-			},
-			wantErr: true,
 		},
 		{
 			name: "text is empty",
@@ -69,7 +59,11 @@ func TestNewAudio(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAudio(tt.args.id, tt.args.lang, tt.args.text, tt.args.audioContent)
+			lang, err := NewLang5(tt.args.lang)
+			if err != nil {
+				panic(err)
+			}
+			got, err := NewAudio(tt.args.id, lang, tt.args.text, tt.args.audioContent)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAudio() error = %v, wantErr %v", err, tt.wantErr)
 				return
