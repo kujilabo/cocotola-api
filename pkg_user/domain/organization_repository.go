@@ -73,9 +73,10 @@ type OrganizationRepository interface {
 
 	FindOrganizationByName(ctx context.Context, operator SystemAdmin, name string) (Organization, error)
 
+	FindOrganizationByID(ctx context.Context, operator SystemAdmin, id OrganizationID) (Organization, error)
+
 	AddOrganization(ctx context.Context, operator SystemAdmin, param OrganizationAddParameter) (OrganizationID, error)
 
-	// FindOrganizationByID(ctx context.Context, operator AppUser, id uint) (Organization, error)
 	// FindOrganizationByName(ctx context.Context, operator SystemAdmin, name string) (Organization, error)
 	// FindOrganization(ctx context.Context, operator AppUser) (Organization, error)
 }

@@ -89,6 +89,10 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, user
 	orgID, err := orgRepo.AddOrganization(bg, sysAd, orgAddParam)
 	assert.NoError(t, err)
 	assert.Greater(t, int(uint(orgID)), 0)
+	log.Printf("OrgID: %d \n", uint(orgID))
+	org, err := orgRepo.FindOrganizationByID(bg, sysAd, orgID)
+	assert.NoError(t, err)
+	log.Printf("OrgID: %d \n", org.GetID())
 
 	appUserRepo := userG.NewAppUserRepository(nil, db)
 	sysOwnerID, err := appUserRepo.AddSystemOwner(bg, sysAd, orgID)
