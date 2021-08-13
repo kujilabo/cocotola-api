@@ -13,7 +13,7 @@ type EnglishPhraseProblem interface {
 	app.Problem
 	GetAudioID() app.AudioID
 	GetText() string
-	GetLang() app.Lang5
+	GetLang() app.Lang2
 	GetTranslated() string
 }
 
@@ -21,11 +21,11 @@ type englishPhraseProblem struct {
 	app.Problem
 	AudioID    app.AudioID
 	Text       string
-	Lang       app.Lang5
+	Lang       app.Lang2
 	Translated string
 }
 
-func NewEnglishPhraseProblem(problem app.Problem, audioID app.AudioID, text string, lang app.Lang5, translated string) (EnglishPhraseProblem, error) {
+func NewEnglishPhraseProblem(problem app.Problem, audioID app.AudioID, text string, lang app.Lang2, translated string) (EnglishPhraseProblem, error) {
 	m := &englishPhraseProblem{
 		Problem:    problem,
 		AudioID:    audioID,
@@ -46,7 +46,7 @@ func (m *englishPhraseProblem) GetText() string {
 	return m.Text
 }
 
-func (m *englishPhraseProblem) GetLang() app.Lang5 {
+func (m *englishPhraseProblem) GetLang() app.Lang2 {
 	return m.Lang
 }
 func (m *englishPhraseProblem) GetTranslated() string {

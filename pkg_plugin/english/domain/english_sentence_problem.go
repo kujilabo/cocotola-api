@@ -18,11 +18,11 @@ type englishSentenceProblem struct {
 	Provider   string
 	AudioID    app.AudioID
 	Text       string
-	Lang       string
+	Lang       app.Lang2
 	Translated string
 }
 
-func NewEnglishSentenceProblem(problem app.Problem, audioID app.AudioID, provider string, text, lang, translated string) (EnglishSentenceProblem, error) {
+func NewEnglishSentenceProblem(problem app.Problem, audioID app.AudioID, provider string, text string, lang app.Lang2, translated string) (EnglishSentenceProblem, error) {
 	return &englishSentenceProblem{
 		Problem:    problem,
 		AudioID:    audioID,

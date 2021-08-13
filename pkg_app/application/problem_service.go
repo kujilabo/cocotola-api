@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -213,7 +214,7 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 
 func (s *problemService) ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error {
 	logger := log.FromContext(ctx)
-	logger.Debug("ProblemService.RemoveProblem")
+	logger.Debug("ProblemService.ImportProblems")
 
 	var problemType string
 	{
@@ -239,6 +240,8 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			return nil
 		}
 
+		logger.Infof("param.properties: %+v", param.GetProperties())
+
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
 			repo := s.repo(tx)
 			userRepo := s.userRepo(tx)
@@ -248,6 +251,10 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			}
 
 			id, err := s.addProblem(ctx, student, workbook, param)
+			if errors.Is(err, domain.ErrProblemAlreadyExists) {
+				return nil
+			}
+
 			if err != nil {
 				return err
 			}

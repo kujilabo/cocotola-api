@@ -18,7 +18,7 @@ type EnglishWordProblem interface {
 	GetPresentParticiple() string
 	GetPastTense() string
 	GetPastParticiple() string
-	GetLang() app.Lang5
+	GetLang() app.Lang2
 	GetTranslated() string
 	GetPhrases() []EnglishPhraseProblem
 	GetSentences() []EnglishSentenceProblem
@@ -34,13 +34,13 @@ type englishWordProblem struct {
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              app.Lang5
+	Lang              app.Lang2
 	Translated        string
 	Phrases           []EnglishPhraseProblem
 	Sentences         []EnglishSentenceProblem
 }
 
-func NewEnglishWordProblem(problem app.Problem, audioID app.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang app.Lang5, translated string, phrases []EnglishPhraseProblem, sentences []EnglishSentenceProblem) (EnglishWordProblem, error) {
+func NewEnglishWordProblem(problem app.Problem, audioID app.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang app.Lang2, translated string, phrases []EnglishPhraseProblem, sentences []EnglishSentenceProblem) (EnglishWordProblem, error) {
 	return &englishWordProblem{
 		Problem:           problem,
 		AudioID:           audioID,
@@ -90,7 +90,7 @@ func (m *englishWordProblem) GetPastParticiple() string {
 	return m.PastParticiple
 }
 
-func (m *englishWordProblem) GetLang() app.Lang5 {
+func (m *englishWordProblem) GetLang() app.Lang2 {
 	return m.Lang
 }
 

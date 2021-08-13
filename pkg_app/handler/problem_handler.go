@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -38,10 +40,10 @@ type ProblemHandler interface {
 
 type problemHandler struct {
 	problemService application.ProblemService
-	newIterator    func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)
+	newIterator    func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (domain.ProblemAddParameterIterator, error)
 }
 
-func NewProblemHandler(problemService application.ProblemService, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) ProblemHandler {
+func NewProblemHandler(problemService application.ProblemService, newIterator func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (domain.ProblemAddParameterIterator, error)) ProblemHandler {
 	return &problemHandler{
 		problemService: problemService,
 		newIterator:    newIterator,
@@ -266,8 +268,8 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 
 		contentType := c.GetHeader("Content-Type")
 		if !strings.HasPrefix(contentType, "multipart/form-data") {
-			logger.Infof("contentType: %s", contentType)
-			c.Status(http.StatusOK)
+			logger.Warnf("contentType: %s", contentType)
+			c.Status(http.StatusBadRequest)
 			return nil
 		}
 
@@ -284,12 +286,16 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		logger.Infof("fileName: %s", file.Filename)
 		multipartFile, err := file.Open()
 		if err != nil {
-			return err
+			return xerrors.Errorf("faield to file.Open. err: %w", err)
 		}
 		defer multipartFile.Close()
 
-		if err := h.problemService.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), h.newIterator); err != nil {
-			return err
+		newIterator := func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error) {
+			return h.newIterator(ctx, workbookID, problemType, multipartFile)
+		}
+
+		if err := h.problemService.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), newIterator); err != nil {
+			return xerrors.Errorf("faield to ImportProblems. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)

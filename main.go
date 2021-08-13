@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -108,7 +110,8 @@ func main() {
 
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
-	router.Use(middleware.NewLogMiddleware())
+	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
 
 	if cfg.Debug.Wait {
 		router.Use(middleware.NewWaitMiddleware())
@@ -151,8 +154,12 @@ func main() {
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}
 
-	newIterator := func(workbookID appD.WorkbookID, problemType string) (appD.ProblemAddParameterIterator, error) {
-		return nil, nil
+	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
+		processor, ok := problemImportProcessor[problemType]
+		if ok {
+			return processor.CreateCSVReader(ctx, workbookID, problemType, reader)
+		}
+		return nil, fmt.Errorf("processor not found. problemType: %s", problemType)
 	}
 
 	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
@@ -200,6 +207,7 @@ func main() {
 		v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/search", problemHandler.FindProblems)
 		v1Problem.POST("problem/search_ids", problemHandler.FindProblemsByProblemIDs)
+		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
 		studyService := application.NewStudyService(db, repoFunc, userRepoFunc)
 		studyHandler := appH.NewStudyHandler(studyService)
