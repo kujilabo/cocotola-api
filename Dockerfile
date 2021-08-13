@@ -1,5 +1,7 @@
 FROM golang:1.16-alpine as builder
 
+RUN apk add --no-cache build-base
+
 WORKDIR /go/src/app
 ADD . .
 # COPY main.go .

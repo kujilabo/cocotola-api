@@ -226,7 +226,7 @@ func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator dom
 }
 
 func (r *appUserRepository) addAppUser(ctx context.Context, appUserEntity *appUserEntity) (domain.AppUserID, error) {
-	if result := r.db.Create(&appUserEntity); result.Error != nil {
+	if result := r.db.Create(appUserEntity); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
 	}
 	return domain.AppUserID(appUserEntity.ID), nil

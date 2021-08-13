@@ -74,6 +74,21 @@ func (r *organizationRepository) FindOrganizationByName(ctx context.Context, ope
 	return organization.toModel()
 }
 
+func (r *organizationRepository) FindOrganizationByID(ctx context.Context, operator domain.SystemAdmin, id domain.OrganizationID) (domain.Organization, error) {
+	organization := organizationEntity{}
+
+	if result := r.db.Where(organizationEntity{
+		ID: uint(id),
+	}).First(&organization); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrOrganizationNotFound
+		}
+		return nil, result.Error
+	}
+
+	return organization.toModel()
+}
+
 func (r *organizationRepository) AddOrganization(ctx context.Context, operator domain.SystemAdmin, param domain.OrganizationAddParameter) (domain.OrganizationID, error) {
 	organization := organizationEntity{
 		Version:   1,
