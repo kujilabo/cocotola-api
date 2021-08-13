@@ -60,7 +60,7 @@ func (e *englishWordProblemEntity) toProblem() (domain.EnglishWordProblem, error
 		return nil, err
 	}
 
-	lang, err := app.NewLang5(e.Lang)
+	lang, err := app.NewLang2(e.Lang)
 	if err != nil {
 		return nil, err
 	}

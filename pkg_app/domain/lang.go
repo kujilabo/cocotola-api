@@ -8,6 +8,7 @@ const Lang5Len = 5
 
 type Lang2 interface {
 	String() string
+	ToLang3() string
 }
 
 type lang2 struct {
@@ -26,6 +27,17 @@ func NewLang2(lang string) (Lang2, error) {
 
 func (l *lang2) String() string {
 	return l.value
+}
+
+func (l *lang2) ToLang3() string {
+	switch l.value {
+	case "en":
+		return "eng"
+	case "ja":
+		return "jpn"
+	default:
+		return "___"
+	}
 }
 
 type Lang3 interface {
@@ -52,6 +64,7 @@ func (l *lang3) String() string {
 
 type Lang5 interface {
 	String() string
+	ToLang2() string
 }
 
 type lang5 struct {
@@ -70,4 +83,15 @@ func NewLang5(lang string) (Lang5, error) {
 
 func (l *lang5) String() string {
 	return l.value
+}
+
+func (l *lang5) ToLang2() string {
+	switch l.value {
+	case "eng":
+		return "en"
+	case "jpn":
+		return "ja"
+	default:
+		return "__"
+	}
 }
