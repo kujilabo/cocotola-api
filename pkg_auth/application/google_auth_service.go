@@ -19,13 +19,13 @@ type GoogleAuthService interface {
 }
 
 type googleAuthService struct {
-	userRepo                func(db *gorm.DB) user.RepositoryFactory
+	userRepo                func(db *gorm.DB) (user.RepositoryFactory, error)
 	googleAuthClient        domain.GoogleAuthClient
 	authTokenManager        domain.AuthTokenManager
 	registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error
 }
 
-func NewGoogleAuthService(userRepo func(db *gorm.DB) user.RepositoryFactory, googleAuthClient domain.GoogleAuthClient, authTokenManager domain.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error) GoogleAuthService {
+func NewGoogleAuthService(userRepo func(db *gorm.DB) (user.RepositoryFactory, error), googleAuthClient domain.GoogleAuthClient, authTokenManager domain.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error) GoogleAuthService {
 	return &googleAuthService{
 		userRepo:                userRepo,
 		googleAuthClient:        googleAuthClient,

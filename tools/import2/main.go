@@ -255,7 +255,10 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	rf := userG.NewRepositoryFactory(db)
+	rf, err := userG.NewRepositoryFactory(db)
+	if err != nil {
+		panic(err)
+	}
 	userD.InitSystemAdmin(rf)
 	systemAdmin := userD.SystemAdminInstance()
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
@@ -288,24 +291,33 @@ func main() {
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemRepository,
 	}
 
-	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
+	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
-		return appG.NewRepositoryFactory(db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
 	}
 
-	appUser, err := userRepoFunc(db).NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
+	repo, err := repoFunc(db)
+	if err != nil {
+		panic(err)
+	}
+	userRepo, err := userRepoFunc(db)
 	if err != nil {
 		panic(err)
 	}
 
-	student, err := appD.NewStudent(repoFunc(db), userRepoFunc(db), appUser)
+	appUser, err := userRepo.NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := registerEnglishWordProblems(ctx, student, repoFunc(db), englishWordProblemProcessor); err != nil {
+	student, err := appD.NewStudent(repo, userRepo, appUser)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := registerEnglishWordProblems(ctx, student, repo, englishWordProblemProcessor); err != nil {
 		panic(err)
 	}
 }

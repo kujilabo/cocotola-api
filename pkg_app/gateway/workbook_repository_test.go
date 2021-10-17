@@ -22,7 +22,8 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 		sqlDB, err := db.DB()
 		assert.NoError(t, err)
 		defer sqlDB.Close()
-		userRepo := userG.NewRepositoryFactory(db)
+		userRepo, err := userG.NewRepositoryFactory(db)
+		assert.NoError(t, err)
 		_, sysOwner, owner := testInitOrganization(t, db)
 		appUserRepo := userG.NewAppUserRepository(nil, db)
 

@@ -35,6 +35,7 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 	if _, ok := param.GetProperties()["translated"]; !ok {
 		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
 	}
+
 	if _, ok := param.GetProperties()["lang"]; !ok {
 		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}

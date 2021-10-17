@@ -60,7 +60,7 @@ type workbook struct {
 	Properties workbookProperties
 }
 
-func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name, problemType, questsionText string) (Workbook, error) {
+func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string) (Workbook, error) {
 	m := &workbook{
 		repo:             repo,
 		processorFactory: processorFactory,

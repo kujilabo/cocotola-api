@@ -44,7 +44,7 @@ type WorkbookSearchResponse struct {
 
 type WorkbookAddParameter struct {
 	Name         string `json:"name" binding:"required"`
-	ProblemType  string `json:"problemType" enums:"english_word,english_phrase,template"`
+	ProblemType  string `json:"problemType" enums:"english_word,english_phrase,english_sentence,template"`
 	QuestionText string `json:"questionText"`
 }
 

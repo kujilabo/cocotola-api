@@ -212,34 +212,34 @@ func (s *student) DecrementQuotaUsage(ctx context.Context, name string) error {
 }
 
 func (s *student) FindRecordbook(ctx context.Context, workbookID WorkbookID, studyType string) (Recordbook, error) {
-	repo, err := s.rf.NewStudyResultRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// repo, err := s.rf.NewStudyResultRepository(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	studyResults, err := repo.FindStudyResults(ctx, s, workbookID, studyType)
-	if err != nil {
-		return nil, err
-	}
+	// studyResults, err := repo.FindStudyResults(ctx, s, workbookID, studyType)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	workbook, err := s.FindWorkbookByID(ctx, workbookID)
-	if err != nil {
-		return nil, err
-	}
+	// workbook, err := s.FindWorkbookByID(ctx, workbookID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	problemIDs, err := workbook.FindProblemIDs(ctx, s)
-	if err != nil {
-		return nil, err
-	}
+	// problemIDs, err := workbook.FindProblemIDs(ctx, s)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	results := make(map[ProblemID]int)
-	for _, problemID := range problemIDs {
-		if level, ok := studyResults[problemID]; ok {
-			results[problemID] = level
-		} else {
-			results[problemID] = 0
-		}
-	}
+	// results := make(map[ProblemID]int)
+	// for _, problemID := range problemIDs {
+	// 	if level, ok := studyResults[problemID]; ok {
+	// 		results[problemID] = level
+	// 	} else {
+	// 		results[problemID] = 0
+	// 	}
+	// }
 
-	return NewRecordbook(workbookID, results)
+	return NewRecordbook(s.rf, s, workbookID, studyType)
 }

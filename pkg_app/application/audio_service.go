@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -15,10 +16,10 @@ type AudioService interface {
 
 type audioService struct {
 	db   *gorm.DB
-	repo func(db *gorm.DB) domain.RepositoryFactory
+	repo func(db *gorm.DB) (domain.RepositoryFactory, error)
 }
 
-func NewAudioService(db *gorm.DB, repo func(db *gorm.DB) domain.RepositoryFactory) AudioService {
+func NewAudioService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error)) AudioService {
 	return &audioService{
 		db:   db,
 		repo: repo,
@@ -30,7 +31,10 @@ func (s *audioService) FindAudioByID(ctx context.Context, audioID domain.AudioID
 	logger.Infof("audioID: %d", audioID)
 	var audio domain.Audio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return xerrors.Errorf("failed to repo. err: %w", err)
+		}
 		audioRepo, err := repo.NewAudioRepository(ctx)
 		if err != nil {
 			return err

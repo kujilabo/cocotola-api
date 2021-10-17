@@ -30,11 +30,11 @@ type ProblemService interface {
 
 type problemService struct {
 	db       *gorm.DB
-	repo     func(db *gorm.DB) domain.RepositoryFactory
-	userRepo func(db *gorm.DB) user.RepositoryFactory
+	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
+	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) domain.RepositoryFactory, userRepo func(db *gorm.DB) user.RepositoryFactory) ProblemService {
+func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
 	return &problemService{
 		db:       db,
 		repo:     repo,
@@ -45,8 +45,14 @@ func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) domain.RepositoryFact
 func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return err
@@ -70,8 +76,14 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return err
@@ -95,8 +107,14 @@ func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizat
 func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error) {
 	var result domain.Problem
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -120,8 +138,14 @@ func (s *problemService) FindProblemByID(ctx context.Context, organizationID use
 func (s *problemService) FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error) {
 	var result []domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -146,8 +170,14 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 	logger := log.FromContext(ctx)
 	var result domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -186,8 +216,14 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 	logger.Debug("ProblemService.RemoveProblem")
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -218,8 +254,14 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 
 	var problemType string
 	{
-		repo := s.repo(s.db)
-		userRepo := s.userRepo(s.db)
+		repo, err := s.repo(s.db)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(s.db)
+		if err != nil {
+			return err
+		}
 		_, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
@@ -243,8 +285,14 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 		logger.Infof("param.properties: %+v", param.GetProperties())
 
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
-			repo := s.repo(tx)
-			userRepo := s.userRepo(tx)
+			repo, err := s.repo(tx)
+			if err != nil {
+				return err
+			}
+			userRepo, err := s.userRepo(tx)
+			if err != nil {
+				return err
+			}
 			student, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
 			if err != nil {
 				return err

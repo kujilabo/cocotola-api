@@ -97,7 +97,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	rf := userG.NewRepositoryFactory(db)
+	rf, err := userG.NewRepositoryFactory(db)
+	if err != nil {
+		panic(err)
+	}
+
 	userD.InitSystemAdmin(rf)
 
 	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
@@ -129,13 +133,17 @@ func main() {
 
 	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
+	englishSentenceProblemProcessor := pluginEnglishDomain.NewEnglishSentenceProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
+
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
 	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
 	problemImportProcessor := map[string]appD.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
@@ -147,11 +155,15 @@ func main() {
 	englishPhraseProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
+	englishSentenceProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, pluginEnglishDomain.EnglishSentenceProblemType)
+	}
 
 	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemRepository,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepository,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepository,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemRepository,
 	}
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
@@ -162,11 +174,11 @@ func main() {
 		return nil, fmt.Errorf("processor not found. problemType: %s", problemType)
 	}
 
-	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
+	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
-		return appG.NewRepositoryFactory(db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
 	}
 
 	signingKey := []byte(cfg.Auth.SigningKey)
@@ -177,7 +189,15 @@ func main() {
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUsedrCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
-		return callback(ctx, cfg.App.TestUserEmail, repoFunc(db), userRepoFunc(db), organizationName, appUser)
+		repo, err := repoFunc(db)
+		if err != nil {
+			return err
+		}
+		userRepo, err := userRepoFunc(db)
+		if err != nil {
+			return err
+		}
+		return callback(ctx, cfg.App.TestUserEmail, repo, userRepo, organizationName, appUser)
 	}
 
 	v1 := router.Group("v1")
@@ -204,7 +224,7 @@ func main() {
 		v1Problem.POST("problem", problemHandler.AddProblem)
 		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
-		v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
+		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/search", problemHandler.FindProblems)
 		v1Problem.POST("problem/search_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
@@ -214,6 +234,7 @@ func main() {
 		v1Study := v1.Group("study/workbook/:workbookID")
 		v1Study.Use(authMiddleware)
 		v1Study.GET("study_type/:studyType", studyHandler.FindRecordbook)
+		v1Study.POST("study_type/:studyType/problem/:problemID/result", studyHandler.SetStudyResult)
 
 		audioService := application.NewAudioService(db, repoFunc)
 		audioHandler := appH.NewAudioHandler(audioService)

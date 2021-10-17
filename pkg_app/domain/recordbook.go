@@ -1,31 +1,103 @@
 package domain
 
-import "github.com/go-playground/validator"
+import (
+	"context"
+
+	"github.com/go-playground/validator"
+	"golang.org/x/xerrors"
+)
 
 type Recordbook interface {
-	GetID() WorkbookID
-	GetResults() map[ProblemID]int
+	GetWorkbookID() WorkbookID
+	GetResults(ctx context.Context) (map[ProblemID]int, error)
+	GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLevel, error)
+	SetResult(ctx context.Context, problemType string, problemID ProblemID, result bool) error
 }
 
 type recordbook struct {
-	ID      WorkbookID `validate:"required"`
-	Results map[ProblemID]int
+	rf         RepositoryFactory
+	student    Student
+	workbookID WorkbookID `validate:"required"`
+	studyType  string
 }
 
-func NewRecordbook(id WorkbookID, results map[ProblemID]int) (Recordbook, error) {
+func NewRecordbook(rf RepositoryFactory, student Student, workbookID WorkbookID, studyType string) (Recordbook, error) {
 	m := &recordbook{
-		ID:      id,
-		Results: results,
+		rf:         rf,
+		student:    student,
+		workbookID: workbookID,
+		studyType:  studyType,
 	}
 
 	v := validator.New()
 	return m, v.Struct(m)
 }
 
-func (m *recordbook) GetID() WorkbookID {
-	return m.ID
+func (m *recordbook) GetWorkbookID() WorkbookID {
+	return m.workbookID
 }
 
-func (m *recordbook) GetResults() map[ProblemID]int {
-	return m.Results
+func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]int, error) {
+	repo, err := m.rf.NewStudyResultRepository(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
+	}
+
+	studyResults, err := repo.FindStudyResults(ctx, m.student, m.workbookID, m.studyType)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to FindStudyResults. err: %w", err)
+	}
+
+	workbook, err := m.student.FindWorkbookByID(ctx, m.workbookID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+	}
+
+	problemIDs, err := workbook.FindProblemIDs(ctx, m.student)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to FindProblemIDs. err: %w", err)
+	}
+
+	results := make(map[ProblemID]int)
+	for _, problemID := range problemIDs {
+		if level, ok := studyResults[problemID]; ok {
+			results[problemID] = level
+		} else {
+			results[problemID] = 0
+		}
+	}
+
+	return results, nil
+}
+
+func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLevel, error) {
+	problems1, err := m.GetResults(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to GetResults. err: %w", err)
+	}
+
+	problems2 := make([]ProblemWithLevel, len(problems1))
+	i := 0
+	for k, v := range problems1 {
+		problems2[i] = ProblemWithLevel{
+			ProblemID: k,
+			Level:     v,
+		}
+		i++
+	}
+
+	return problems2, nil
+}
+
+func (m *recordbook) SetResult(ctx context.Context, problemType string, problemID ProblemID, result bool) error {
+	repo, err := m.rf.NewStudyResultRepository(ctx)
+	if err != nil {
+		return xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
+	}
+
+	if err := repo.SetResult(ctx, m.student, m.workbookID, m.studyType, problemType, problemID, result); err != nil {
+		return xerrors.Errorf("failed to SetResult. err: %w", err)
+	}
+
+	return nil
 }
