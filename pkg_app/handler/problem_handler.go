@@ -29,7 +29,7 @@ type ProblemHandler interface {
 
 	AddProblem(c *gin.Context)
 
-	FindProblemIDs(c *gin.Context)
+	// FindProblemIDs(c *gin.Context)
 
 	ImportProblems(c *gin.Context)
 
@@ -159,32 +159,33 @@ func (h *problemHandler) FindProblemByID(c *gin.Context) {
 	}, h.errorHandle)
 }
 
-func (h *problemHandler) FindProblemIDs(c *gin.Context) {
-	ctx := c.Request.Context()
-	logger := log.FromContext(ctx)
-	logger.Info("FindProblemIDs")
+// func (h *problemHandler) FindProblemIDs(c *gin.Context) {
+// 	ctx := c.Request.Context()
+// 	logger := log.FromContext(ctx)
+// 	logger.Info("FindProblemIDs")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return nil
-		}
+// 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+// 		workbookID, err := ginhelper.GetUint(c, "workbookID")
+// 		if err != nil {
+// 			c.Status(http.StatusBadRequest)
+// 			return nil
+// 		}
 
-		result, err := h.problemService.FindProblemIDs(ctx, organizationID, operatorID, domain.WorkbookID(workbookID))
-		if err != nil {
-			return err
-		}
+// 		// result, err := h.problemService.FindProblemIDs(ctx, organizationID, operatorID, domain.WorkbookID(workbookID))
+// 		// if err != nil {
+// 		// 	return err
+// 		// }
+// 		h.studyService.Find
 
-		response, err := converter.ToProblemIDs(ctx, result)
-		if err != nil {
-			return err
-		}
+// 		response, err := converter.ToProblemWithLevelList(ctx, result)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		c.JSON(http.StatusOK, response)
-		return nil
-	}, h.errorHandle)
-}
+// 		c.JSON(http.StatusOK, response)
+// 		return nil
+// 	}, h.errorHandle)
+// }
 
 func (h *problemHandler) AddProblem(c *gin.Context) {
 	ctx := c.Request.Context()

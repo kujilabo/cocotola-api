@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
@@ -128,12 +129,12 @@ func initWorkbook(ctx context.Context, operator appD.Student, workbookName strin
 func initProblems(ctx context.Context, operator appD.Student, workbook appD.Workbook) (map[string]bool, error) {
 	searchCondition, err := appD.NewProblemSearchCondition(appD.WorkbookID(workbook.GetID()), defaultPageNo, defaultPageSize, "")
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to NewProblemSearchCondition. err: %w", err)
 	}
 
 	problems, err := workbook.FindProblems(ctx, operator, searchCondition)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to FindProblems. err: %w", err)
 	}
 
 	problemMap := make(map[string]bool)
@@ -141,7 +142,7 @@ func initProblems(ctx context.Context, operator appD.Student, workbook appD.Work
 		m := p.GetProperties(ctx)
 		textObj, ok := m["text"]
 		if !ok {
-			return nil, fmt.Errorf("text not found. %v", m)
+			return nil, fmt.Errorf("text not found. problem: %+v, properties: %+v", p, m)
 		}
 		text, ok := textObj.(string)
 		if !ok {
@@ -166,17 +167,17 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 	workbookName := "flush sentence"
 	workbook, err := initWorkbook(ctx, operator, workbookName)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to initWorkbook. err: %w", err)
 	}
 
 	problemMap, err := initProblems(ctx, operator, workbook)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to initProblems. err: %w", err)
 	}
 
 	file, err := os.Open(csvFilePath)
 	if err != nil {
-		panic(err)
+		return xerrors.Errorf("failed to Open file. err: %w", err)
 	}
 	defer file.Close()
 
@@ -194,17 +195,18 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 		}
 
 		properties := map[string]string{
+			"lang":       "ja",
 			"text":       line[0],
 			"translated": line[1],
 		}
 		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, workbook.GetProblemType(), properties)
 		if err != nil {
-			return err
+			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		if _, ok := problemMap[line[0]]; !ok {
 			if _, err := processor.AddProblem(ctx, repo, operator, param); err != nil {
-				return err
+				return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", param, err)
 			}
 		}
 
@@ -248,7 +250,10 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	rf := userG.NewRepositoryFactory(db)
+	rf, err := userG.NewRepositoryFactory(db)
+	if err != nil {
+		panic(err)
+	}
 	userD.InitSystemAdmin(rf)
 	systemAdmin := userD.SystemAdminInstance()
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
@@ -279,24 +284,33 @@ func main() {
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}
 
-	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
+	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
-		return appG.NewRepositoryFactory(db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
 	}
 
-	appUser, err := userRepoFunc(db).NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
+	repo, err := repoFunc(db)
+	if err != nil {
+		panic(err)
+	}
+	userRepo, err := userRepoFunc(db)
 	if err != nil {
 		panic(err)
 	}
 
-	student, err := appD.NewStudent(repoFunc(db), userRepoFunc(db), appUser)
+	appUser, err := userRepo.NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := registerEnglishPhraseProblemsFlushSentence(ctx, student, repoFunc(db), englishPhraseProblemProcessor); err != nil {
+	student, err := appD.NewStudent(repo, userRepo, appUser)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := registerEnglishPhraseProblemsFlushSentence(ctx, student, repo, englishPhraseProblemProcessor); err != nil {
 		panic(err)
 	}
 }

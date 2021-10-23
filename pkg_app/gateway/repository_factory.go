@@ -7,30 +7,20 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type repositoryFactory struct {
 	db                  *gorm.DB
 	driverName          string
-	userRepo            func(db *gorm.DB) user.RepositoryFactory
+	userRepo            func(db *gorm.DB) (user.RepositoryFactory, error)
 	pf                  domain.ProcessorFactory
 	problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)
+	problemTypes        []domain.ProblemType
 }
 
-func NewRepositoryFactory(db *gorm.DB, driverName string, userRepo func(db *gorm.DB) user.RepositoryFactory, pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) domain.RepositoryFactory {
-	return &repositoryFactory{
-		db:                  db,
-		driverName:          driverName,
-		userRepo:            userRepo,
-		pf:                  pf,
-		problemRepositories: problemRepositories,
-	}
-}
-
-func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.WorkbookRepository, error) {
-	problemTypeRepo, err := f.NewProblemTypeRepository(ctx)
+func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRepo func(db *gorm.DB) (user.RepositoryFactory, error), pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) (domain.RepositoryFactory, error) {
+	problemTypeRepo, err := NewProblemTypeRepository(db)
 	if err != nil {
 		return nil, err
 	}
@@ -38,9 +28,32 @@ func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.W
 	if err != nil {
 		return nil, err
 	}
-	logger := log.FromContext(ctx)
-	logger.Infof("problem types: %+v", problemTypes)
-	return NewWorkbookRepository(ctx, f.driverName, f, f.userRepo(f.db), f.pf, f.db, problemTypes), nil
+	return &repositoryFactory{
+		db:                  db,
+		driverName:          driverName,
+		userRepo:            userRepo,
+		pf:                  pf,
+		problemRepositories: problemRepositories,
+		problemTypes:        problemTypes,
+	}, nil
+}
+
+func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.WorkbookRepository, error) {
+	// problemTypeRepo, err := f.NewProblemTypeRepository(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// logger := log.FromContext(ctx)
+	// logger.Infof("problem types: %+v", problemTypes)
+	userRepo, err := f.userRepo(f.db)
+	if err != nil {
+		return nil, err
+	}
+	return NewWorkbookRepository(ctx, f.driverName, f, userRepo, f.pf, f.db, f.problemTypes), nil
 }
 
 func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (domain.ProblemRepository, error) {
@@ -60,7 +73,7 @@ func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) (domain.
 }
 
 func (f *repositoryFactory) NewStudyResultRepository(ctx context.Context) (domain.StudyResultRepository, error) {
-	return NewStudyResultRepository(ctx, f, f.db)
+	return NewStudyResultRepository(ctx, f, f.db, f.problemTypes)
 }
 
 func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (domain.AudioRepository, error) {

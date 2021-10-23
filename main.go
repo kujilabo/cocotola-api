@@ -71,51 +71,61 @@ func main() {
 		done <- true
 	}()
 
-	cfg, err := config.LoadConfig(*env)
+	// cfg, err := config.LoadConfig(*env)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// // init log
+	// if err := config.InitLog(*env, cfg.Log); err != nil {
+	// 	panic(err)
+	// }
+
+	// // cors
+	// corsConfig := config.InitCORS(cfg.CORS)
+	// logrus.Infof("cors: %+v", corsConfig)
+
+	// if err := corsConfig.Validate(); err != nil {
+	// 	panic(err)
+	// }
+
+	// // init db
+	// db, sqlDB, err := initDB(cfg.DB)
+	// if err != nil {
+	// 	fmt.Printf("failed to InitDB. err: %+v", err)
+	// 	panic(err)
+	// }
+	// defer sqlDB.Close()
+
+	// rf, err := userG.NewRepositoryFactory(db)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// userD.InitSystemAdmin(rf)
+
+	// if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
+	// 	panic(err)
+	// }
+
+	// if !cfg.Debug.GinMode {
+	// 	gin.SetMode(gin.ReleaseMode)
+	// }
+
+	// router := gin.New()
+	// router.Use(cors.New(corsConfig))
+	// router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	// router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+
+	// if cfg.Debug.Wait {
+	// 	router.Use(middleware.NewWaitMiddleware())
+	// }
+
+	cfg, db, sqlDB, router, err := initialize(ctx, *env)
 	if err != nil {
-		panic(err)
-	}
-
-	// init log
-	if err := config.InitLog(*env, cfg.Log); err != nil {
-		panic(err)
-	}
-
-	// cors
-	corsConfig := config.InitCORS(cfg.CORS)
-	logrus.Infof("cors: %+v", corsConfig)
-
-	if err := corsConfig.Validate(); err != nil {
-		panic(err)
-	}
-
-	// init db
-	db, sqlDB, err := initDB(cfg.DB)
-	if err != nil {
-		fmt.Printf("failed to InitDB. err: %+v", err)
 		panic(err)
 	}
 	defer sqlDB.Close()
-
-	rf := userG.NewRepositoryFactory(db)
-	userD.InitSystemAdmin(rf)
-
-	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
-		panic(err)
-	}
-
-	if !cfg.Debug.GinMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
-
-	if cfg.Debug.Wait {
-		router.Use(middleware.NewWaitMiddleware())
-	}
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.Status(http.StatusOK)
@@ -129,13 +139,17 @@ func main() {
 
 	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
+	englishSentenceProblemProcessor := pluginEnglishDomain.NewEnglishSentenceProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
+
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
 	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemProcessor,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
 	problemImportProcessor := map[string]appD.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
@@ -147,11 +161,15 @@ func main() {
 	englishPhraseProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
+	englishSentenceProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, pluginEnglishDomain.EnglishSentenceProblemType)
+	}
 
 	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
-		pluginEnglishDomain.EnglishWordProblemType:   englishWordProblemRepository,
-		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepository,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepository,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemRepository,
 	}
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
@@ -162,11 +180,11 @@ func main() {
 		return nil, fmt.Errorf("processor not found. problemType: %s", problemType)
 	}
 
-	userRepoFunc := func(db *gorm.DB) userD.RepositoryFactory {
+	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) appD.RepositoryFactory {
-		return appG.NewRepositoryFactory(db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
 	}
 
 	signingKey := []byte(cfg.Auth.SigningKey)
@@ -177,7 +195,15 @@ func main() {
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUsedrCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
-		return callback(ctx, cfg.App.TestUserEmail, repoFunc(db), userRepoFunc(db), organizationName, appUser)
+		repo, err := repoFunc(db)
+		if err != nil {
+			return err
+		}
+		userRepo, err := userRepoFunc(db)
+		if err != nil {
+			return err
+		}
+		return callback(ctx, cfg.App.TestUserEmail, repo, userRepo, organizationName, appUser)
 	}
 
 	v1 := router.Group("v1")
@@ -204,7 +230,7 @@ func main() {
 		v1Problem.POST("problem", problemHandler.AddProblem)
 		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
-		v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
+		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/search", problemHandler.FindProblems)
 		v1Problem.POST("problem/search_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
@@ -214,6 +240,7 @@ func main() {
 		v1Study := v1.Group("study/workbook/:workbookID")
 		v1Study.Use(authMiddleware)
 		v1Study.GET("study_type/:studyType", studyHandler.FindRecordbook)
+		v1Study.POST("study_type/:studyType/problem/:problemID/result", studyHandler.SetStudyResult)
 
 		audioService := application.NewAudioService(db, repoFunc)
 		audioHandler := appH.NewAudioHandler(audioService)
@@ -255,6 +282,59 @@ func main() {
 	}
 	time.Sleep(gracefulShutdownTime2)
 	logrus.Info("exited")
+}
+
+func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *gin.Engine, error) {
+	cfg, err := config.LoadConfig(env)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// init log
+	if err := config.InitLog(env, cfg.Log); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// cors
+	corsConfig := config.InitCORS(cfg.CORS)
+	logrus.Infof("cors: %+v", corsConfig)
+
+	if err := corsConfig.Validate(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// init db
+	db, sqlDB, err := initDB(cfg.DB)
+	if err != nil {
+		fmt.Printf("failed to InitDB. err: %+v", err)
+		return nil, nil, nil, nil, err
+	}
+
+	rf, err := userG.NewRepositoryFactory(db)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	userD.InitSystemAdmin(rf)
+
+	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	if !cfg.Debug.GinMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := gin.New()
+	router.Use(cors.New(corsConfig))
+	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+
+	if cfg.Debug.Wait {
+		router.Use(middleware.NewWaitMiddleware())
+	}
+
+	return cfg, db, sqlDB, router, nil
 }
 
 func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {

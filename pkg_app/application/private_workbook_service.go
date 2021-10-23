@@ -27,11 +27,11 @@ type PrivateWorkbookService interface {
 
 type privateWorkbookService struct {
 	db       *gorm.DB
-	repo     func(db *gorm.DB) domain.RepositoryFactory
-	userRepo func(db *gorm.DB) user.RepositoryFactory
+	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
+	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewPrivateWorkbookService(db *gorm.DB, repo func(db *gorm.DB) domain.RepositoryFactory, userRepo func(db *gorm.DB) user.RepositoryFactory) PrivateWorkbookService {
+func NewPrivateWorkbookService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) PrivateWorkbookService {
 	return &privateWorkbookService{
 		db:       db,
 		repo:     repo,
@@ -42,8 +42,14 @@ func NewPrivateWorkbookService(db *gorm.DB, repo func(db *gorm.DB) domain.Reposi
 func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID) (*domain.WorkbookSearchResult, error) {
 	var result *domain.WorkbookSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -70,8 +76,14 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workBookID domain.WorkbookID) (domain.Workbook, error) {
 	var result domain.Workbook
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -93,8 +105,14 @@ func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizat
 func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter domain.WorkbookAddParameter) (domain.WorkbookID, error) {
 	var result domain.WorkbookID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -115,8 +133,14 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 
 func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter domain.WorkbookUpdateParameter) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
@@ -131,8 +155,14 @@ func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizatio
 
 func (s *privateWorkbookService) RemoveWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo := s.repo(tx)
-		userRepo := s.userRepo(tx)
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
 		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)

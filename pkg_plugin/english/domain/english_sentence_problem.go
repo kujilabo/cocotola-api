@@ -6,6 +6,8 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
+const EnglishSentenceProblemType = "english_sentence"
+
 type EnglishSentenceProblem interface {
 	app.Problem
 	GetProvider() string

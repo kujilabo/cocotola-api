@@ -59,16 +59,6 @@ func ToProblemResponse(ctx context.Context, problem domain.Problem) (*entity.Pro
 	}, nil
 }
 
-func ToProblemIDs(ctx context.Context, ids []domain.ProblemID) (*entity.ProblemIDs, error) {
-	problemIDs := make([]uint, len(ids))
-	for i, id := range ids {
-		problemIDs[i] = uint(id)
-	}
-	return &entity.ProblemIDs{
-		Results: problemIDs,
-	}, nil
-}
-
 func ToProblemIDsCondition(ctx context.Context, param *entity.ProblemIDsParameter, workbookID domain.WorkbookID) (domain.ProblemIDsCondition, error) {
 	ids := make([]domain.ProblemID, 0)
 	for _, id := range param.IDs {

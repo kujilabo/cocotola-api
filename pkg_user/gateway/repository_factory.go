@@ -10,10 +10,10 @@ type repositoryFactory struct {
 	db *gorm.DB
 }
 
-func NewRepositoryFactory(db *gorm.DB) domain.RepositoryFactory {
+func NewRepositoryFactory(db *gorm.DB) (domain.RepositoryFactory, error) {
 	return &repositoryFactory{
 		db: db,
-	}
+	}, nil
 }
 
 func (f *repositoryFactory) NewOrganizationRepository() domain.OrganizationRepository {
