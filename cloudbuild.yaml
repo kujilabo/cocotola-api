@@ -21,8 +21,6 @@ steps:
       - name: "ssh"
         path: /root/.ssh
 
-  # cp known_hosts.github /root/.ssh/known_hosts
-  
   - name: "gcr.io/cloud-builders/git"
     entrypoint: "bash"
     args:
