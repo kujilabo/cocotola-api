@@ -152,11 +152,11 @@ func (r *studyResultRepository) SetResult(ctx context.Context, operator domain.S
 	}
 
 	if studyResult {
-		if entity.Level < 10 {
+		if entity.Level < domain.StudyMaxLevel {
 			entity.Level++
 		}
 	} else {
-		if entity.Level > 0 {
+		if entity.Level > domain.StudyMinLevel {
 			entity.Level--
 		}
 	}
