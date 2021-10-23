@@ -72,6 +72,19 @@ steps:
       - "CLOUDSDK_CONTAINER_CLUSTER=k8s-cluster"
       - "GCLOUD_PROJECT=cocotola"
 
+  - name: "gcr.io/$PROJECT_ID/kustomize"
+    dir: "kujilabo-manifests/cocotola-api/overlays/development"
+    args:
+      - "edit"
+      - "set"
+      - "image"
+      - "gcr.io/cocotola/cocotola-api=gcr.io/$PROJECT_ID/cocotola-api:$SHORT_SHA"
+    env:
+      - "APPLY=false"
+      - "CLOUDSDK_COMPUTE_ZONE=asia-northeast1-a"
+      - "CLOUDSDK_CONTAINER_CLUSTER=k8s-cluster"
+      - "GCLOUD_PROJECT=cocotola"
+
   - name: "gcr.io/cloud-builders/git"
     dir: "kujilabo-manifests"
     args:

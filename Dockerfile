@@ -17,4 +17,4 @@ COPY --from=builder /go/src/app/cocotola .
 COPY --from=builder /go/src/app/configs ./configs
 COPY --from=builder /go/src/app/sqls ./sqls
 
-CMD ["./cocotola", "-env", "production"]
+CMD ["./cocotola"]
