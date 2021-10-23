@@ -56,7 +56,7 @@ func main() {
 	if len(*env) == 0 {
 		appEnv := os.Getenv("APP_ENV")
 		if len(appEnv) == 0 {
-			*env = "development"
+			*env = "local"
 		} else {
 			*env = appEnv
 		}

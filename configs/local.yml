@@ -28,4 +28,4 @@ log:
   level: debug
 debug:
   ginMode: true
-  wait: false
+  wait: true
