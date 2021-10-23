@@ -71,55 +71,61 @@ func main() {
 		done <- true
 	}()
 
-	cfg, err := config.LoadConfig(*env)
+	// cfg, err := config.LoadConfig(*env)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// // init log
+	// if err := config.InitLog(*env, cfg.Log); err != nil {
+	// 	panic(err)
+	// }
+
+	// // cors
+	// corsConfig := config.InitCORS(cfg.CORS)
+	// logrus.Infof("cors: %+v", corsConfig)
+
+	// if err := corsConfig.Validate(); err != nil {
+	// 	panic(err)
+	// }
+
+	// // init db
+	// db, sqlDB, err := initDB(cfg.DB)
+	// if err != nil {
+	// 	fmt.Printf("failed to InitDB. err: %+v", err)
+	// 	panic(err)
+	// }
+	// defer sqlDB.Close()
+
+	// rf, err := userG.NewRepositoryFactory(db)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// userD.InitSystemAdmin(rf)
+
+	// if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
+	// 	panic(err)
+	// }
+
+	// if !cfg.Debug.GinMode {
+	// 	gin.SetMode(gin.ReleaseMode)
+	// }
+
+	// router := gin.New()
+	// router.Use(cors.New(corsConfig))
+	// router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	// router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+
+	// if cfg.Debug.Wait {
+	// 	router.Use(middleware.NewWaitMiddleware())
+	// }
+
+	cfg, db, sqlDB, router, err := initialize(ctx, *env)
 	if err != nil {
-		panic(err)
-	}
-
-	// init log
-	if err := config.InitLog(*env, cfg.Log); err != nil {
-		panic(err)
-	}
-
-	// cors
-	corsConfig := config.InitCORS(cfg.CORS)
-	logrus.Infof("cors: %+v", corsConfig)
-
-	if err := corsConfig.Validate(); err != nil {
-		panic(err)
-	}
-
-	// init db
-	db, sqlDB, err := initDB(cfg.DB)
-	if err != nil {
-		fmt.Printf("failed to InitDB. err: %+v", err)
 		panic(err)
 	}
 	defer sqlDB.Close()
-
-	rf, err := userG.NewRepositoryFactory(db)
-	if err != nil {
-		panic(err)
-	}
-
-	userD.InitSystemAdmin(rf)
-
-	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
-		panic(err)
-	}
-
-	if !cfg.Debug.GinMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
-
-	if cfg.Debug.Wait {
-		router.Use(middleware.NewWaitMiddleware())
-	}
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.Status(http.StatusOK)
@@ -276,6 +282,59 @@ func main() {
 	}
 	time.Sleep(gracefulShutdownTime2)
 	logrus.Info("exited")
+}
+
+func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *gin.Engine, error) {
+	cfg, err := config.LoadConfig(env)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// init log
+	if err := config.InitLog(env, cfg.Log); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// cors
+	corsConfig := config.InitCORS(cfg.CORS)
+	logrus.Infof("cors: %+v", corsConfig)
+
+	if err := corsConfig.Validate(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// init db
+	db, sqlDB, err := initDB(cfg.DB)
+	if err != nil {
+		fmt.Printf("failed to InitDB. err: %+v", err)
+		return nil, nil, nil, nil, err
+	}
+
+	rf, err := userG.NewRepositoryFactory(db)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	userD.InitSystemAdmin(rf)
+
+	if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	if !cfg.Debug.GinMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := gin.New()
+	router.Use(cors.New(corsConfig))
+	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+
+	if cfg.Debug.Wait {
+		router.Use(middleware.NewWaitMiddleware())
+	}
+
+	return cfg, db, sqlDB, router, nil
 }
 
 func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
