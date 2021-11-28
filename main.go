@@ -194,7 +194,7 @@ func main() {
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
-	registerAppUsedrCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
+	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
 		repo, err := repoFunc(db)
 		if err != nil {
 			return err
@@ -209,7 +209,7 @@ func main() {
 	v1 := router.Group("v1")
 	{
 		v1auth := v1.Group("auth")
-		googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUsedrCallback)
+		googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUserCallback)
 		authHandler := authH.NewAuthHandler(authTokenManager)
 		googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
 		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
