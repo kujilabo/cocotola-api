@@ -17,9 +17,9 @@ COPY --from=builder /go/src/app/cocotola .
 COPY --from=builder /go/src/app/configs ./configs
 COPY --from=builder /go/src/app/sqls ./sqls
 
-RUN groupadd -r docker && useradd -r -g docker docker
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-USER docker
+USER appuser
 
 EXPOSE 8080
 
