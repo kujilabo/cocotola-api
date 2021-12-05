@@ -306,8 +306,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := initDB(cfg.DB)
 	if err != nil {
-		fmt.Printf("failed to InitDB. err: %+v", err)
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	rf, err := userG.NewRepositoryFactory(db)
@@ -356,6 +355,26 @@ func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
 
 		if err := appG.MigrateSQLiteDB(db); err != nil {
 			return nil, nil, err
+		}
+
+		return db, sqlDB, nil
+	case "mysql":
+		db, err := libG.OpenMySQL(cfg.MySQL.Username, cfg.MySQL.Password, cfg.MySQL.Host, cfg.MySQL.Port, cfg.MySQL.Database)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		sqlDB, err := db.DB()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if err := sqlDB.Ping(); err != nil {
+			return nil, nil, err
+		}
+
+		if err := appG.MigrateMySQLDB(db); err != nil {
+			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
 		}
 
 		return db, sqlDB, nil

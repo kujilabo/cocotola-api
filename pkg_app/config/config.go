@@ -20,9 +20,18 @@ type SQLite3Config struct {
 	File string `yaml:"file" validate:"required"`
 }
 
+type MySQLConfig struct {
+	Username string `yaml:"username" validate:"required"`
+	Password string `yaml:"password" validate:"required"`
+	Host     string `yaml:"host" validate:"required"`
+	Port     int    `yaml:"port" validate:"required"`
+	Database string `yaml:"database" validate:"required"`
+}
+
 type DBConfig struct {
 	DriverName string         `yaml:"driverName"`
 	SQLite3    *SQLite3Config `yaml:"sqlite3"`
+	MySQL      *MySQLConfig   `yaml:"mysql"`
 }
 
 type AuthConfig struct {

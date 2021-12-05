@@ -3,9 +3,16 @@ app:
   ownerPassword: password
   testUserEmail: $TEST_USER_EMAIL
 db:
-  driverName: sqlite3
-  sqlite3:
-    file: app.db
+  # driverName: sqlite3
+  # sqlite3:
+  #   file: app.db
+  driverName: mysql
+  mysql:
+    username: user
+    password: password
+    host: 127.0.0.1
+    port: 3306
+    database: development
 auth:
   signingKey: ah5T9Y9V2JPU74fhCtHQfDqLp3Zg8ZNc
   accessTokenTtlMin: 5

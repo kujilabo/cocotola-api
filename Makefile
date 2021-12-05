@@ -6,7 +6,7 @@ unit-test: dependency
 docker-up:
 	@docker-compose -f docker/development/docker-compose.yml up -d
 	sleep 10
-	@chmod -R 777 docker/development
+	# @chmod -R 777 docker/development
 
 docker-down:
 	@chmod -R 777 docker/development
