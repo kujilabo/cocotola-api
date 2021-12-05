@@ -22,3 +22,5 @@ tmp/
 export.sh
 
 *.csv
+
+docker/development/mysql-data
