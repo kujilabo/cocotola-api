@@ -320,14 +320,15 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 		return nil, nil, nil, nil, err
 	}
 
-	if !cfg.Debug.GinMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
-	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
 	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+
+	if cfg.Debug.GinMode {
+		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	if cfg.Debug.Wait {
 		router.Use(middleware.NewWaitMiddleware())
