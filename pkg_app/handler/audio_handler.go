@@ -9,6 +9,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handlerhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -41,13 +42,14 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 			return nil
 		}
 
-		audio, err := h.audioService.FindAudioByID(ctx, domain.AudioID(uint(audioID)))
+		result, err := h.audioService.FindAudioByID(ctx, domain.AudioID(uint(audioID)))
 		if err != nil {
 			return err
 		}
 
-		response := map[string]string{
-			"audioContent": audio.GetAudioContent(),
+		response, err := converter.ToAudioResponse(ctx, result)
+		if err != nil {
+			return err
 		}
 
 		c.JSON(http.StatusOK, response)

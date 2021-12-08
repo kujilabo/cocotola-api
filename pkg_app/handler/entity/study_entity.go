@@ -6,7 +6,7 @@ type StudyResultParameter struct {
 
 type ProblemWithLevel struct {
 	ProblemID uint `json:"problemId"`
-	Level     int  `json:"leve"`
+	Level     int  `json:"level"`
 }
 
 type ProblemWithLevelList struct {

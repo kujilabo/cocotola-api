@@ -71,7 +71,7 @@ func (e *englishWordProblemEntity) toProblem() (domain.EnglishWordProblem, error
 	return domain.NewEnglishWordProblem(problem, app.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, lang, e.Translated, phrases, sentences)
 }
 
-type newEnglishWordProblemParam struct {
+type englishWordProblemAddParemeter struct {
 	AudioID           uint   `validate:"required"`
 	Text              string `validate:"required"`
 	Pos               int    `validate:"required"`
@@ -88,7 +88,7 @@ type newEnglishWordProblemParam struct {
 	SentenceID2       uint
 }
 
-func toNewEnglishWordProblemParam(param app.ProblemAddParameter) (*newEnglishWordProblemParam, error) {
+func toEnglishWordProblemAddParameter(param app.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["audioId"]; !ok {
 		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
 	}
@@ -115,7 +115,7 @@ func toNewEnglishWordProblemParam(param app.ProblemAddParameter) (*newEnglishWor
 		return nil, err
 	}
 
-	m := &newEnglishWordProblemParam{
+	m := &englishWordProblemAddParemeter{
 		AudioID:    uint(audioID),
 		Lang:       param.GetProperties()["lang"],
 		Text:       param.GetProperties()["text"],
@@ -250,9 +250,9 @@ func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, opera
 func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 
-	problemParam, err := toNewEnglishWordProblemParam(param)
+	problemParam, err := toEnglishWordProblemAddParameter(param)
 	if err != nil {
-		return 0, err
+		return 0, xerrors.Errorf("failed to toEnglishWordProblemAddParameter. param: %+v, err: %w", param, err)
 	}
 	englishWordProblem := englishWordProblemEntity{
 		Version:           1,

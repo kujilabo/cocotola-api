@@ -106,8 +106,8 @@ func (h *privateWorkbookHandler) FindWorkbookByID(c *gin.Context) {
 // AddWorkbook godoc
 // @Summary Create new workbook
 // @Produce json
-// @Param param body entity.NewWorkbookParameter true "parameter to create new workbook"
-// @Success 200 {object} handler_helper.IDResponse
+// @Param param body entity.WorkbookAddParameter true "parameter to create new workbook"
+// @Success 200 {object} handlerhelper.IDResponse
 // @Failure 400
 // @Router /v1/private/workbook [post]
 func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
@@ -139,13 +139,16 @@ func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
 }
 
 // UpdateWorkbook godoc
-// @Summary Update the workbook
-// @Produce json
-// @Param workbook_id path int true "Workbook ID"
-// @Param param body entity.EditWorkbookParameter true "parameter to update the workbook"
-// @Success 200 {object} handler_helper.IDResponse
-// @Failure 400
-// @Router /v1/private/workbook/{workbook_id} [put]
+// @Summary     Update the workbook
+// @Description update the workbook
+// @Tags        private workbook
+// @Accept      json
+// @Produce     json
+// @Param       workbookID path int true "Workbook ID"
+// @Param       param body entity.WorkbookUpdateParameter true "parameter to update the workbook"
+// @Success     200 {object} handlerhelper.IDResponse
+// @Failure     400
+// @Router      /v1/private/workbook/{workbookID} [put]
 func (h *privateWorkbookHandler) UpdateWorkbook(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)

@@ -31,6 +31,16 @@ func NewStudyHandler(studyService application.StudyService) StudyHandler {
 	}
 }
 
+// FindRecordbook godoc
+// @Summary     Find the recordbook
+// @Description find results of workbook
+// @Tags        study
+// @Produce     json
+// @Param       workbookID path string true "Workbook ID"
+// @Param       studyType  path string true "Study type"
+// @Success     200 {object} entity.ProblemWithLevelList
+// @Failure     400
+// @Router      /v1/study/workbook/{workbookID}/study_type/{studyType} [get]
 func (h *studyHandler) FindRecordbook(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)

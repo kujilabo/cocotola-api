@@ -1,4 +1,170 @@
+definitions:
+  entity.ProblemWithLevel:
+    properties:
+      level:
+        type: integer
+      problemId:
+        type: integer
+    type: object
+  entity.ProblemWithLevelList:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/entity.ProblemWithLevel'
+        type: array
+    type: object
+  entity.Workbook:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        minimum: 1
+        type: integer
+      id:
+        minimum: 1
+        type: integer
+      name:
+        type: string
+      problemType:
+        type: string
+      questionText:
+        type: string
+      updatedAt:
+        type: string
+      updatedBy:
+        minimum: 1
+        type: integer
+      version:
+        minimum: 1
+        type: integer
+    required:
+    - createdBy
+    - id
+    - updatedBy
+    - version
+    type: object
+  entity.WorkbookAddParameter:
+    properties:
+      name:
+        type: string
+      problemType:
+        enum:
+        - english_word
+        - english_phrase
+        - english_sentence
+        - template
+        type: string
+      questionText:
+        type: string
+    required:
+    - name
+    type: object
+  entity.WorkbookSearchResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/entity.Workbook'
+        type: array
+      totalCount:
+        type: integer
+    type: object
+  entity.WorkbookUpdateParameter:
+    properties:
+      name:
+        type: string
+      questionText:
+        type: string
+    required:
+    - name
+    type: object
+  handlerhelper.IDResponse:
+    properties:
+      id:
+        type: integer
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /v1/private/workbook:
+    post:
+      parameters:
+      - description: parameter to create new workbook
+        in: body
+        name: param
+        required: true
+        schema:
+          $ref: '#/definitions/entity.WorkbookAddParameter'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlerhelper.IDResponse'
+        "400":
+          description: ""
+      summary: Create new workbook
+  /v1/private/workbook/{workbookID}:
+    put:
+      consumes:
+      - application/json
+      description: update the workbook
+      parameters:
+      - description: Workbook ID
+        in: path
+        name: workbookID
+        required: true
+        type: integer
+      - description: parameter to update the workbook
+        in: body
+        name: param
+        required: true
+        schema:
+          $ref: '#/definitions/entity.WorkbookUpdateParameter'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlerhelper.IDResponse'
+        "400":
+          description: ""
+      summary: Update the workbook
+  /v1/private/workbook/search:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.WorkbookSearchResponse'
+        "400":
+          description: ""
+      summary: Find workbooks
+  /v1/study/workbook/{workbookID}/study_type/{studyType}:
+    get:
+      description: find results of workbook
+      parameters:
+      - description: Workbook ID
+        in: path
+        name: workbookID
+        required: true
+        type: string
+      - description: Study type
+        in: path
+        name: studyType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ProblemWithLevelList'
+        "400":
+          description: ""
+      summary: Find the recordbook
 swagger: "2.0"
