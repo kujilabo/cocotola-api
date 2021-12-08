@@ -32,8 +32,9 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
-	if _, ok := param.GetProperties()["translated"]; !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+	translated := ""
+	if _, ok := param.GetProperties()["translated"]; ok {
+		translated = param.GetProperties()["translated"]
 	}
 
 	if _, ok := param.GetProperties()["lang"]; !ok {
@@ -49,7 +50,7 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 		Lang:       lang2,
 		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
-		Translated: param.GetProperties()["translated"],
+		Translated: translated,
 	}
 
 	v := validator.New()
@@ -78,7 +79,7 @@ func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator p
 
 func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
-	logger.Infof("AddProblem1")
+	logger.Debug("englishWordProblemProcessor.AddProblem, param: %+v", param)
 
 	problemRepo, err := repo.NewProblemRepository(ctx, param.GetProblemType())
 	if err != nil {
@@ -87,7 +88,7 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 
 	extractedParam, err := toEnglishWordProblemAddParemeter(param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. err: %w", err)
+		return 0, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
 	}
 
 	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
@@ -145,7 +146,7 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 
 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
 	}
 
 	return problemID, nil
@@ -154,9 +155,7 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 
 func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, param app.ProblemAddParameter, extractedParam *englishWordProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
-	logger.Infof("AddProblem1")
-
-	logger.Infof("text: %s, audio ID: %d", extractedParam.Text, audioID)
+	logger.Debugf("addMultipleProblem. text: %s, audio ID: %d", extractedParam.Text, audioID)
 
 	translated, err := p.translate(ctx, extractedParam.Text, app.Lang2EN, app.Lang2JA)
 	if err != nil {
@@ -166,6 +165,7 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 			"translated": extractedParam.Translated,
 			"pos":        strconv.Itoa(int(extractedParam.Pos)),
 			"audioId":    strconv.Itoa(int(audioID)),
+			"lang":       app.Lang2JA.String(),
 		}
 		newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
 		if err != nil {
@@ -174,7 +174,7 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 
 		problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 		if err != nil {
-			return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+			return 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
 		}
 
 		return problemID, nil
@@ -188,14 +188,15 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 			"translated": extractedParam.Translated,
 			"pos":        strconv.Itoa(int(extractedParam.Pos)),
 			"audioId":    strconv.Itoa(int(audioID)),
+			"lang":       app.Lang2JA.String(),
 		}
 		newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
 		if err != nil {
-			return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+			return 0, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		if _, err := problemRepo.AddProblem(ctx, operator, newParam); err != nil {
-			return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+			return 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
 		}
 	}
 

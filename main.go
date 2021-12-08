@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -37,6 +38,7 @@ import (
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
@@ -232,7 +234,7 @@ func main() {
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
 		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/search", problemHandler.FindProblems)
-		v1Problem.POST("problem/search_ids", problemHandler.FindProblemsByProblemIDs)
+		v1Problem.POST("problem/search_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
 		studyService := application.NewStudyService(db, repoFunc, userRepoFunc)
@@ -423,23 +425,47 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 
 func callback(ctx context.Context, testUserEmail string, repo appD.RepositoryFactory, userRepo userD.RepositoryFactory, organizationName string, appUser userD.AppUser) error {
 	logger := log.FromContext(ctx)
-	logger.Infof("%s", appUser.GetLoginID())
+	logger.Infof("callback. loginID: %s", appUser.GetLoginID())
 
 	if appUser.GetLoginID() == testUserEmail {
 		logger.Info("%s", appUser.GetLoginID())
 		student, err := appD.NewStudent(repo, userRepo, appUser)
 		if err != nil {
-			return err
+			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}
 
 		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, "Example", "")
 		if err != nil {
-			return fmt.Errorf("failed to AddWorkbook")
+			return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
 		}
 
 		workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
 		if err != nil {
-			return fmt.Errorf("failed to AddWorkbook")
+			return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+		}
+
+		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		if err != nil {
+			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+		}
+
+		pos := strconv.Itoa(int(pluginCommonDomain.PosNoun))
+		for i, word := range []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"} {
+			properties := map[string]string{
+				"text": word,
+				"lang": "ja",
+				"pos":  pos,
+			}
+			param, err := appD.NewProblemAddParameter(workbookID, i+1, pluginEnglishDomain.EnglishWordProblemType, properties)
+			if err != nil {
+				return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			}
+
+			problemID, err := workbook.AddProblem(ctx, student, param)
+			if err != nil {
+				return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			}
+			logger.Infof("problemID: %d", problemID)
 		}
 
 		logger.Infof("Example %d", workbookID)
