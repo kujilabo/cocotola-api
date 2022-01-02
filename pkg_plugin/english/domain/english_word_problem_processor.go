@@ -25,7 +25,7 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 	posS := param.GetProperties()["pos"]
 	pos, err := strconv.Atoi(posS)
 	if err != nil {
-		return nil, xerrors.Errorf("faield to cast to int. err: %w", err)
+		return nil, xerrors.Errorf("failed to cast to int. err: %w", err)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
@@ -77,7 +77,7 @@ func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator p
 	}
 }
 
-func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.AddProblem, param: %+v", param)
 
@@ -91,13 +91,18 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 		return 0, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
 	}
 
-	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
-	if err != nil {
-		return 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
-	}
+	audioID := app.AudioID(0)
+	if workbook.GetProperties()["audioEnabled"] == "true" {
+		audioIDtmp, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
+		if err != nil {
+			return 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
+		}
 
-	if audioID == 0 {
-		return 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
+		if audioIDtmp == 0 {
+			return 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
+		}
+
+		audioID = audioIDtmp
 	}
 
 	if extractedParam.Translated == "" && extractedParam.Pos == plugin.PosOther {

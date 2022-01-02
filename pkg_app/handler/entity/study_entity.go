@@ -10,5 +10,5 @@ type ProblemWithLevel struct {
 }
 
 type ProblemWithLevelList struct {
-	Results []ProblemWithLevel `json:"results"`
+	Records []ProblemWithLevel `json:"records"`
 }

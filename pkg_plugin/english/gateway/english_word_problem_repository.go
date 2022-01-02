@@ -72,7 +72,7 @@ func (e *englishWordProblemEntity) toProblem() (domain.EnglishWordProblem, error
 }
 
 type englishWordProblemAddParemeter struct {
-	AudioID           uint   `validate:"required"`
+	AudioID           uint
 	Text              string `validate:"required"`
 	Pos               int    `validate:"required"`
 	Phonetic          string
@@ -140,13 +140,15 @@ func NewEnglishWordProblemRepository(db *gorm.DB, problemType string) (app.Probl
 
 func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (*app.ProblemSearchResult, error) {
 	logger := log.FromContext(ctx)
-	logger.Debugf("englishWordProblemRepository.FindProblems")
+	logger.Debug("englishWordProblemRepository.FindProblems")
 	limit := param.GetPageSize()
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishWordProblemEntity
 
-	where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
-	if result := where.Order("workbook_id, number, created_at").
+	where := func() *gorm.DB {
+		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
+	}
+	if result := where().Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -161,7 +163,43 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 	}
 
 	var count int64
-	if result := where.Model(&englishWordProblemEntity{}).Count(&count); result.Error != nil {
+	if result := where().Model(&englishWordProblemEntity{}).Count(&count); result.Error != nil {
+		return nil, result.Error
+	}
+
+	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
+
+	return &app.ProblemSearchResult{
+		TotalCount: count,
+		Results:    problems,
+	}, nil
+}
+
+func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, operator app.Student, workbookID app.WorkbookID) (*app.ProblemSearchResult, error) {
+	logger := log.FromContext(ctx)
+	logger.Debug("englishWordProblemRepository.FindProblems")
+	limit := 1000
+	var problemEntities []englishWordProblemEntity
+
+	where := func() *gorm.DB {
+		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+	}
+	if result := where().Order("workbook_id, number, created_at").
+		Limit(limit).Find(&problemEntities); result.Error != nil {
+		return nil, result.Error
+	}
+
+	problems := make([]app.Problem, len(problemEntities))
+	for i, e := range problemEntities {
+		p, err := e.toProblem()
+		if err != nil {
+			return nil, err
+		}
+		problems[i] = p
+	}
+
+	var count int64
+	if result := where().Model(&englishWordProblemEntity{}).Count(&count); result.Error != nil {
 		return nil, result.Error
 	}
 

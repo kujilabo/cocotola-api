@@ -13,7 +13,6 @@ func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemSearchPa
 }
 
 func ToProblemSearchResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemSearchResponse, error) {
-
 	problems := make([]entity.Problem, len(result.Results))
 	for i, p := range result.Results {
 		bytes, err := json.Marshal(p.GetProperties(ctx))

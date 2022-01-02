@@ -31,7 +31,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 
 	googleAuthParameter := entity.GoogleAuthParameter{}
 	if err := c.BindJSON(&googleAuthParameter); err != nil {
-		logger.Info("Invalid parameter")
+		logger.Warnf("invalid parameter. err: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
 		return
 	}
@@ -56,7 +56,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	authResult, err := h.googleAuthService.RegisterStudent(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
 	if err != nil {
 		logger.Warnf("failed to RegisterStudent. err: %+v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": http.StatusText(http.StatusBadRequest)})
 		return
 	}
 

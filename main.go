@@ -234,6 +234,7 @@ func main() {
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
 		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/search", problemHandler.FindProblems)
+		v1Problem.POST("problem/find_all", problemHandler.FindAllProblems)
 		v1Problem.POST("problem/search_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
@@ -324,7 +325,8 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
-	router.Use(middleware.NewLogMiddleware(), gin.Recovery())
+	router.Use(middleware.NewLogMiddleware())
+	router.Use(gin.Recovery())
 
 	if cfg.Debug.GinMode {
 		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
@@ -434,42 +436,88 @@ func callback(ctx context.Context, testUserEmail string, repo appD.RepositoryFac
 			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}
 
-		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, "Example", "")
-		if err != nil {
-			return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
+		if err := createDemoWordWorkbook(ctx, student, "Example", pluginCommonDomain.PosNoun, []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"}); err != nil {
+			return err
 		}
 
-		workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
-		if err != nil {
-			return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+		if err := createDemoWordWorkbook(ctx, student, "NGSL-100", pluginCommonDomain.PosOther, []string{
+			"know",
+			"more",
+			"get",
+			"who",
+			"like",
+			"when",
+			"think",
+			"make",
+			"time",
+			"see",
+			"what",
+			"up",
+			"some",
+			"other",
+			"out",
+			"good",
+			"people",
+			"year",
+			"take",
+			"no",
+			"well",
+			"because",
+			"very",
+			"just",
+			"come",
+			"could",
+			"work",
+			"use",
+			"than",
+			"now",
+		}); err != nil {
+			return err
 		}
-
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
-		if err != nil {
-			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
-		}
-
-		pos := strconv.Itoa(int(pluginCommonDomain.PosNoun))
-		for i, word := range []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"} {
-			properties := map[string]string{
-				"text": word,
-				"lang": "ja",
-				"pos":  pos,
-			}
-			param, err := appD.NewProblemAddParameter(workbookID, i+1, pluginEnglishDomain.EnglishWordProblemType, properties)
-			if err != nil {
-				return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
-			}
-
-			problemID, err := workbook.AddProblem(ctx, student, param)
-			if err != nil {
-				return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
-			}
-			logger.Infof("problemID: %d", problemID)
-		}
-
-		logger.Infof("Example %d", workbookID)
 	}
 
+	return nil
+}
+
+func createDemoWordWorkbook(ctx context.Context, student appD.Student, workbookName string, pos pluginCommonDomain.WordPos, words []string) error {
+	logger := log.FromContext(ctx)
+
+	workbookProperties := map[string]string{
+		"audioEnabled": "false",
+	}
+	param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
+	if err != nil {
+		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
+	}
+
+	workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
+	if err != nil {
+		return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+	}
+
+	workbook, err := student.FindWorkbookByID(ctx, workbookID)
+	if err != nil {
+		return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+	}
+
+	for i, word := range words {
+		properties := map[string]string{
+			"text": word,
+			"lang": "ja",
+			"pos":  strconv.Itoa(int(pos)),
+		}
+		param, err := appD.NewProblemAddParameter(workbookID, i+1, pluginEnglishDomain.EnglishWordProblemType, properties)
+		if err != nil {
+			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		}
+
+		problemID, err := workbook.AddProblem(ctx, student, param)
+		if err != nil {
+			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		}
+		logger.Infof("problemID: %d", problemID)
+	}
+
+	logger.Infof("Example %d", workbookID)
 	return nil
 }

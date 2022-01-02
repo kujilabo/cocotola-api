@@ -59,7 +59,7 @@ func NewEnglishPhraseProblemProcessor(synthesizer plugin.Synthesizer, translator
 	}
 }
 
-func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
@@ -31,6 +32,7 @@ func NewAzureTranslatorClient(subscriptionKey string) domain.Translator {
 }
 
 func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]domain.TranslationResult, error) {
+	logger := log.FromContext(ctx)
 	result, err := c.client.DictionaryLookup(context.Background(), fromLang.String(), toLang.String(), []translatortext.DictionaryLookupTextInput{{Text: to.StringPtr(text)}}, "")
 	if err != nil {
 		return nil, err
@@ -49,6 +51,9 @@ func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text strin
 			pos, err := domain.ParsePos(c.pointerToString(t.PosTag))
 			if err != nil {
 				return nil, err
+			}
+			if pos == domain.PosOther {
+				logger.Warnf("PosOther. text: %s, pos: %s", text, *t.PosTag)
 			}
 			translations = append(translations, domain.TranslationResult{
 				Pos:        pos,

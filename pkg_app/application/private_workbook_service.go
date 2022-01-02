@@ -120,7 +120,7 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 
 		tmpResult, err := student.AddWorkbookToPersonalSpace(ctx, parameter)
 		if err != nil {
-			return xerrors.Errorf("faield to AddWorkbookToPersonalSpace. err: %w", err)
+			return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
 		}
 
 		result = tmpResult

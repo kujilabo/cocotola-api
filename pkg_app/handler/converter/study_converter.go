@@ -39,6 +39,6 @@ func ToProblemWithLevelList(ctx context.Context, problems []domain.ProblemWithLe
 		}
 	}
 	return &entity.ProblemWithLevelList{
-		Results: list,
+		Records: list,
 	}, nil
 }

@@ -28,7 +28,9 @@ func ToWorkbookSearchResponse(result *domain.WorkbookSearchResult) (*entity.Work
 }
 
 func ToWorkbookAddParameter(param *entity.WorkbookAddParameter) (domain.WorkbookAddParameter, error) {
-	return domain.NewWorkbookAddParameter(param.ProblemType, param.Name, param.QuestionText)
+	return domain.NewWorkbookAddParameter(param.ProblemType, param.Name, param.QuestionText, map[string]string{
+		"audioEnabled": "true",
+	})
 }
 
 func ToWorkbookUpdateParameter(param *entity.WorkbookUpdateParameter) (domain.WorkbookUpdateParameter, error) {

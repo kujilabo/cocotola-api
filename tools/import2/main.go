@@ -105,7 +105,9 @@ func initWorkbook(ctx context.Context, operator appD.Student, workbookName strin
 			return nil, err
 		}
 
-		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "")
+		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", map[string]string{
+			"audioEnabled": "false",
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +213,7 @@ func registerEnglishWordProblems(ctx context.Context, operator appD.Student, rep
 		}
 
 		if _, ok := problemMap[line[0]]; !ok {
-			if _, err := processor.AddProblem(ctx, repo, operator, param); err != nil {
+			if _, err := processor.AddProblem(ctx, repo, operator, workbook, param); err != nil {
 				return err
 			}
 		}

@@ -14,12 +14,13 @@ var (
 	PosDet   WordPos = 4
 	PosModal WordPos = 5
 	PosNoun  WordPos = 6
-	PosPrev  WordPos = 7
+	PosPrep  WordPos = 7
 	PosPron  WordPos = 8
 	PosVerb  WordPos = 9
 	PosOther WordPos = 99
 )
 
+// https://docs.microsoft.com/ja-jp/rest/api/cognitiveservices/translator/translator/dictionary-lookup
 func ParsePos(v string) (WordPos, error) {
 	pos := strings.ToLower(v)
 	switch pos {
@@ -27,7 +28,7 @@ func ParsePos(v string) (WordPos, error) {
 		return PosAdj, nil
 	case "adv":
 		return PosAdv, nil
-	case "conf":
+	case "conj":
 		return PosConj, nil
 	case "det":
 		return PosDet, nil
@@ -35,8 +36,8 @@ func ParsePos(v string) (WordPos, error) {
 		return PosModal, nil
 	case "noun":
 		return PosNoun, nil
-	case "prev":
-		return PosPrev, nil
+	case "prep":
+		return PosPrep, nil
 	case "pron":
 		return PosPron, nil
 	case "verb":
