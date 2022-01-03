@@ -1,4 +1,4 @@
-create table `study_result` (
+create table `recordbook` (
  `app_user_id` int not null
 ,`workbook_id` int not null
 ,`problem_type_id` int not null
@@ -8,6 +8,7 @@ create table `study_result` (
 ,`result_prev2` tinyint
 ,`result_prev1` tinyint
 ,`level` int not null
+,`memorized` tinyint
 ,`last_answered_at` datetime not null default current_timestamp on update current_timestamp
 ,primary key(`app_user_id`, `problem_id`, `study_type_id`, `problem_type_id`)
 ,foreign key(`app_user_id`) references `app_user`(`id`) on delete cascade

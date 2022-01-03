@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -34,11 +33,11 @@ import (
 	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
 	authH "github.com/kujilabo/cocotola-api/pkg_auth/handler"
 	authM "github.com/kujilabo/cocotola-api/pkg_auth/handler/middleware"
+	english_word "github.com/kujilabo/cocotola-api/pkg_data/english_word"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
@@ -233,17 +232,17 @@ func main() {
 		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
 		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
-		v1Problem.POST("problem/search", problemHandler.FindProblems)
+		v1Problem.POST("problem/find", problemHandler.FindProblems)
 		v1Problem.POST("problem/find_all", problemHandler.FindAllProblems)
-		v1Problem.POST("problem/search_by_ids", problemHandler.FindProblemsByProblemIDs)
+		v1Problem.POST("problem/find_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
 		studyService := application.NewStudyService(db, repoFunc, userRepoFunc)
-		studyHandler := appH.NewStudyHandler(studyService)
+		recordbookHandler := appH.NewRecordbookHandler(studyService)
 		v1Study := v1.Group("study/workbook/:workbookID")
 		v1Study.Use(authMiddleware)
-		v1Study.GET("study_type/:studyType", studyHandler.FindRecordbook)
-		v1Study.POST("study_type/:studyType/problem/:problemID/result", studyHandler.SetStudyResult)
+		v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
+		v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
 
 		audioService := application.NewAudioService(db, repoFunc)
 		audioHandler := appH.NewAudioHandler(audioService)
@@ -430,94 +429,23 @@ func callback(ctx context.Context, testUserEmail string, repo appD.RepositoryFac
 	logger.Infof("callback. loginID: %s", appUser.GetLoginID())
 
 	if appUser.GetLoginID() == testUserEmail {
-		logger.Info("%s", appUser.GetLoginID())
 		student, err := appD.NewStudent(repo, userRepo, appUser)
 		if err != nil {
 			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}
 
-		if err := createDemoWordWorkbook(ctx, student, "Example", pluginCommonDomain.PosNoun, []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"}); err != nil {
+		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {
 			return err
 		}
 
-		if err := createDemoWordWorkbook(ctx, student, "NGSL-100", pluginCommonDomain.PosOther, []string{
-			"know",
-			"more",
-			"get",
-			"who",
-			"like",
-			"when",
-			"think",
-			"make",
-			"time",
-			"see",
-			"what",
-			"up",
-			"some",
-			"other",
-			"out",
-			"good",
-			"people",
-			"year",
-			"take",
-			"no",
-			"well",
-			"because",
-			"very",
-			"just",
-			"come",
-			"could",
-			"work",
-			"use",
-			"than",
-			"now",
-		}); err != nil {
+		if err := english_word.Create20NGSLWorkbook(ctx, student); err != nil {
+			return err
+		}
+
+		if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func createDemoWordWorkbook(ctx context.Context, student appD.Student, workbookName string, pos pluginCommonDomain.WordPos, words []string) error {
-	logger := log.FromContext(ctx)
-
-	workbookProperties := map[string]string{
-		"audioEnabled": "false",
-	}
-	param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
-	if err != nil {
-		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
-	}
-
-	workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
-	if err != nil {
-		return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
-	}
-
-	workbook, err := student.FindWorkbookByID(ctx, workbookID)
-	if err != nil {
-		return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
-	}
-
-	for i, word := range words {
-		properties := map[string]string{
-			"text": word,
-			"lang": "ja",
-			"pos":  strconv.Itoa(int(pos)),
-		}
-		param, err := appD.NewProblemAddParameter(workbookID, i+1, pluginEnglishDomain.EnglishWordProblemType, properties)
-		if err != nil {
-			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
-		}
-
-		problemID, err := workbook.AddProblem(ctx, student, param)
-		if err != nil {
-			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
-		}
-		logger.Infof("problemID: %d", problemID)
-	}
-
-	logger.Infof("Example %d", workbookID)
 	return nil
 }

@@ -16,17 +16,17 @@ import (
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
-type StudyHandler interface {
+type RecordbookHandler interface {
 	FindRecordbook(c *gin.Context)
 	SetStudyResult(c *gin.Context)
 }
 
-type studyHandler struct {
+type recordbookHandler struct {
 	studyService application.StudyService
 }
 
-func NewStudyHandler(studyService application.StudyService) StudyHandler {
-	return &studyHandler{
+func NewRecordbookHandler(studyService application.StudyService) RecordbookHandler {
+	return &recordbookHandler{
 		studyService: studyService,
 	}
 }
@@ -41,7 +41,7 @@ func NewStudyHandler(studyService application.StudyService) StudyHandler {
 // @Success     200 {object} entity.ProblemWithLevelList
 // @Failure     400
 // @Router      /v1/study/workbook/{workbookID}/study_type/{studyType} [get]
-func (h *studyHandler) FindRecordbook(c *gin.Context) {
+func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	logger.Info("FindRecordbook")
@@ -69,7 +69,7 @@ func (h *studyHandler) FindRecordbook(c *gin.Context) {
 	}, h.errorHandle)
 }
 
-func (h *studyHandler) SetStudyResult(c *gin.Context) {
+func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	logger.Info("SetStudyResult")
@@ -97,7 +97,7 @@ func (h *studyHandler) SetStudyResult(c *gin.Context) {
 		// 	return err
 		// }
 
-		if err := h.studyService.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result); err != nil {
+		if err := h.studyService.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
 			return xerrors.Errorf("failed to SetResult. err: %w", err)
 		}
 
@@ -106,7 +106,7 @@ func (h *studyHandler) SetStudyResult(c *gin.Context) {
 	}, h.errorHandle)
 }
 
-func (h *studyHandler) errorHandle(c *gin.Context, err error) bool {
+func (h *recordbookHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	if xerrors.Is(err, domain.ErrProblemAlreadyExists) {

@@ -130,7 +130,7 @@ func (p *englishSentenceProblemProcessor) RemoveProblem(ctx context.Context, rep
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, problemID, version); err != nil {
-		return err
+		return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (p *englishSentenceProblemProcessor) findOrAddAudio(ctx context.Context, re
 		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
 		if err != nil {
 			if !xerrors.Is(err, app.ErrAudioNotFound) {
-				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)
+				return 0, xerrors.Errorf("failed to FindAudioIDByText. err: %w", err)
 			}
 		} else {
 			return id, nil

@@ -14,7 +14,7 @@ type StudyService interface {
 	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error)
 
 	// FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error)
-	SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result bool) error
+	SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error
 }
 
 type studyService struct {
@@ -63,7 +63,7 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 	return results, nil
 }
 
-func (s *studyService) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result bool) error {
+func (s *studyService) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo, err := s.repo(tx)
 		if err != nil {
@@ -85,7 +85,7 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 		if err != nil {
 			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
-		if err := tmpResult.SetResult(ctx, workbook.GetProblemType(), problemID, result); err != nil {
+		if err := tmpResult.SetResult(ctx, workbook.GetProblemType(), problemID, result, memorized); err != nil {
 			return xerrors.Errorf("failed to SetResult. err: %w", err)
 		}
 		return nil

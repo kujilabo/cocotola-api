@@ -10,4 +10,10 @@ type StudyResultParameter struct {
 type ProblemWithLevel struct {
 	ProblemID ProblemID
 	Level     int
+	Memorized bool
+}
+
+type StudyStatus struct {
+	Level     int
+	Memorized bool
 }

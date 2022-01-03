@@ -107,7 +107,7 @@ func (h *problemHandler) FindAllProblems(c *gin.Context) {
 			return err
 		}
 
-		response, err := converter.ToProblemSearchResponse(ctx, result)
+		response, err := converter.ToProblemFindAllResponse(ctx, result)
 		if err != nil {
 			return err
 		}
