@@ -36,9 +36,10 @@ func ToProblemWithLevelList(ctx context.Context, problems []domain.ProblemWithLe
 		list[i] = entity.ProblemWithLevel{
 			ProblemID: uint(p.ProblemID),
 			Level:     p.Level,
+			Memorized: p.Memorized,
 		}
 	}
 	return &entity.ProblemWithLevelList{
-		Results: list,
+		Records: list,
 	}, nil
 }

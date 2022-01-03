@@ -27,5 +27,4 @@ create table `english_word_problem` (
 ,foreign key(`updated_by`) references `app_user`(`id`)
 ,foreign key(`organization_id`) references `organization`(`id`)
 ,foreign key(`workbook_id`) references `workbook`(`id`)
-,foreign key(`audio_id`) references `audio`(`id`)
 );

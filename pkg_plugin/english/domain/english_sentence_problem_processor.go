@@ -67,7 +67,7 @@ func NewEnglishSentenceProblemProcessor(synthesizer plugin.Synthesizer, translat
 	}
 }
 
-func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
@@ -130,7 +130,7 @@ func (p *englishSentenceProblemProcessor) RemoveProblem(ctx context.Context, rep
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, problemID, version); err != nil {
-		return err
+		return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (p *englishSentenceProblemProcessor) findOrAddAudio(ctx context.Context, re
 		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
 		if err != nil {
 			if !xerrors.Is(err, app.ErrAudioNotFound) {
-				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)
+				return 0, xerrors.Errorf("failed to FindAudioIDByText. err: %w", err)
 			}
 		} else {
 			return id, nil

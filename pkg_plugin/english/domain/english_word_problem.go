@@ -18,7 +18,7 @@ type EnglishWordProblem interface {
 	GetPresentParticiple() string
 	GetPastTense() string
 	GetPastParticiple() string
-	GetLang() app.Lang2
+	GetLang2() app.Lang2
 	GetTranslated() string
 	GetPhrases() []EnglishPhraseProblem
 	GetSentences() []EnglishSentenceProblem
@@ -90,7 +90,7 @@ func (m *englishWordProblem) GetPastParticiple() string {
 	return m.PastParticiple
 }
 
-func (m *englishWordProblem) GetLang() app.Lang2 {
+func (m *englishWordProblem) GetLang2() app.Lang2 {
 	return m.Lang
 }
 

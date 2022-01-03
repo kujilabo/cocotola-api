@@ -72,8 +72,8 @@ func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) (domain.
 	return NewStudyTypeRepository(f.db)
 }
 
-func (f *repositoryFactory) NewStudyResultRepository(ctx context.Context) (domain.StudyResultRepository, error) {
-	return NewStudyResultRepository(ctx, f, f.db, f.problemTypes)
+func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (domain.RecordbookRepository, error) {
+	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes)
 }
 
 func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (domain.AudioRepository, error) {

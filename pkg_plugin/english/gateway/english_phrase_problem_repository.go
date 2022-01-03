@@ -140,6 +140,38 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 	}, nil
 }
 
+func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, operator app.Student, workbookID app.WorkbookID) (*app.ProblemSearchResult, error) {
+	limit := 1000
+	var problemEntities []englishPhraseProblemEntity
+
+	where := func() *gorm.DB {
+		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+	}
+	if result := where().Order("workbook_id, number, created_at").
+		Limit(limit).Find(&problemEntities); result.Error != nil {
+		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
+	}
+
+	problems := make([]app.Problem, len(problemEntities))
+	for i, e := range problemEntities {
+		p, err := e.toProblem()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+		}
+		problems[i] = p
+	}
+
+	var count int64
+	if result := where().Model(&englishPhraseProblemEntity{}).Count(&count); result.Error != nil {
+		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
+	}
+
+	return &app.ProblemSearchResult{
+		TotalCount: count,
+		Results:    problems,
+	}, nil
+}
+
 func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param app.ProblemIDsCondition) (*app.ProblemSearchResult, error) {
 	var problemEntities []englishPhraseProblemEntity
 

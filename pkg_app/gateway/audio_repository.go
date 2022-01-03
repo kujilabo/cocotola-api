@@ -81,7 +81,7 @@ func (r *audioRepository) FindAudioIDByText(ctx context.Context, lang domain.Lan
 	}
 	model, err := entity.toAudio()
 	if err != nil {
-		return 0, xerrors.Errorf("faield to toAudio. entity: %v, err: %w", entity, err)
+		return 0, xerrors.Errorf("failed to toAudio. entity: %v, err: %w", entity, err)
 	}
 	return domain.AudioID(model.GetID()), nil
 }

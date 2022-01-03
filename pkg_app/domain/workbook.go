@@ -19,11 +19,11 @@ type WorkbookSearchResult struct {
 }
 
 //
-type workbookProperties struct {
-	Name         string `validate:"required"`
-	ProblemType  string `validate:"required"`
-	QuestionText string
-}
+// type workbookProperties struct {
+// 	Name         string `validate:"required"`
+// 	ProblemType  string `validate:"required"`
+// 	QuestionText string
+// }
 
 type Workbook interface {
 	user.Model
@@ -32,8 +32,11 @@ type Workbook interface {
 	GetName() string
 	GetProblemType() string
 	GetQuestionText() string
+	GetProperties() map[string]string
 
 	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error)
+
+	FindAllProblems(ctx context.Context, operator Student) (*ProblemSearchResult, error)
 
 	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error)
 
@@ -54,13 +57,16 @@ type workbook struct {
 	repo             RepositoryFactory
 	processorFactory ProcessorFactory
 	user.Model
-	spaceID    user.SpaceID    `validate:"required"`
-	ownerID    user.AppUserID  `validate:"required"`
-	privileges user.Privileges `validate:"required"`
-	Properties workbookProperties
+	spaceID      user.SpaceID    `validate:"required"`
+	ownerID      user.AppUserID  `validate:"required"`
+	privileges   user.Privileges `validate:"required"`
+	Name         string          `validate:"required"`
+	ProblemType  string          `validate:"required"`
+	QuestionText string
+	Properties   map[string]string
 }
 
-func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string) (Workbook, error) {
+func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string, properties map[string]string) (Workbook, error) {
 	m := &workbook{
 		repo:             repo,
 		processorFactory: processorFactory,
@@ -68,11 +74,16 @@ func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, mode
 		Model:            model,
 		spaceID:          spaceID,
 		ownerID:          ownerID,
-		Properties: workbookProperties{
-			Name:         name,
-			ProblemType:  problemType,
-			QuestionText: questsionText,
-		},
+		// Properties: workbookProperties{
+		// 	Name:         name,
+		// 	ProblemType:  problemType,
+		// 	QuestionText: questsionText,
+		// },
+
+		Name:         name,
+		ProblemType:  problemType,
+		QuestionText: questsionText,
+		Properties:   properties,
 	}
 
 	v := validator.New()
@@ -88,15 +99,19 @@ func (m *workbook) GetOwnerID() user.AppUserID {
 }
 
 func (m *workbook) GetName() string {
-	return m.Properties.Name
+	return m.Name
 }
 
 func (m *workbook) GetProblemType() string {
-	return m.Properties.ProblemType
+	return m.ProblemType
 }
 
 func (m *workbook) GetQuestionText() string {
-	return m.Properties.QuestionText
+	return m.QuestionText
+}
+
+func (m *workbook) GetProperties() map[string]string {
+	return m.Properties
 }
 
 func (m *workbook) FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error) {
@@ -105,6 +120,14 @@ func (m *workbook) FindProblems(ctx context.Context, operator Student, param Pro
 		return nil, err
 	}
 	return problemRepo.FindProblems(ctx, operator, param)
+}
+
+func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (*ProblemSearchResult, error) {
+	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	if err != nil {
+		return nil, err
+	}
+	return problemRepo.FindAllProblems(ctx, operator, WorkbookID(m.GetID()))
 }
 
 func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error) {
@@ -145,7 +168,7 @@ func (m *workbook) AddProblem(ctx context.Context, operator Student, param Probl
 	}
 
 	logger.Infof("processor.AddProblem")
-	return processor.AddProblem(ctx, m.repo, operator, param)
+	return processor.AddProblem(ctx, m.repo, operator, m, param)
 }
 
 func (m *workbook) RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error {

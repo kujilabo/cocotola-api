@@ -9,9 +9,9 @@ import (
 
 type Recordbook interface {
 	GetWorkbookID() WorkbookID
-	GetResults(ctx context.Context) (map[ProblemID]int, error)
+	GetResults(ctx context.Context) (map[ProblemID]StudyStatus, error)
 	GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLevel, error)
-	SetResult(ctx context.Context, problemType string, problemID ProblemID, result bool) error
+	SetResult(ctx context.Context, problemType string, problemID ProblemID, result, memorized bool) error
 }
 
 type recordbook struct {
@@ -37,10 +37,10 @@ func (m *recordbook) GetWorkbookID() WorkbookID {
 	return m.workbookID
 }
 
-func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]int, error) {
-	repo, err := m.rf.NewStudyResultRepository(ctx)
+func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]StudyStatus, error) {
+	repo, err := m.rf.NewRecordbookRepository(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewRecordbookRepository. err: %w", err)
 	}
 
 	studyResults, err := repo.FindStudyResults(ctx, m.student, m.workbookID, m.studyType)
@@ -58,12 +58,15 @@ func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]int, error) 
 		return nil, xerrors.Errorf("failed to FindProblemIDs. err: %w", err)
 	}
 
-	results := make(map[ProblemID]int)
+	results := make(map[ProblemID]StudyStatus)
 	for _, problemID := range problemIDs {
 		if level, ok := studyResults[problemID]; ok {
 			results[problemID] = level
 		} else {
-			results[problemID] = 0
+			results[problemID] = StudyStatus{
+				Level:     0,
+				Memorized: false,
+			}
 		}
 	}
 
@@ -81,7 +84,8 @@ func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLe
 	for k, v := range problems1 {
 		problems2[i] = ProblemWithLevel{
 			ProblemID: k,
-			Level:     v,
+			Level:     v.Level,
+			Memorized: v.Memorized,
 		}
 		i++
 	}
@@ -89,13 +93,13 @@ func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLe
 	return problems2, nil
 }
 
-func (m *recordbook) SetResult(ctx context.Context, problemType string, problemID ProblemID, result bool) error {
-	repo, err := m.rf.NewStudyResultRepository(ctx)
+func (m *recordbook) SetResult(ctx context.Context, problemType string, problemID ProblemID, result, memorized bool) error {
+	repo, err := m.rf.NewRecordbookRepository(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
 	}
 
-	if err := repo.SetResult(ctx, m.student, m.workbookID, m.studyType, problemType, problemID, result); err != nil {
+	if err := repo.SetResult(ctx, m.student, m.workbookID, m.studyType, problemType, problemID, result, memorized); err != nil {
 		return xerrors.Errorf("failed to SetResult. err: %w", err)
 	}
 

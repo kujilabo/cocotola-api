@@ -1,14 +1,16 @@
 package entity
 
 type StudyResultParameter struct {
-	Result bool `json:"result"`
+	Result    bool `json:"result"`
+	Memorized bool `json:"memorized"`
 }
 
 type ProblemWithLevel struct {
 	ProblemID uint `json:"problemId"`
 	Level     int  `json:"level"`
+	Memorized bool `json:"memorized"`
 }
 
 type ProblemWithLevelList struct {
-	Results []ProblemWithLevel `json:"results"`
+	Records []ProblemWithLevel `json:"records"`
 }

@@ -155,6 +155,8 @@ type ProblemSearchResult struct {
 type ProblemRepository interface {
 	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error)
 
+	FindAllProblems(ctx context.Context, operator Student, workbookID WorkbookID) (*ProblemSearchResult, error)
+
 	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error)
 
 	FindProblemIDs(ctx context.Context, operator Student, workbookID WorkbookID) ([]ProblemID, error)

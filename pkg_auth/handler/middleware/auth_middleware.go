@@ -16,7 +16,7 @@ func NewAuthMiddleware(signingKey []byte) gin.HandlerFunc {
 		logger := log.FromContext(ctx)
 		authorization := c.GetHeader("Authorization")
 		if !strings.HasPrefix(authorization, "Bearer ") {
-			logger.Error("Has not Bearer")
+			logger.Warn("invalid header. Bearer not found")
 			return
 		}
 
@@ -25,14 +25,15 @@ func NewAuthMiddleware(signingKey []byte) gin.HandlerFunc {
 			return signingKey, nil
 		})
 		if err != nil {
-			logger.WithError(err).Errorf("%v", err)
+			logger.WithError(err).Warnf("invalid token. err: %v", err)
 			return
 		}
 
 		if claims, ok := token.Claims.(*gateway.AppUserClaims); ok && token.Valid {
 			c.Set("AuthorizedUser", int(claims.AppUserID))
 			c.Set("OrganizationID", int(claims.OrganizationID))
-			logger.Infof("AuthorizedUser %d", int(claims.AppUserID))
+
+			logger.Infof("uri: %s, user: %d", c.Request.RequestURI, int(claims.AppUserID))
 		}
 	}
 }

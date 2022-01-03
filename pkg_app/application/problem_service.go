@@ -15,6 +15,8 @@ import (
 type ProblemService interface {
 	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error)
 
+	FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (*domain.ProblemSearchResult, error)
+
 	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error)
 
 	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error)
@@ -62,6 +64,37 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 			return err
 		}
 		tmpResult, err := workbook.FindProblems(ctx, student, param)
+		if err != nil {
+			return err
+		}
+		result = tmpResult
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (*domain.ProblemSearchResult, error) {
+	var result *domain.ProblemSearchResult
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		repo, err := s.repo(tx)
+		if err != nil {
+			return err
+		}
+		userRepo, err := s.userRepo(tx)
+		if err != nil {
+			return err
+		}
+		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		if err != nil {
+			return err
+		}
+		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		if err != nil {
+			return err
+		}
+		tmpResult, err := workbook.FindAllProblems(ctx, student)
 		if err != nil {
 			return err
 		}

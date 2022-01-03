@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"time"
@@ -31,10 +32,28 @@ type workbookEntity struct {
 	Name           string
 	ProblemTypeID  uint `gorm:"column:problem_type_id"`
 	QuestionText   string
+	Properties     string
 }
 
 func (e *workbookEntity) TableName() string {
 	return "workbook"
+}
+
+func jsonToStringMap(s string) (map[string]string, error) {
+	var m map[string]string
+	err := json.Unmarshal([]byte(s), &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func stringMapToJSON(m map[string]string) (string, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.ProcessorFactory, operator user.AppUser, problemType string, privs user.Privileges) (domain.Workbook, error) {
@@ -42,7 +61,13 @@ func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.Proce
 	if err != nil {
 		return nil, err
 	}
-	workbook, err := domain.NewWorkbook(rf, pf, model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText)
+
+	properties, err := jsonToStringMap(e.Properties)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
+	}
+
+	workbook, err := domain.NewWorkbook(rf, pf, model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
@@ -199,9 +224,9 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
 }
 
-func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, name string) (domain.Workbook, error) {
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, spaceID user.SpaceID, name string) (domain.Workbook, error) {
 	workbook := workbookEntity{}
-	if result := r.db.Where("name = ?", name).First(&workbook); result.Error != nil {
+	if result := r.db.Where("space_id = ?", uint(spaceID)).Where("name = ?", name).First(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrWorkbookNotFound
 		}
@@ -228,18 +253,6 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator do
 
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
 }
-
-// func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.AbstractStudent, name string) (domain.Workbook, error) {
-// 	workbook := workbookEntity{}
-// 	if result := r.db.Where("name = ?", name).First(&workbook); result.Error != nil {
-// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-// 			return nil, domain.NewWorkbookNotFoundError(0)
-// 		}
-// 		return nil, result.Error
-// 	}
-// 	priv := user.NewPrivileges(user.PrivRead, user.PrivUpdate, domain.PrivDelete)
-// 	return workbook.toWorkbook(r.rf, r.gh, operator, priv)
-// }
 
 // func (r *workbookRepository) scan(rows *sql.Rows) *workbookEntity {
 // 	var id uint
@@ -306,6 +319,10 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.St
 	if problemTypeID == 0 {
 		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
 	}
+	propertiesJSON, err := stringMapToJSON(param.GetProperties())
+	if err != nil {
+		return 0, err
+	}
 	workbook := workbookEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -316,6 +333,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.St
 		ProblemTypeID:  problemTypeID,
 		Name:           param.GetName(),
 		QuestionText:   param.GetQuestionText(),
+		Properties:     propertiesJSON,
 	}
 	if result := r.db.Create(&workbook); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrWorkbookAlreadyExists)

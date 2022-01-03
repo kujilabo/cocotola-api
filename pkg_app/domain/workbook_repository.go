@@ -52,19 +52,22 @@ type WorkbookAddParameter interface {
 	GetProblemType() string
 	GetName() string
 	GetQuestionText() string
+	GetProperties() map[string]string
 }
 
 type workbookAddParameter struct {
 	ProblemType  string
 	Name         string
 	QuestionText string
+	Properties   map[string]string
 }
 
-func NewWorkbookAddParameter(problemType string, name, questionText string) (WorkbookAddParameter, error) {
+func NewWorkbookAddParameter(problemType string, name, questionText string, properties map[string]string) (WorkbookAddParameter, error) {
 	m := &workbookAddParameter{
 		ProblemType:  problemType,
 		Name:         name,
 		QuestionText: questionText,
+		Properties:   properties,
 	}
 
 	v := validator.New()
@@ -81,6 +84,10 @@ func (p *workbookAddParameter) GetName() string {
 
 func (p *workbookAddParameter) GetQuestionText() string {
 	return p.QuestionText
+}
+
+func (p *workbookAddParameter) GetProperties() map[string]string {
+	return p.Properties
 }
 
 type WorkbookUpdateParameter interface {
@@ -116,7 +123,7 @@ type WorkbookRepository interface {
 
 	FindWorkbookByID(ctx context.Context, operator Student, id WorkbookID) (Workbook, error)
 
-	FindWorkbookByName(ctx context.Context, operator Student, name string) (Workbook, error)
+	FindWorkbookByName(ctx context.Context, operator Student, spaceID user.SpaceID, name string) (Workbook, error)
 
 	AddWorkbook(ctx context.Context, operator Student, spaceID user.SpaceID, param WorkbookAddParameter) (WorkbookID, error)
 
