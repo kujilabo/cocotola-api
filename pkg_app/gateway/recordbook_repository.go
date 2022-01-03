@@ -96,7 +96,8 @@ func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator do
 	var entities []recordbookEntity
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
 		Where("study_type_id = ?", studyTypeID).
-		Where("app_user_id = ?", uint(operator.GetID())).Find(&entities); result.Error != nil {
+		Where("app_user_id = ?", operator.GetID()).
+		Find(&entities); result.Error != nil {
 		return nil, result.Error
 	}
 
@@ -136,7 +137,7 @@ func (r *recordbookRepository) setResult(ctx context.Context, operator domain.St
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
 		Where("study_type_id = ?", studyTypeID).
 		Where("problem_id = ?", uint(problemID)).
-		Where("app_user_id = ?", uint(operator.GetID())).
+		Where("app_user_id = ?", operator.GetID()).
 		First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			logger.Debugf("workbook_id = %d and study_type_id = %d and problem_id = %d", uint(workbookID), studyTypeID, uint(problemID))
@@ -191,7 +192,7 @@ func (r *recordbookRepository) setResult(ctx context.Context, operator domain.St
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
 		Where("study_type_id = ?", studyTypeID).
 		Where("problem_id = ?", uint(problemID)).
-		Where("app_user_id = ?", uint(operator.GetID())).
+		Where("app_user_id = ?", operator.GetID()).
 		Updates(&entity); result.Error != nil {
 		return result.Error
 	}
@@ -206,7 +207,7 @@ func (r *recordbookRepository) setMemorized(ctx context.Context, operator domain
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
 		Where("study_type_id = ?", studyTypeID).
 		Where("problem_id = ?", uint(problemID)).
-		Where("app_user_id = ?", uint(operator.GetID())).
+		Where("app_user_id = ?", operator.GetID()).
 		First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			logger.Debugf("workbook_id = %d and study_type_id = %d and problem_id = %d", uint(workbookID), studyTypeID, uint(problemID))
@@ -237,7 +238,7 @@ func (r *recordbookRepository) setMemorized(ctx context.Context, operator domain
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
 		Where("study_type_id = ?", studyTypeID).
 		Where("problem_id = ?", uint(problemID)).
-		Where("app_user_id = ?", uint(operator.GetID())).
+		Where("app_user_id = ?", operator.GetID()).
 		Updates(&entity); result.Error != nil {
 		return result.Error
 	}

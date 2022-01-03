@@ -6,7 +6,6 @@ import (
 	"github.com/go-playground/validator"
 	"golang.org/x/xerrors"
 
-	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -102,7 +101,7 @@ func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook
 		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	return workbookRepo.FindWorkbookByName(ctx, s, domain.SpaceID(space.GetID()), name)
+	return workbookRepo.FindWorkbookByName(ctx, s, user.SpaceID(space.GetID()), name)
 }
 
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error) {
