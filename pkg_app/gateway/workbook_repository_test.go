@@ -230,7 +230,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := workbookRepo.FindWorkbookByName(bg, tt.args.operator, tt.args.param)
+				got, err := workbookRepo.FindWorkbookByName(bg, tt.args.operator, spaceID1, tt.args.param)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("workbookRepository.FindWorkbookByName() error = %v, wantErr %v", err, tt.wantErr)
 					return

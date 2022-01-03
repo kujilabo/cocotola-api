@@ -224,9 +224,9 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
 }
 
-func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, name string) (domain.Workbook, error) {
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, spaceID user.SpaceID, name string) (domain.Workbook, error) {
 	workbook := workbookEntity{}
-	if result := r.db.Where("name = ?", name).First(&workbook); result.Error != nil {
+	if result := r.db.Where("space_id = ?", uint(spaceID)).Where("name = ?", name).First(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrWorkbookNotFound
 		}
@@ -253,18 +253,6 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator do
 
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
 }
-
-// func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.AbstractStudent, name string) (domain.Workbook, error) {
-// 	workbook := workbookEntity{}
-// 	if result := r.db.Where("name = ?", name).First(&workbook); result.Error != nil {
-// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-// 			return nil, domain.NewWorkbookNotFoundError(0)
-// 		}
-// 		return nil, result.Error
-// 	}
-// 	priv := user.NewPrivileges(user.PrivRead, user.PrivUpdate, domain.PrivDelete)
-// 	return workbook.toWorkbook(r.rf, r.gh, operator, priv)
-// }
 
 // func (r *workbookRepository) scan(rows *sql.Rows) *workbookEntity {
 // 	var id uint

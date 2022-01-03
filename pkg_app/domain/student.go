@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator"
 	"golang.org/x/xerrors"
 
+	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -91,12 +92,17 @@ func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook
 }
 
 func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook, error) {
+	space, err := s.GetPersonalSpace(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+	}
+
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	return workbookRepo.FindWorkbookByName(ctx, s, name)
+	return workbookRepo.FindWorkbookByName(ctx, s, domain.SpaceID(space.GetID()), name)
 }
 
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error) {

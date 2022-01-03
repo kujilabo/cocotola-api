@@ -123,7 +123,7 @@ type WorkbookRepository interface {
 
 	FindWorkbookByID(ctx context.Context, operator Student, id WorkbookID) (Workbook, error)
 
-	FindWorkbookByName(ctx context.Context, operator Student, name string) (Workbook, error)
+	FindWorkbookByName(ctx context.Context, operator Student, spaceID user.SpaceID, name string) (Workbook, error)
 
 	AddWorkbook(ctx context.Context, operator Student, spaceID user.SpaceID, param WorkbookAddParameter) (WorkbookID, error)
 

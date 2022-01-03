@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Test_azureTranslatorClient_DictionaryLookup(t *testing.T) {
+func _Test_azureTranslatorClient_DictionaryLookup(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 	translatorClient := NewAzureTranslatorClient("")
