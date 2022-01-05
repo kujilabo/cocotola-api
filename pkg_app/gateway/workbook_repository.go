@@ -381,14 +381,14 @@ func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain
 }
 
 func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.Student, id domain.WorkbookID, version int, param domain.WorkbookUpdateParameter) error {
-	workbook := workbookEntity{
-		Name:         param.GetName(),
-		QuestionText: param.GetQuestionText(),
-	}
 	if result := r.db.Model(&workbookEntity{}).
 		Where("organization_id = ? and id = ? and version = ?",
 			uint(operator.GetOrganizationID()), uint(id), version).
-		Updates(&workbook); result.Error != nil {
+		Updates(map[string]interface{}{
+			"name":          param.GetName(),
+			"question_text": param.GetQuestionText(),
+			"version":       gorm.Expr("version + 1"),
+		}); result.Error != nil {
 		return libG.ConvertDuplicatedError(result.Error, domain.ErrWorkbookAlreadyExists)
 	}
 

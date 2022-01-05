@@ -28,11 +28,11 @@ type Student interface {
 
 	RemoveWorkbook(ctx context.Context, id WorkbookID, version int) error
 
-	CheckQuota(ctx context.Context, problemType, name string) error
+	CheckQuota(ctx context.Context, problemType string, name QuotaName) error
 
-	IncrementQuotaUsage(ctx context.Context, problemType, name string) error
+	IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error
 
-	DecrementQuotaUsage(ctx context.Context, problemType, name string) error
+	DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error
 
 	FindRecordbook(ctx context.Context, workbookID WorkbookID, studyType string) (Recordbook, error)
 }
@@ -144,8 +144,7 @@ func (s *student) RemoveWorkbook(ctx context.Context, workbookID WorkbookID, ver
 	return workbook.RemoveWorkbook(ctx, s, version)
 }
 
-func (s *student) CheckQuota(ctx context.Context, problemType, name string) error {
-
+func (s *student) CheckQuota(ctx context.Context, problemType string, name QuotaName) error {
 	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
 	if err != nil {
 		return err
@@ -157,7 +156,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType, name string) erro
 	}
 
 	switch name {
-	case "Size":
+	case QuotaNameSize:
 		unit := processor.GetUnitForSizeQuota()
 		limit := processor.GetLimitForSizeQuota()
 		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_size", unit, limit)
@@ -170,7 +169,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType, name string) erro
 		}
 
 		return nil
-	case "Update":
+	case QuotaNameUpdate:
 		unit := processor.GetUnitForUpdateQuota()
 		limit := processor.GetLimitForUpdateQuota()
 		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_update", unit, limit)
@@ -241,7 +240,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType, name string) erro
 	// return nil
 }
 
-func (s *student) IncrementQuotaUsage(ctx context.Context, problemType, name string) error {
+func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error {
 	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
 	if err != nil {
 		return err
@@ -253,7 +252,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType, name str
 	}
 
 	switch name {
-	case "Size":
+	case QuotaNameSize:
 		unit := processor.GetUnitForSizeQuota()
 		limit := processor.GetLimitForSizeQuota()
 		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_size", unit, limit, 1)
@@ -266,7 +265,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType, name str
 		}
 
 		return nil
-	case "Update":
+	case QuotaNameUpdate:
 		unit := processor.GetUnitForUpdateQuota()
 		limit := processor.GetLimitForUpdateQuota()
 		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_update", unit, limit, 1)
@@ -284,7 +283,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType, name str
 	}
 }
 
-func (s *student) DecrementQuotaUsage(ctx context.Context, problemType, name string) error {
+func (s *student) DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error {
 	return nil
 }
 

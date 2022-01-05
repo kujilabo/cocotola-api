@@ -20,9 +20,6 @@ var (
 
 	quotaUpdateUnit  = app.UnitDay
 	quotaUpdateLimit = 100
-
-	quotaNameSize   = "Size"
-	quotaNameUpdate = "Update"
 )
 
 type englishWordProblemAddParemeter struct {

@@ -12,6 +12,13 @@ import (
 	common "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
+var (
+	posPos        = 1
+	lenPos        = posPos + 1
+	posTranslated = posPos + 1
+	lenTranslated = posTranslated + 1
+)
+
 type engliushWordProblemAddParameterCSVReader struct {
 	workbookID  app.WorkbookID
 	problemType string
@@ -42,8 +49,8 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 	}
 
 	pos := common.PosOther
-	if len(line) >= 2 {
-		posTmp, err := common.ParsePos(line[1])
+	if len(line) >= lenPos {
+		posTmp, err := common.ParsePos(line[posPos])
 		if err != nil {
 			return nil, xerrors.Errorf("failed to ParsePos. err: %w", err)
 		}
@@ -51,8 +58,8 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 	}
 
 	translated := ""
-	if len(line) >= 3 {
-		translated = line[2]
+	if len(line) >= lenTranslated {
+		translated = line[posTranslated]
 	}
 
 	properties := map[string]string{

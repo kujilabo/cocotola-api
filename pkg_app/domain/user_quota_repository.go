@@ -6,12 +6,15 @@ import (
 )
 
 type QuotaUnit string
+type QuotaName string
 
 var (
 	ErrQuotaExceeded           = errors.New("quota exceeded")
 	UnitPersitance   QuotaUnit = "persitance"
 	UnitMonth        QuotaUnit = "month"
 	UnitDay          QuotaUnit = "day"
+	QuotaNameSize    QuotaName = "Size"
+	QuotaNameUpdate  QuotaName = "Update"
 )
 
 type UserQuotaRepository interface {

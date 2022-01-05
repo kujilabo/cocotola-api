@@ -228,6 +228,8 @@ func main() {
 		v1Workbook.Use(authMiddleware)
 		v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
 		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
+		v1Workbook.PUT(":workbookID", privateWorkbookHandler.UpdateWorkbook)
+		v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 
 		problemService := application.NewProblemService(db, pf, repoFunc, userRepoFunc)
