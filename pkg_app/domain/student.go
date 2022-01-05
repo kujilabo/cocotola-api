@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-playground/validator"
 	"golang.org/x/xerrors"
@@ -27,11 +28,11 @@ type Student interface {
 
 	RemoveWorkbook(ctx context.Context, id WorkbookID, version int) error
 
-	CheckLimit(ctx context.Context, name string) error
+	CheckQuota(ctx context.Context, problemType, name string) error
 
-	IncrementQuotaUsage(ctx context.Context, name string) error
+	IncrementQuotaUsage(ctx context.Context, problemType, name string) error
 
-	DecrementQuotaUsage(ctx context.Context, name string) error
+	DecrementQuotaUsage(ctx context.Context, problemType, name string) error
 
 	FindRecordbook(ctx context.Context, workbookID WorkbookID, studyType string) (Recordbook, error)
 }
@@ -39,13 +40,15 @@ type Student interface {
 type student struct {
 	user.AppUser
 	rf       RepositoryFactory
+	pf       ProcessorFactory
 	userRepo user.RepositoryFactory
 }
 
-func NewStudent(repositoryFactory RepositoryFactory, userRepo user.RepositoryFactory, appUser user.AppUser) (Student, error) {
+func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRepo user.RepositoryFactory, appUser user.AppUser) (Student, error) {
 	m := &student{
 		AppUser:  appUser,
-		rf:       repositoryFactory,
+		pf:       pf,
+		rf:       rf,
 		userRepo: userRepo,
 	}
 
@@ -141,11 +144,59 @@ func (s *student) RemoveWorkbook(ctx context.Context, workbookID WorkbookID, ver
 	return workbook.RemoveWorkbook(ctx, s, version)
 }
 
-func (s *student) CheckLimit(ctx context.Context, name string) error {
-	// config, ok := s.quotaLimitConfigs[name]
-	// if !ok {
-	// 	return fmt.Errorf("NotFound %s", name)
+func (s *student) CheckQuota(ctx context.Context, problemType, name string) error {
+
+	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
+	if err != nil {
+		return err
+	}
+
+	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
+	if err != nil {
+		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+	}
+
+	switch name {
+	case "Size":
+		unit := processor.GetUnitForSizeQuota()
+		limit := processor.GetLimitForSizeQuota()
+		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_size", unit, limit)
+		if err != nil {
+			return err
+		}
+
+		if isExceeded {
+			return ErrQuotaExceeded
+		}
+
+		return nil
+	case "Update":
+		unit := processor.GetUnitForUpdateQuota()
+		limit := processor.GetLimitForUpdateQuota()
+		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_update", unit, limit)
+		if err != nil {
+			return err
+		}
+
+		if isExceeded {
+			return ErrQuotaExceeded
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("invalid name. name: %s", name)
+	}
+
+	// isExceeded, err := processor.IsExceeded(ctx, s.rf, s, name)
+	// if err != nil {
+	// 	return err
 	// }
+
+	// if isExceeded {
+	// 	return ErrQuotaExceeded
+	// }
+
+	// return nil
 
 	// switch name {
 	// case EnglishWordProblemSizeLimit:
@@ -187,64 +238,56 @@ func (s *student) CheckLimit(ctx context.Context, name string) error {
 	// default:
 	// 	return fmt.Errorf("Invalid name. name2: %s", name)
 	// }
-	return nil
+	// return nil
 }
 
-func (s *student) IncrementQuotaUsage(ctx context.Context, name string) error {
-	// config, ok := s.quotaLimitConfigs[name]
-	// if !ok {
-	// 	return fmt.Errorf("NotFound %s", name)
-	// }
+func (s *student) IncrementQuotaUsage(ctx context.Context, problemType, name string) error {
+	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
+	if err != nil {
+		return err
+	}
 
-	// switch name {
-	// case EnglishWordProblemUpdateLimit, EnglishPhraseProblemUpdateLimit, TemplateProblemUpdateLimit:
-	// 	exceeded, err := s.rf.NewQuotaLimitRepository().Increment(ctx, s.OrganizationID(), s.ID(), name, 1, config.Unit, config.Limit)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if exceeded {
-	// 		return NewLimitExceededError(name)
-	// 	}
-	// 	return nil
-	// default:
-	// 	return errors.New("xxxxxxx")
-	// }
-	return nil
+	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
+	if err != nil {
+		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+	}
+
+	switch name {
+	case "Size":
+		unit := processor.GetUnitForSizeQuota()
+		limit := processor.GetLimitForSizeQuota()
+		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_size", unit, limit, 1)
+		if err != nil {
+			return err
+		}
+
+		if isExceeded {
+			return ErrQuotaExceeded
+		}
+
+		return nil
+	case "Update":
+		unit := processor.GetUnitForUpdateQuota()
+		limit := processor.GetLimitForUpdateQuota()
+		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_update", unit, limit, 1)
+		if err != nil {
+			return err
+		}
+
+		if isExceeded {
+			return ErrQuotaExceeded
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("invalid name. name: %s", name)
+	}
 }
 
-func (s *student) DecrementQuotaUsage(ctx context.Context, name string) error {
+func (s *student) DecrementQuotaUsage(ctx context.Context, problemType, name string) error {
 	return nil
 }
 
 func (s *student) FindRecordbook(ctx context.Context, workbookID WorkbookID, studyType string) (Recordbook, error) {
-	// repo, err := s.rf.NewStudyResultRepository(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// studyResults, err := repo.FindStudyResults(ctx, s, workbookID, studyType)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// workbook, err := s.FindWorkbookByID(ctx, workbookID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// problemIDs, err := workbook.FindProblemIDs(ctx, s)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// results := make(map[ProblemID]int)
-	// for _, problemID := range problemIDs {
-	// 	if level, ok := studyResults[problemID]; ok {
-	// 		results[problemID] = level
-	// 	} else {
-	// 		results[problemID] = 0
-	// 	}
-	// }
-
 	return NewRecordbook(s.rf, s, workbookID, studyType)
 }

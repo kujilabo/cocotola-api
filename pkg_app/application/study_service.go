@@ -19,13 +19,15 @@ type StudyService interface {
 
 type studyService struct {
 	db       *gorm.DB
+	pf       domain.ProcessorFactory
 	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
 	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewStudyService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) StudyService {
+func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) StudyService {
 	return &studyService{
 		db:       db,
+		pf:       pf,
 		repo:     repo,
 		userRepo: userRepo,
 	}
@@ -42,7 +44,7 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -73,7 +75,7 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}

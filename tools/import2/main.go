@@ -284,11 +284,12 @@ func main() {
 	problemImportProcessor := map[string]appD.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
+	problemQuotaProcessor := map[string]appD.ProblemQuotaProcessor{}
 	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor)
+	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemRepository,
 	}
@@ -314,7 +315,7 @@ func main() {
 		panic(err)
 	}
 
-	student, err := appD.NewStudent(repo, userRepo, appUser)
+	student, err := appD.NewStudent(pf, repo, userRepo, appUser)
 	if err != nil {
 		panic(err)
 	}

@@ -115,7 +115,7 @@ func (m *englishWordProblem) GetProperties(cxt context.Context) map[string]inter
 	return map[string]interface{}{
 		"text":       m.Text,
 		"pos":        m.Pos,
-		"lang":       m.Lang,
+		"lang":       m.Lang.String(),
 		"translated": m.Translated,
 		"audioId":    m.AudioID,
 		"sentences":  m.Sentences,

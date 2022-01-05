@@ -60,8 +60,8 @@ func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]StudyStatus,
 
 	results := make(map[ProblemID]StudyStatus)
 	for _, problemID := range problemIDs {
-		if level, ok := studyResults[problemID]; ok {
-			results[problemID] = level
+		if status, ok := studyResults[problemID]; ok {
+			results[problemID] = status
 		} else {
 			results[problemID] = StudyStatus{
 				Level:     0,

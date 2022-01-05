@@ -14,6 +14,17 @@ import (
 	plugin "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
+var (
+	quotaSizeUnit  = app.UnitPersitance
+	quotaSizeLimit = 5000
+
+	quotaUpdateUnit  = app.UnitDay
+	quotaUpdateLimit = 100
+
+	quotaNameSize   = "Size"
+	quotaNameUpdate = "Update"
+)
+
 type englishWordProblemAddParemeter struct {
 	Lang       app.Lang2      `validate:"required"`
 	Text       string         `validate:"required"`
@@ -61,6 +72,7 @@ type EnglishWordProblemProcessor interface {
 	app.ProblemAddProcessor
 	app.ProblemRemoveProcessor
 	app.ProblemImportProcessor
+	app.ProblemQuotaProcessor
 }
 
 type englishWordProblemProcessor struct {
@@ -304,3 +316,64 @@ func (p *englishWordProblemProcessor) translate(ctx context.Context, text string
 
 	return translated, nil
 }
+func (p *englishWordProblemProcessor) GetUnitForSizeQuota() app.QuotaUnit {
+	return quotaSizeUnit
+}
+func (p *englishWordProblemProcessor) GetLimitForSizeQuota() int {
+	return quotaSizeLimit
+}
+func (p *englishWordProblemProcessor) GetUnitForUpdateQuota() app.QuotaUnit {
+	return quotaUpdateUnit
+}
+func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
+	return quotaUpdateLimit
+}
+
+// func (p *englishWordProblemProcessor) IsExceeded(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
+// 	// logger := log.FromContext(ctx)
+
+// 	userQuotaRepo, err := repo.NewUserQuotaRepository(ctx)
+// 	if err != nil {
+// 		return false, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+// 	}
+
+// 	switch name {
+// 	case quotaNameSize:
+// 		unit := quotaSizeUnit
+// 		limit := quotaSizeLimit
+// 		return userQuotaRepo.IsExceeded(ctx, operator, EnglishWordProblemType+"_size", unit, limit)
+// 	case "Update":
+// 		unit := quotaUpdateUnit
+// 		limit := quotaUpdateLimit
+// 		return userQuotaRepo.IsExceeded(ctx, operator, EnglishWordProblemType+"_update", unit, limit)
+// 	default:
+// 		return false, fmt.Errorf("invalid name. name: %s", name)
+// 	}
+// }
+
+// func (p *englishWordProblemProcessor) Increment(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
+// 	// logger := log.FromContext(ctx)
+// 	userQuotaRepo, err := repo.NewUserQuotaRepository(ctx)
+// 	if err != nil {
+// 		return false, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+// 	}
+
+// 	switch name {
+// 	case quotaNameSize:
+// 		unit := quotaSizeUnit
+// 		limit := quotaSizeLimit
+// 		return userQuotaRepo.Increment(ctx, operator, EnglishWordProblemType+"_size", unit, limit, 1)
+// 	case "Update":
+// 		unit := quotaUpdateUnit
+// 		limit := quotaUpdateLimit
+// 		return userQuotaRepo.Increment(ctx, operator, EnglishWordProblemType+"_update", unit, limit, 1)
+// 	default:
+// 		return false, fmt.Errorf("invalid name. name: %s", name)
+// 	}
+
+// }
+
+// func (p *englishWordProblemProcessor) Decrement(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
+// 	// logger := log.FromContext(ctx)
+// 	return false, nil
+// }

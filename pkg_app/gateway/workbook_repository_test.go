@@ -135,7 +135,7 @@ func testNewProblemType(t *testing.T, name string) appD.ProblemType {
 }
 
 func testNewStudent(t *testing.T, appUser userD.AppUser) appD.Student {
-	s, err := appD.NewStudent(nil, nil, appUser)
+	s, err := appD.NewStudent(nil, nil, nil, appUser)
 	assert.NoError(t, err)
 	return s
 }

@@ -155,6 +155,9 @@ func main() {
 	problemImportProcessor := map[string]appD.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
+	problemQuotaProcessor := map[string]appD.ProblemQuotaProcessor{
+		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+	}
 
 	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
@@ -166,7 +169,7 @@ func main() {
 		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor)
+	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepository,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepository,
@@ -204,19 +207,22 @@ func main() {
 		if err != nil {
 			return err
 		}
-		return callback(ctx, cfg.App.TestUserEmail, repo, userRepo, organizationName, appUser)
+		return callback(ctx, cfg.App.TestUserEmail, pf, repo, userRepo, organizationName, appUser)
 	}
 
 	v1 := router.Group("v1")
 	{
 		v1auth := v1.Group("auth")
 		googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUserCallback)
+		guestAuthService := authA.NewGuestAuthService(authTokenManager)
 		authHandler := authH.NewAuthHandler(authTokenManager)
 		googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
+		guestAuthHandler := authH.NewGuestAuthHandler(guestAuthService)
 		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
+		v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
 		v1auth.POST("refresh_token", authHandler.RefreshToken)
 
-		privateWorkbookService := application.NewPrivateWorkbookService(db, repoFunc, userRepoFunc)
+		privateWorkbookService := application.NewPrivateWorkbookService(db, pf, repoFunc, userRepoFunc)
 		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
 		v1Workbook := v1.Group("private/workbook")
 		v1Workbook.Use(authMiddleware)
@@ -224,7 +230,7 @@ func main() {
 		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 
-		problemService := application.NewProblemService(db, repoFunc, userRepoFunc)
+		problemService := application.NewProblemService(db, pf, repoFunc, userRepoFunc)
 		problemHandler := appH.NewProblemHandler(problemService, newIterator)
 		v1Problem := v1.Group("workbook/:workbookID")
 		v1Problem.Use(authMiddleware)
@@ -237,7 +243,7 @@ func main() {
 		v1Problem.POST("problem/find_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
-		studyService := application.NewStudyService(db, repoFunc, userRepoFunc)
+		studyService := application.NewStudyService(db, pf, repoFunc, userRepoFunc)
 		recordbookHandler := appH.NewRecordbookHandler(studyService)
 		v1Study := v1.Group("study/workbook/:workbookID")
 		v1Study.Use(authMiddleware)
@@ -424,12 +430,12 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 	return nil
 }
 
-func callback(ctx context.Context, testUserEmail string, repo appD.RepositoryFactory, userRepo userD.RepositoryFactory, organizationName string, appUser userD.AppUser) error {
+func callback(ctx context.Context, testUserEmail string, pf appD.ProcessorFactory, repo appD.RepositoryFactory, userRepo userD.RepositoryFactory, organizationName string, appUser userD.AppUser) error {
 	logger := log.FromContext(ctx)
 	logger.Infof("callback. loginID: %s", appUser.GetLoginID())
 
 	if appUser.GetLoginID() == testUserEmail {
-		student, err := appD.NewStudent(repo, userRepo, appUser)
+		student, err := appD.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
 			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}

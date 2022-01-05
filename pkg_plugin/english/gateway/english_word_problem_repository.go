@@ -313,7 +313,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 
 	logger.Infof("englishWordProblemRepository.AddProblem. text: %s", problemParam.Text)
 	if result := r.db.Create(&englishWordProblem); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists)
+		return 0, xerrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
 	}
 
 	return app.ProblemID(englishWordProblem.ID), nil
