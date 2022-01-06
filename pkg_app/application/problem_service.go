@@ -25,6 +25,8 @@ type ProblemService interface {
 
 	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error)
 
+	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemUpdateParameter) error
+
 	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error
 
 	ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error
@@ -162,6 +164,22 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 	return result, nil
 }
 
+func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemUpdateParameter) error {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
+		if err != nil {
+			return err
+		}
+		if err := s.updateProblem(ctx, student, workbook, param); err != nil {
+			return xerrors.Errorf("failed to UpdateProblem. err: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("ProblemService.RemoveProblem")
@@ -175,7 +193,7 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 			return err
 		}
 		problemType := workbook.GetProblemType()
-		if err := student.DecrementQuotaUsage(ctx, problemType, "Size"); err != nil {
+		if err := student.DecrementQuotaUsage(ctx, problemType, "Size", 1); err != nil {
 			return err
 		}
 
@@ -209,7 +227,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			return err
 		}
 		if param == nil {
-			return nil
+			continue
 		}
 
 		logger.Infof("param.properties: %+v", param.GetProperties())
@@ -266,15 +284,44 @@ func (s *problemService) addProblem(ctx context.Context, student domain.Student,
 	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
 		return 0, err
 	}
-	id, err := workbook.AddProblem(ctx, student, param)
+	added, id, err := workbook.AddProblem(ctx, student, param)
 	if err != nil {
 		return 0, err
 	}
-	if err := student.IncrementQuotaUsage(ctx, problemType, "Size"); err != nil {
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", int(added)); err != nil {
 		return 0, err
 	}
-	if err := student.IncrementQuotaUsage(ctx, problemType, "Update"); err != nil {
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", int(added)); err != nil {
 		return 0, err
 	}
 	return id, nil
+}
+
+func (s *problemService) updateProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, param domain.ProblemUpdateParameter) error {
+	problemType := workbook.GetProblemType()
+	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
+		return err
+	}
+	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
+		return err
+	}
+	added, updated, err := workbook.UpdateProblem(ctx, student, param)
+	if err != nil {
+		return err
+	}
+	if added > 0 {
+		if err := student.IncrementQuotaUsage(ctx, problemType, "Size", int(added)); err != nil {
+			return err
+		}
+	} else if added < 0 {
+		if err := student.DecrementQuotaUsage(ctx, problemType, "Size", -int(added)); err != nil {
+			return err
+		}
+	}
+	if updated > 0 {
+		if err := student.IncrementQuotaUsage(ctx, problemType, "Update", int(updated)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

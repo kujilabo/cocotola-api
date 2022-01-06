@@ -14,7 +14,7 @@ var ErrProblemOtherError = xerrors.New("problem other error")
 type ProblemAddParameter interface {
 	GetWorkbookID() WorkbookID
 	GetNumber() int
-	GetProblemType() string
+	// GetProblemType() string
 	GetProperties() map[string]string
 }
 
@@ -25,12 +25,12 @@ type problemAddParameter struct {
 	Properties  map[string]string
 }
 
-func NewProblemAddParameter(workbookID WorkbookID, number int, problemType string, properties map[string]string) (ProblemAddParameter, error) {
+func NewProblemAddParameter(workbookID WorkbookID, number int, properties map[string]string) (ProblemAddParameter, error) {
 	m := &problemAddParameter{
-		WorkbookID:  workbookID,
-		Number:      number,
-		ProblemType: problemType,
-		Properties:  properties,
+		WorkbookID: workbookID,
+		Number:     number,
+		// ProblemType: problemType,
+		Properties: properties,
 	}
 
 	v := validator.New()
@@ -43,25 +43,29 @@ func (p *problemAddParameter) GetWorkbookID() WorkbookID {
 func (p *problemAddParameter) GetNumber() int {
 	return p.Number
 }
-func (p *problemAddParameter) GetProblemType() string {
-	return p.ProblemType
-}
+
+// func (p *problemAddParameter) GetProblemType() string {
+// 	return p.ProblemType
+// }
 func (p *problemAddParameter) GetProperties() map[string]string {
 	return p.Properties
 }
 
 type ProblemUpdateParameter interface {
+	GetWorkbookID() WorkbookID
 	GetNumber() int
 	GetProperties() map[string]string
 }
 
 type problemUpdateParameter struct {
-	Number     int `validate:"required"`
+	WorkbookID WorkbookID `validate:"required"`
+	Number     int        `validate:"required"`
 	Properties map[string]string
 }
 
-func NewProblemUpdateParameter(workbookID WorkbookID, number int, problemType string, properties map[string]string) (ProblemUpdateParameter, error) {
+func NewProblemUpdateParameter(workbookID WorkbookID, number int, properties map[string]string) (ProblemUpdateParameter, error) {
 	m := &problemUpdateParameter{
+		WorkbookID: workbookID,
 		Number:     number,
 		Properties: properties,
 	}
@@ -70,6 +74,9 @@ func NewProblemUpdateParameter(workbookID WorkbookID, number int, problemType st
 	return m, v.Struct(m)
 }
 
+func (p *problemUpdateParameter) GetWorkbookID() WorkbookID {
+	return p.WorkbookID
+}
 func (p *problemUpdateParameter) GetNumber() int {
 	return p.Number
 }
@@ -165,7 +172,7 @@ type ProblemRepository interface {
 
 	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error)
 
-	// UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) error
+	UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) error
 
 	RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error
 }

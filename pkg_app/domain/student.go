@@ -30,9 +30,9 @@ type Student interface {
 
 	CheckQuota(ctx context.Context, problemType string, name QuotaName) error
 
-	IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error
+	IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error
 
-	DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error
+	DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error
 
 	FindRecordbook(ctx context.Context, workbookID WorkbookID, studyType string) (Recordbook, error)
 }
@@ -240,7 +240,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 	// return nil
 }
 
-func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error {
+func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error {
 	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
 	if err != nil {
 		return err
@@ -255,7 +255,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 	case QuotaNameSize:
 		unit := processor.GetUnitForSizeQuota()
 		limit := processor.GetLimitForSizeQuota()
-		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_size", unit, limit, 1)
+		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_size", unit, limit, value)
 		if err != nil {
 			return err
 		}
@@ -268,7 +268,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 	case QuotaNameUpdate:
 		unit := processor.GetUnitForUpdateQuota()
 		limit := processor.GetLimitForUpdateQuota()
-		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_update", unit, limit, 1)
+		isExceeded, err := userQuotaRepo.Increment(ctx, s, problemType+"_update", unit, limit, value)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 	}
 }
 
-func (s *student) DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName) error {
+func (s *student) DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error {
 	return nil
 }
 

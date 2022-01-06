@@ -20,18 +20,18 @@ var (
 )
 
 type engliushWordProblemAddParameterCSVReader struct {
-	workbookID  app.WorkbookID
-	problemType string
-	reader      *csv.Reader
-	num         int
+	workbookID app.WorkbookID
+	// problemType string
+	reader *csv.Reader
+	num    int
 }
 
-func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator {
+func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator {
 	return &engliushWordProblemAddParameterCSVReader{
-		workbookID:  workbookID,
-		problemType: problemType,
-		reader:      csv.NewReader(reader),
-		num:         1,
+		workbookID: workbookID,
+		// problemType: problemType,
+		reader: csv.NewReader(reader),
+		num:    1,
 	}
 }
 
@@ -45,6 +45,9 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 		return nil, xerrors.Errorf("failed to reader.Read. err: %w", err)
 	}
 	if len(line) == 0 {
+		return nil, nil
+	}
+	if len(line[0]) == 0 {
 		return nil, nil
 	}
 
@@ -68,7 +71,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 		"translated": translated,
 		"pos":        strconv.Itoa(int(pos)),
 	}
-	param, err := app.NewProblemAddParameter(r.workbookID, r.num, r.problemType, properties)
+	param, err := app.NewProblemAddParameter(r.workbookID, r.num, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}

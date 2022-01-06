@@ -5,8 +5,15 @@ import (
 	"io"
 )
 
+type Added int
+type Updated int
+
 type ProblemAddProcessor interface {
-	AddProblem(ctx context.Context, repo RepositoryFactory, operator Student, workbook Workbook, param ProblemAddParameter) (ProblemID, error)
+	AddProblem(ctx context.Context, repo RepositoryFactory, operator Student, workbook Workbook, param ProblemAddParameter) (Added, ProblemID, error)
+}
+
+type ProblemUpdateProcessor interface {
+	UpdateProblem(ctx context.Context, repo RepositoryFactory, operator Student, workbook Workbook, param ProblemUpdateParameter) (Added, Updated, error)
 }
 
 type ProblemRemoveProcessor interface {
@@ -14,7 +21,7 @@ type ProblemRemoveProcessor interface {
 }
 
 type ProblemImportProcessor interface {
-	CreateCSVReader(ctx context.Context, workbookID WorkbookID, problemType string, reader io.Reader) (ProblemAddParameterIterator, error)
+	CreateCSVReader(ctx context.Context, workbookID WorkbookID, reader io.Reader) (ProblemAddParameterIterator, error)
 }
 
 type ProblemQuotaProcessor interface {

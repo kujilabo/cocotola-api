@@ -278,6 +278,10 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 	return app.ProblemID(englishSentenceProblem.ID), nil
 }
 
+func (r *englishSentenceProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+	return errors.New("not implemented")
+}
+
 func (r *englishSentenceProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {
 	logger := log.FromContext(ctx)
 

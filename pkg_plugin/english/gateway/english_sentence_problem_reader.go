@@ -9,18 +9,18 @@ import (
 )
 
 type engliushSentenceProblemAddParameterCSVReader struct {
-	workbookID  app.WorkbookID
-	problemType string
-	reader      *csv.Reader
-	num         int
+	workbookID app.WorkbookID
+	// problemType string
+	reader *csv.Reader
+	num    int
 }
 
-func NewEnglishSentenceProblemAddParameterCSVReader(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator {
+func NewEnglishSentenceProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator {
 	return &engliushSentenceProblemAddParameterCSVReader{
-		workbookID:  workbookID,
-		problemType: problemType,
-		reader:      csv.NewReader(reader),
-		num:         1,
+		workbookID: workbookID,
+		// problemType: problemType,
+		reader: csv.NewReader(reader),
+		num:    1,
 	}
 }
 
@@ -41,7 +41,7 @@ func (r *engliushSentenceProblemAddParameterCSVReader) Next() (app.ProblemAddPar
 		"translated": line[2],
 	}
 
-	param, err := app.NewProblemAddParameter(r.workbookID, r.num, r.problemType, properties)
+	param, err := app.NewProblemAddParameter(r.workbookID, r.num, properties)
 	if err != nil {
 		return nil, err
 	}

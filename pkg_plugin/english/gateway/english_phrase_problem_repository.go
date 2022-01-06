@@ -274,6 +274,10 @@ func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operato
 	return app.ProblemID(englishPhraseProblem.ID), nil
 }
 
+func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+	return errors.New("not implemented")
+}
+
 func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {
 	logger := log.FromContext(ctx)
 

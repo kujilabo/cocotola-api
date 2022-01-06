@@ -59,30 +59,35 @@ func NewEnglishPhraseProblemProcessor(synthesizer plugin.Synthesizer, translator
 	}
 }
 
-func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.Added, app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
-	problemRepo, err := repo.NewProblemRepository(ctx, param.GetProblemType())
+	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	extractedParam, err := toEnglishPhraseProblemAddParemeter(param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
 	}
 
 	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
 	}
 
 	if audioID == 0 {
-		return 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
+		return 0, 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
 	}
 
-	return p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+	if err != nil {
+		return 0, 0, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+	}
+
+	return 1, problemID, err
 }
 
 func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, param app.ProblemAddParameter, extractedParam *englishPhraseProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
@@ -97,7 +102,7 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 		"lang":       extractedParam.Lang,
 		"audioId":    strconv.Itoa(int(audioID)),
 	}
-	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
+	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
 	}

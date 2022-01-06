@@ -32,8 +32,9 @@ func NewAuthMiddleware(signingKey []byte) gin.HandlerFunc {
 		if claims, ok := token.Claims.(*gateway.AppUserClaims); ok && token.Valid {
 			c.Set("AuthorizedUser", int(claims.AppUserID))
 			c.Set("OrganizationID", int(claims.OrganizationID))
+			c.Set("Role", claims.Role)
 
-			logger.Infof("uri: %s, user: %d", c.Request.RequestURI, int(claims.AppUserID))
+			logger.Infof("uri: %s, user: %d, role: %s", c.Request.RequestURI, int(claims.AppUserID), claims.Role)
 		}
 	}
 }

@@ -391,12 +391,12 @@ func CreateWorkbook(ctx context.Context, student appD.Student, workbookName stri
 			"lang": "ja",
 			"pos":  strconv.Itoa(int(pos)),
 		}
-		param, err := appD.NewProblemAddParameter(workbookID, i+1, pluginEnglishDomain.EnglishWordProblemType, properties)
+		param, err := appD.NewProblemAddParameter(workbookID, i+1, properties)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
-		problemID, err := workbook.AddProblem(ctx, student, param)
+		_, problemID, err := workbook.AddProblem(ctx, student, param)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
