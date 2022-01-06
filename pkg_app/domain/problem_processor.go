@@ -16,3 +16,19 @@ type ProblemRemoveProcessor interface {
 type ProblemImportProcessor interface {
 	CreateCSVReader(ctx context.Context, workbookID WorkbookID, problemType string, reader io.Reader) (ProblemAddParameterIterator, error)
 }
+
+type ProblemQuotaProcessor interface {
+	// IsExceeded(ctx context.Context, repo RepositoryFactory, operator Student, name string) (bool, error)
+
+	// Increment(ctx context.Context, repo RepositoryFactory, operator Student, name string) (bool, error)
+
+	// Decrement(ctx context.Context, repo RepositoryFactory, operator Student, name string) (bool, error)
+
+	GetUnitForSizeQuota() QuotaUnit
+
+	GetLimitForSizeQuota() int
+
+	GetUnitForUpdateQuota() QuotaUnit
+
+	GetLimitForUpdateQuota() int
+}

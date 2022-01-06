@@ -158,7 +158,7 @@ func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, 
 	for i, e := range problemEntities {
 		p, err := e.toProblem()
 		if err != nil {
-			return nil, err
+			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
@@ -281,7 +281,7 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 func (r *englishSentenceProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {
 	logger := log.FromContext(ctx)
 
-	logger.Infof("englishSentenceProblemRepository.RemoveProblem. text: %d", problemID)
+	logger.Infof("englishSentenceProblemRepository.RemoveProblem. problemID: %d", problemID)
 	result := r.db.Where("id = ? and version = ?", uint(problemID), version).Delete(&englishSentenceProblemEntity{})
 	if result.Error != nil {
 		return result.Error

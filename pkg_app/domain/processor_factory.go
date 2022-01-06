@@ -8,19 +8,23 @@ type ProcessorFactory interface {
 	NewProblemRemoveProcessor(processorType string) (ProblemRemoveProcessor, error)
 
 	NewProblemImportProcessor(processorType string) (ProblemImportProcessor, error)
+
+	NewProblemQuotaProcessor(processorType string) (ProblemQuotaProcessor, error)
 }
 
 type processorFactrory struct {
 	processors       map[string]ProblemAddProcessor
 	removeProcessors map[string]ProblemRemoveProcessor
 	importProcessors map[string]ProblemImportProcessor
+	quotaProcessors  map[string]ProblemQuotaProcessor
 }
 
-func NewProcessorFactory(processors map[string]ProblemAddProcessor, removeProcessors map[string]ProblemRemoveProcessor, importProcessors map[string]ProblemImportProcessor) ProcessorFactory {
+func NewProcessorFactory(processors map[string]ProblemAddProcessor, removeProcessors map[string]ProblemRemoveProcessor, importProcessors map[string]ProblemImportProcessor, quotaProcessors map[string]ProblemQuotaProcessor) ProcessorFactory {
 	return &processorFactrory{
 		processors:       processors,
 		removeProcessors: removeProcessors,
 		importProcessors: importProcessors,
+		quotaProcessors:  quotaProcessors,
 	}
 }
 
@@ -44,6 +48,14 @@ func (f *processorFactrory) NewProblemImportProcessor(processorType string) (Pro
 	processor, ok := f.importProcessors[processorType]
 	if !ok {
 		return nil, fmt.Errorf("NewProblemImportProcessor not found. processorType: %s", processorType)
+	}
+	return processor, nil
+}
+
+func (f *processorFactrory) NewProblemQuotaProcessor(processorType string) (ProblemQuotaProcessor, error) {
+	processor, ok := f.quotaProcessors[processorType]
+	if !ok {
+		return nil, fmt.Errorf("NewProblemQuotaProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }

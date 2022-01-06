@@ -6,8 +6,17 @@ import (
 	"io"
 	"strconv"
 
+	"golang.org/x/xerrors"
+
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	common "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+)
+
+var (
+	posPos        = 1
+	lenPos        = posPos + 1
+	posTranslated = posPos + 1
+	lenTranslated = posTranslated + 1
 )
 
 type engliushWordProblemAddParameterCSVReader struct {
@@ -33,21 +42,35 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 		return nil, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to reader.Read. err: %w", err)
 	}
-	pos, err := domain.ParsePos(line[0])
-	if err != nil {
-		return nil, err
+	if len(line) == 0 {
+		return nil, nil
 	}
+
+	pos := common.PosOther
+	if len(line) >= lenPos {
+		posTmp, err := common.ParsePos(line[posPos])
+		if err != nil {
+			return nil, xerrors.Errorf("failed to ParsePos. err: %w", err)
+		}
+		pos = posTmp
+	}
+
+	translated := ""
+	if len(line) >= lenTranslated {
+		translated = line[posTranslated]
+	}
+
 	properties := map[string]string{
 		"lang":       "ja",
-		"text":       line[1],
-		"translated": line[2],
+		"text":       line[0],
+		"translated": translated,
 		"pos":        strconv.Itoa(int(pos)),
 	}
 	param, err := app.NewProblemAddParameter(r.workbookID, r.num, r.problemType, properties)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 
 	r.num++

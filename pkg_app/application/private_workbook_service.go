@@ -27,13 +27,15 @@ type PrivateWorkbookService interface {
 
 type privateWorkbookService struct {
 	db       *gorm.DB
+	pf       domain.ProcessorFactory
 	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
 	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewPrivateWorkbookService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) PrivateWorkbookService {
+func NewPrivateWorkbookService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) PrivateWorkbookService {
 	return &privateWorkbookService{
 		db:       db,
+		pf:       pf,
 		repo:     repo,
 		userRepo: userRepo,
 	}
@@ -50,7 +52,7 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -84,7 +86,7 @@ func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizat
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -113,7 +115,7 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -141,7 +143,7 @@ func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizatio
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -163,7 +165,7 @@ func (s *privateWorkbookService) RemoveWorkbook(ctx context.Context, organizatio
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}

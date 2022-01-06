@@ -79,3 +79,7 @@ func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (domain
 func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (domain.AudioRepository, error) {
 	return NewAudioRepository(f.db), nil
 }
+
+func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) (domain.UserQuotaRepository, error) {
+	return NewUserQuotaRepository(f.db), nil
+}

@@ -32,13 +32,15 @@ type ProblemService interface {
 
 type problemService struct {
 	db       *gorm.DB
+	pf       domain.ProcessorFactory
 	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
 	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
+func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
 	return &problemService{
 		db:       db,
+		pf:       pf,
 		repo:     repo,
 		userRepo: userRepo,
 	}
@@ -47,19 +49,7 @@ func NewProblemService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFac
 func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return err
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -78,19 +68,7 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return err
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -109,19 +87,7 @@ func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organi
 func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
 	var result *domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return err
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -140,19 +106,7 @@ func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizat
 func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error) {
 	var result domain.Problem
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -171,19 +125,7 @@ func (s *problemService) FindProblemByID(ctx context.Context, organizationID use
 func (s *problemService) FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error) {
 	var result []domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -203,37 +145,13 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 	logger := log.FromContext(ctx)
 	var result domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		tmpResult, err := s.addProblem(ctx, student, workbook, param)
 		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
-		}
-		workbook, err := student.FindWorkbookByID(ctx, param.GetWorkbookID())
-		if err != nil {
-			return err
-		}
-		problemType := workbook.GetProblemType()
-		sizeLimitName := problemType + "Size"
-		updateLimitName := problemType + "Update"
-		if err := student.CheckLimit(ctx, sizeLimitName); err != nil {
-			return err
-		}
-		if err := student.CheckLimit(ctx, updateLimitName); err != nil {
-			return err
-		}
-		tmpResult, err := workbook.AddProblem(ctx, student, param)
-		if err != nil {
-			return err
-		}
-		if err := student.IncrementQuotaUsage(ctx, sizeLimitName); err != nil {
-			return err
+			return xerrors.Errorf("failed to AddProblem. err: %w", err)
 		}
 		result = tmpResult
 		return nil
@@ -249,19 +167,7 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 	logger.Debug("ProblemService.RemoveProblem")
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(tx)
-		if err != nil {
-			return err
-		}
-		student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
-		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
-		}
-		workbook, err := student.FindWorkbookByID(ctx, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -269,8 +175,7 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 			return err
 		}
 		problemType := workbook.GetProblemType()
-		sizeLimitName := problemType + "Size"
-		if err := student.DecrementQuotaUsage(ctx, sizeLimitName); err != nil {
+		if err := student.DecrementQuotaUsage(ctx, problemType, "Size"); err != nil {
 			return err
 		}
 
@@ -287,15 +192,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 
 	var problemType string
 	{
-		repo, err := s.repo(s.db)
-		if err != nil {
-			return err
-		}
-		userRepo, err := s.userRepo(s.db)
-		if err != nil {
-			return err
-		}
-		_, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
+		_, workbook, err := s.findStudentAndWorkbook(ctx, s.db, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
@@ -318,26 +215,19 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 		logger.Infof("param.properties: %+v", param.GetProperties())
 
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
-			repo, err := s.repo(tx)
-			if err != nil {
-				return err
-			}
-			userRepo, err := s.userRepo(tx)
-			if err != nil {
-				return err
-			}
-			student, workbook, err := s.findStudentAndWorkbook(ctx, repo, userRepo, organizationID, operatorID, workbookID)
+			student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 			if err != nil {
 				return err
 			}
 
 			id, err := s.addProblem(ctx, student, workbook, param)
 			if errors.Is(err, domain.ErrProblemAlreadyExists) {
+				logger.Infof("Problem already exists. param: %+v", param)
 				return nil
 			}
 
 			if err != nil {
-				return err
+				return xerrors.Errorf("failed to addProblem. err: %w", err)
 			}
 			logger.Infof("%d", id)
 
@@ -348,8 +238,16 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 	}
 }
 
-func (s *problemService) findStudentAndWorkbook(ctx context.Context, repo domain.RepositoryFactory, userRepo user.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
-	student, err := findStudent(ctx, repo, userRepo, organizationID, operatorID)
+func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
+	repo, err := s.repo(tx)
+	if err != nil {
+		return nil, nil, err
+	}
+	userRepo, err := s.userRepo(tx)
+	if err != nil {
+		return nil, nil, err
+	}
+	student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
 	}
@@ -362,19 +260,20 @@ func (s *problemService) findStudentAndWorkbook(ctx context.Context, repo domain
 
 func (s *problemService) addProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, param domain.ProblemAddParameter) (domain.ProblemID, error) {
 	problemType := workbook.GetProblemType()
-	sizeLimitName := problemType + "Size"
-	updateLimitName := problemType + "Update"
-	if err := student.CheckLimit(ctx, sizeLimitName); err != nil {
+	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
 		return 0, err
 	}
-	if err := student.CheckLimit(ctx, updateLimitName); err != nil {
+	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
 		return 0, err
 	}
 	id, err := workbook.AddProblem(ctx, student, param)
 	if err != nil {
 		return 0, err
 	}
-	if err := student.IncrementQuotaUsage(ctx, sizeLimitName); err != nil {
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Size"); err != nil {
+		return 0, err
+	}
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Update"); err != nil {
 		return 0, err
 	}
 	return id, nil
