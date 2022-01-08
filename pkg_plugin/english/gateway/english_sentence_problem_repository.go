@@ -80,7 +80,7 @@ func toNewEnglishSentenceProblemParam(param app.ProblemAddParameter) (*newEnglis
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
 	}
 
 	m := &newEnglishSentenceProblemParam{

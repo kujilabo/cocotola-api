@@ -14,22 +14,19 @@ var ErrProblemOtherError = xerrors.New("problem other error")
 type ProblemAddParameter interface {
 	GetWorkbookID() WorkbookID
 	GetNumber() int
-	// GetProblemType() string
 	GetProperties() map[string]string
 }
 
 type problemAddParameter struct {
-	WorkbookID  WorkbookID `validate:"required"`
-	Number      int        `validate:"required"`
-	ProblemType string     `validate:"required"`
-	Properties  map[string]string
+	WorkbookID WorkbookID `validate:"required"`
+	Number     int        `validate:"required"`
+	Properties map[string]string
 }
 
 func NewProblemAddParameter(workbookID WorkbookID, number int, properties map[string]string) (ProblemAddParameter, error) {
 	m := &problemAddParameter{
 		WorkbookID: workbookID,
 		Number:     number,
-		// ProblemType: problemType,
 		Properties: properties,
 	}
 
@@ -43,10 +40,6 @@ func (p *problemAddParameter) GetWorkbookID() WorkbookID {
 func (p *problemAddParameter) GetNumber() int {
 	return p.Number
 }
-
-// func (p *problemAddParameter) GetProblemType() string {
-// 	return p.ProblemType
-// }
 func (p *problemAddParameter) GetProperties() map[string]string {
 	return p.Properties
 }
