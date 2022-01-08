@@ -2,7 +2,7 @@ package entity
 
 import "encoding/json"
 
-type ProblemSearchParameter struct {
+type ProblemFindParameter struct {
 	PageNo   int    `json:"pageNo" binding:"required,gte=1"`
 	PageSize int    `json:"pageSize" binding:"required,gte=1"`
 	Keyword  string `json:"keyword"`
@@ -19,7 +19,7 @@ type Problem struct {
 	Properties  json.RawMessage `json:"properties"`
 }
 
-type ProblemSearchResponse struct {
+type ProblemFindResponse struct {
 	TotalCount int64     `json:"totalCount"`
 	Results    []Problem `json:"results"`
 }
@@ -37,9 +37,14 @@ type ProblemFindAllResponse struct {
 }
 
 type ProblemAddParameter struct {
-	Number      int             `json:"number" binding:"required"`
-	ProblemType string          `json:"problemType"`
-	Properties  json.RawMessage `json:"properties"`
+	Number int `json:"number" binding:"required"`
+	// ProblemType string          `json:"problemType"`
+	Properties json.RawMessage `json:"properties"`
+}
+
+type ProblemUpdateParameter struct {
+	Number     int             `json:"number" binding:"required"`
+	Properties json.RawMessage `json:"properties"`
 }
 
 type ProblemIDs struct {

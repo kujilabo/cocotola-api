@@ -5,6 +5,8 @@ import "fmt"
 type ProcessorFactory interface {
 	NewProblemAddProcessor(processorType string) (ProblemAddProcessor, error)
 
+	NewProblemUpdateProcessor(processorType string) (ProblemUpdateProcessor, error)
+
 	NewProblemRemoveProcessor(processorType string) (ProblemRemoveProcessor, error)
 
 	NewProblemImportProcessor(processorType string) (ProblemImportProcessor, error)
@@ -13,15 +15,17 @@ type ProcessorFactory interface {
 }
 
 type processorFactrory struct {
-	processors       map[string]ProblemAddProcessor
+	addProcessors    map[string]ProblemAddProcessor
+	updateProcessors map[string]ProblemUpdateProcessor
 	removeProcessors map[string]ProblemRemoveProcessor
 	importProcessors map[string]ProblemImportProcessor
 	quotaProcessors  map[string]ProblemQuotaProcessor
 }
 
-func NewProcessorFactory(processors map[string]ProblemAddProcessor, removeProcessors map[string]ProblemRemoveProcessor, importProcessors map[string]ProblemImportProcessor, quotaProcessors map[string]ProblemQuotaProcessor) ProcessorFactory {
+func NewProcessorFactory(addProcessors map[string]ProblemAddProcessor, updateProcessors map[string]ProblemUpdateProcessor, removeProcessors map[string]ProblemRemoveProcessor, importProcessors map[string]ProblemImportProcessor, quotaProcessors map[string]ProblemQuotaProcessor) ProcessorFactory {
 	return &processorFactrory{
-		processors:       processors,
+		addProcessors:    addProcessors,
+		updateProcessors: updateProcessors,
 		removeProcessors: removeProcessors,
 		importProcessors: importProcessors,
 		quotaProcessors:  quotaProcessors,
@@ -29,7 +33,14 @@ func NewProcessorFactory(processors map[string]ProblemAddProcessor, removeProces
 }
 
 func (f *processorFactrory) NewProblemAddProcessor(processorType string) (ProblemAddProcessor, error) {
-	processor, ok := f.processors[processorType]
+	processor, ok := f.addProcessors[processorType]
+	if !ok {
+		return nil, fmt.Errorf("newProblemProcessor not found. processorType: %s", processorType)
+	}
+	return processor, nil
+}
+func (f *processorFactrory) NewProblemUpdateProcessor(processorType string) (ProblemUpdateProcessor, error) {
+	processor, ok := f.updateProcessors[processorType]
 	if !ok {
 		return nil, fmt.Errorf("newProblemProcessor not found. processorType: %s", processorType)
 	}

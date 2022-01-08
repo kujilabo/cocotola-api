@@ -126,6 +126,44 @@ func toEnglishWordProblemAddParameter(param app.ProblemAddParameter) (*englishWo
 	return m, v.Struct(m)
 }
 
+type englishWordProblemUpdateParemeter struct {
+	AudioID           uint
+	Text              string `validate:"required"`
+	Phonetic          string
+	PresentThird      string
+	PresentParticiple string
+	PastTense         string
+	PastParticiple    string
+	Translated        string
+	PhraseID1         uint
+	PhraseID2         uint
+	SentenceID1       uint
+	SentenceID2       uint
+}
+
+func toEnglishWordProblemUpdateParameter(param app.ProblemUpdateParameter) (*englishWordProblemUpdateParemeter, error) {
+	if _, ok := param.GetProperties()["audioId"]; !ok {
+		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	if _, ok := param.GetProperties()["text"]; !ok {
+		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
+	if err != nil {
+		return nil, err
+	}
+
+	m := &englishWordProblemUpdateParemeter{
+		AudioID:    uint(audioID),
+		Text:       param.GetProperties()["text"],
+		Translated: param.GetProperties()["translated"],
+	}
+	v := validator.New()
+	return m, v.Struct(m)
+}
+
 type englishWordProblemRepository struct {
 	db          *gorm.DB
 	problemType string
@@ -317,6 +355,34 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 	}
 
 	return app.ProblemID(englishWordProblem.ID), nil
+}
+
+func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+	logger := log.FromContext(ctx)
+
+	problemParam, err := toEnglishWordProblemUpdateParameter(param)
+	if err != nil {
+		return xerrors.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
+	}
+	englishWordProblem := englishWordProblemEntity{
+		Version:           1,
+		UpdatedBy:         operator.GetID(),
+		AudioID:           problemParam.AudioID,
+		Number:            param.GetNumber(),
+		Phonetic:          problemParam.Phonetic,
+		PresentThird:      problemParam.PresentThird,
+		PresentParticiple: problemParam.PresentParticiple,
+		PastTense:         problemParam.PastTense,
+		PastParticiple:    problemParam.PastParticiple,
+		Translated:        problemParam.Translated,
+	}
+
+	logger.Infof("englishWordProblemRepository.UpdateProblem. text: %s", problemParam.Text)
+	if result := r.db.UpdateColumns(&englishWordProblem); result.Error != nil {
+		return xerrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
+	}
+
+	return nil
 }
 
 func (r *englishWordProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {

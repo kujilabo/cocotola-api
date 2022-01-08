@@ -56,10 +56,10 @@ type EnglishSentenceProblemProcessor interface {
 type englishSentenceProblemProcessor struct {
 	synthesizer                     plugin.Synthesizer
 	translator                      plugin.Translator
-	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator
+	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator
 }
 
-func NewEnglishSentenceProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, problemType string, reader io.Reader) app.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
+func NewEnglishSentenceProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
 	return &englishSentenceProblemProcessor{
 		synthesizer:                     synthesizer,
 		translator:                      translator,
@@ -67,35 +67,35 @@ func NewEnglishSentenceProblemProcessor(synthesizer plugin.Synthesizer, translat
 	}
 }
 
-func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.Added, app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
-	problemRepo, err := repo.NewProblemRepository(ctx, param.GetProblemType())
+	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	extractedParam, err := toEnglishSentenceProblemAddParemeter(param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to toNewEnglishSentenceProblemParemeter. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to toNewEnglishSentenceProblemParemeter. err: %w", err)
 	}
 
 	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
+		return 0, 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
 	}
 
 	if audioID == 0 {
-		return 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
+		return 0, 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
 	}
 
 	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+		return 0, 0, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
-	return problemID, nil
+	return 1, problemID, nil
 }
 
 func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, param app.ProblemAddParameter, extractedParam *englishSentenceProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
@@ -110,7 +110,7 @@ func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, 
 		"translated": extractedParam.Translated,
 		"audioId":    strconv.Itoa(int(audioID)),
 	}
-	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), param.GetProblemType(), properties)
+	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
 	}
@@ -136,8 +136,8 @@ func (p *englishSentenceProblemProcessor) RemoveProblem(ctx context.Context, rep
 	return nil
 }
 
-func (p *englishSentenceProblemProcessor) CreateCSVReader(ctx context.Context, workbookID app.WorkbookID, problemType string, reader io.Reader) (app.ProblemAddParameterIterator, error) {
-	return p.newProblemAddParameterCSVReader(workbookID, problemType, reader), nil
+func (p *englishSentenceProblemProcessor) CreateCSVReader(ctx context.Context, workbookID app.WorkbookID, reader io.Reader) (app.ProblemAddParameterIterator, error) {
+	return p.newProblemAddParameterCSVReader(workbookID, reader), nil
 }
 
 func (p *englishSentenceProblemProcessor) findOrAddAudio(ctx context.Context, repo app.RepositoryFactory, text string) (app.AudioID, error) {

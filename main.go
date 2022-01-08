@@ -41,6 +41,7 @@ import (
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
+	handlerP "github.com/kujilabo/cocotola-api/pkg_plugin/handler"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
@@ -147,6 +148,9 @@ func main() {
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
 		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
+	problemUpdateProcessor := map[string]appD.ProblemUpdateProcessor{
+		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+	}
 	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
@@ -169,7 +173,7 @@ func main() {
 		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
+	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepository,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepository,
@@ -179,7 +183,7 @@ func main() {
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
 		processor, ok := problemImportProcessor[problemType]
 		if ok {
-			return processor.CreateCSVReader(ctx, workbookID, problemType, reader)
+			return processor.CreateCSVReader(ctx, workbookID, reader)
 		}
 		return nil, fmt.Errorf("processor not found. problemType: %s", problemType)
 	}
@@ -257,6 +261,13 @@ func main() {
 		v1Audio := v1.Group("audio")
 		v1Audio.Use(authMiddleware)
 		v1Audio.GET(":audioID", audioHandler.FindAudioByID)
+	}
+
+	plugin := router.Group("plugin")
+	{
+		pluginTranslation := plugin.Group("translation")
+		translationHandler := handlerP.NewTranslationHandler()
+		pluginTranslation.POST("find", translationHandler.FindTranslations)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -405,7 +416,7 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
 
-			firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("cocotola-owner", password, "Owner(cocotola)")
+			firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("cocotola-owner", "Owner(cocotola)", password)
 			if err != nil {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}

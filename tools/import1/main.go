@@ -201,13 +201,13 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 			"text":       line[0],
 			"translated": line[1],
 		}
-		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, workbook.GetProblemType(), properties)
+		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, properties)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		if _, ok := problemMap[line[0]]; !ok {
-			if _, err := processor.AddProblem(ctx, repo, operator, workbook, param); err != nil {
+			if _, _, err := processor.AddProblem(ctx, repo, operator, workbook, param); err != nil {
 				return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", param, err)
 			}
 		}
@@ -273,6 +273,7 @@ func main() {
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
 	}
+	problemUpdateProcessor := map[string]appD.ProblemUpdateProcessor{}
 	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
 	}
@@ -282,7 +283,7 @@ func main() {
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
+	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}

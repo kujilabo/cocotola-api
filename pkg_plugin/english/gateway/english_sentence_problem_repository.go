@@ -80,7 +80,7 @@ func toNewEnglishSentenceProblemParam(param app.ProblemAddParameter) (*newEnglis
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
 	}
 
 	m := &newEnglishSentenceProblemParam{
@@ -276,6 +276,10 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 	}
 
 	return app.ProblemID(englishSentenceProblem.ID), nil
+}
+
+func (r *englishSentenceProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+	return errors.New("not implemented")
 }
 
 func (r *englishSentenceProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {

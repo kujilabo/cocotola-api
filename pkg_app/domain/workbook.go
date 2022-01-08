@@ -44,7 +44,9 @@ type Workbook interface {
 
 	FindProblemByID(ctx context.Context, operator Student, problemID ProblemID) (Problem, error)
 
-	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error)
+	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (Added, ProblemID, error)
+
+	UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) (Added, Updated, error)
 
 	RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error
 
@@ -154,21 +156,37 @@ func (m *workbook) FindProblemByID(ctx context.Context, operator Student, proble
 	return problemRepo.FindProblemByID(ctx, operator, WorkbookID(m.GetID()), problemID)
 }
 
-func (m *workbook) AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error) {
+func (m *workbook) AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (Added, ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbook.AddProblem")
 
 	if !m.privileges.HasPrivilege(PrivilegeUpdate) {
-		return 0, errors.New("no update privilege")
+		return 0, 0, errors.New("no update privilege")
 	}
 
-	processor, err := m.processorFactory.NewProblemAddProcessor(param.GetProblemType())
+	processor, err := m.processorFactory.NewProblemAddProcessor(m.GetProblemType())
 	if err != nil {
-		return 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", param.GetProblemType(), err)
+		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
 	logger.Infof("processor.AddProblem")
 	return processor.AddProblem(ctx, m.repo, operator, m, param)
+}
+
+func (m *workbook) UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) (Added, Updated, error) {
+	logger := log.FromContext(ctx)
+	logger.Infof("workbook.UpdateProblem")
+
+	if !m.privileges.HasPrivilege(PrivilegeUpdate) {
+		return 0, 0, errors.New("no update privilege")
+	}
+
+	processor, err := m.processorFactory.NewProblemUpdateProcessor(m.GetProblemType())
+	if err != nil {
+		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
+	}
+
+	return processor.UpdateProblem(ctx, m.repo, operator, m, param)
 }
 
 func (m *workbook) RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error {

@@ -15,9 +15,9 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
-	"github.com/kujilabo/cocotola-api/pkg_lib/handlerhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
 
 type ProblemHandler interface {
@@ -35,7 +35,7 @@ type ProblemHandler interface {
 
 	ImportProblems(c *gin.Context)
 
-	// UpdateProblem(c *gin.Context)
+	UpdateProblem(c *gin.Context)
 
 	RemoveProblem(c *gin.Context)
 }
@@ -64,7 +64,7 @@ func (h *problemHandler) FindProblems(c *gin.Context) {
 			return nil
 		}
 
-		param := entity.ProblemSearchParameter{}
+		param := entity.ProblemFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -80,7 +80,7 @@ func (h *problemHandler) FindProblems(c *gin.Context) {
 			return err
 		}
 
-		response, err := converter.ToProblemSearchResponse(ctx, result)
+		response, err := converter.ToProblemFindResponse(ctx, result)
 		if err != nil {
 			return err
 		}
@@ -145,7 +145,7 @@ func (h *problemHandler) FindProblemsByProblemIDs(c *gin.Context) {
 			return err
 		}
 
-		response, err := converter.ToProblemSearchResponse(ctx, result)
+		response, err := converter.ToProblemFindResponse(ctx, result)
 		if err != nil {
 			return err
 		}
@@ -249,6 +249,38 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 	}, h.errorHandle)
 }
 
+func (h *problemHandler) UpdateProblem(c *gin.Context) {
+	ctx := c.Request.Context()
+	logger := log.FromContext(ctx)
+	logger.Infof("UpdateProblem")
+
+	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
+
+		param := entity.ProblemUpdateParameter{}
+		if err := c.BindJSON(&param); err != nil {
+			logger.Infof("failed to BindJSON. err: %v", err)
+			return nil
+		}
+
+		parameter, err := converter.ToProblemUpdateParameter(domain.WorkbookID(workbookID), &param)
+		if err != nil {
+			return err
+		}
+
+		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, parameter); err != nil {
+			return xerrors.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
+		}
+
+		c.Status(http.StatusOK)
+		return nil
+	}, h.errorHandle)
+}
+
 func (h *problemHandler) RemoveProblem(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
@@ -342,6 +374,6 @@ func (h *problemHandler) errorHandle(c *gin.Context, err error) bool {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}
-	logger.Errorf("workbookHandler error:%v", err)
+	logger.Errorf("problemHandler error:%v", err)
 	return false
 }

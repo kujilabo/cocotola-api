@@ -8,11 +8,11 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 )
 
-func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemSearchParameter, workbookID domain.WorkbookID) (domain.ProblemSearchCondition, error) {
+func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindParameter, workbookID domain.WorkbookID) (domain.ProblemSearchCondition, error) {
 	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, "")
 }
 
-func ToProblemSearchResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemSearchResponse, error) {
+func ToProblemFindResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
 	problems := make([]entity.Problem, len(result.Results))
 	for i, p := range result.Results {
 		bytes, err := json.Marshal(p.GetProperties(ctx))
@@ -33,7 +33,7 @@ func ToProblemSearchResponse(ctx context.Context, result *domain.ProblemSearchRe
 		}
 	}
 
-	return &entity.ProblemSearchResponse{
+	return &entity.ProblemFindResponse{
 		TotalCount: result.TotalCount,
 		Results:    problems,
 	}, nil
@@ -100,5 +100,14 @@ func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAd
 		return nil, err
 	}
 
-	return domain.NewProblemAddParameter(workbookID, param.Number, param.ProblemType, properties)
+	return domain.NewProblemAddParameter(workbookID, param.Number, properties)
+}
+
+func ToProblemUpdateParameter(workbookID domain.WorkbookID, param *entity.ProblemUpdateParameter) (domain.ProblemUpdateParameter, error) {
+	var properties map[string]string
+	if err := json.Unmarshal(param.Properties, &properties); err != nil {
+		return nil, err
+	}
+
+	return domain.NewProblemUpdateParameter(workbookID, param.Number, properties)
 }
