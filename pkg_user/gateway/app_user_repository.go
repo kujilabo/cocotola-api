@@ -178,7 +178,7 @@ func (r *appUserRepository) FindAppUserByID(ctx context.Context, operator domain
 		return nil, result.Error
 	}
 
-	roles := []string{""}
+	roles := []string{appUser.Role}
 	properties := map[string]string{}
 
 	return appUser.toAppUser(r.rf, roles, properties)
@@ -200,7 +200,7 @@ func (r *appUserRepository) FindAppUserByLoginID(ctx context.Context, operator d
 		return nil, result.Error
 	}
 
-	roles := []string{""}
+	roles := []string{appUser.Role}
 	properties := map[string]string{}
 
 	return appUser.toAppUser(r.rf, roles, properties)
@@ -219,7 +219,7 @@ func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator dom
 		return nil, result.Error
 	}
 
-	roles := []string{""}
+	roles := []string{appUser.Role}
 	properties := map[string]string{}
 
 	return appUser.toOwner(r.rf, roles, properties)

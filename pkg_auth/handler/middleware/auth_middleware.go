@@ -35,6 +35,9 @@ func NewAuthMiddleware(signingKey []byte) gin.HandlerFunc {
 			c.Set("Role", claims.Role)
 
 			logger.Infof("uri: %s, user: %d, role: %s", c.Request.RequestURI, int(claims.AppUserID), claims.Role)
+		} else {
+			logger.Warnf("invalid token")
+			return
 		}
 	}
 }

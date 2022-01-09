@@ -38,6 +38,7 @@ import (
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
@@ -135,9 +136,17 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
 
-	translatorClient := pluginCommonGateway.NewAzureTranslatorClient(cfg.Azure.SubscriptionKey)
-	translatorRepository := pluginCommonGateway.NewAzureTranslationRepository(db)
-	translator := pluginCommonGateway.NewAzureCachedTranslatorClient(translatorClient, translatorRepository)
+	azureTranslationClient := pluginCommonGateway.NewAzureTranslationClient(cfg.Azure.SubscriptionKey)
+
+	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
+	if err != nil {
+		panic(err)
+	}
+
+	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
+	if err != nil {
+		panic(err)
+	}
 
 	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
@@ -265,6 +274,7 @@ func main() {
 
 	plugin := router.Group("plugin")
 	{
+		plugin.Use(authMiddleware)
 		pluginTranslation := plugin.Group("translation")
 		translationHandler := handlerP.NewTranslationHandler()
 		pluginTranslation.POST("find", translationHandler.FindTranslations)

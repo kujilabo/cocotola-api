@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strconv"
 
@@ -165,11 +166,15 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 	logger.Infof("AddProblem, text: %s, audio ID: %d", extractedParam.Text, audioID)
 
 	if extractedParam.Translated == "" {
-		translated, err := p.translateWithPos(ctx, extractedParam.Text, extractedParam.Pos, app.Lang2EN, app.Lang2JA)
+		translation, err := p.translateWithPos(ctx, extractedParam.Text, extractedParam.Pos, app.Lang2EN, app.Lang2JA)
 		if err != nil {
-			logger.Errorf("translate err: %v", err)
+			if errors.Is(err, plugin.ErrTranslationNotFound) {
+				extractedParam.Translated = ""
+			} else {
+				logger.Errorf("translate err: %v", err)
+			}
 		} else {
-			extractedParam.Translated = translated
+			extractedParam.Translated = translation.GetTranslated()
 		}
 	}
 
@@ -221,12 +226,10 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 	}
 
 	for _, t := range translated {
-		extractedParam.Pos = t.Pos
-		extractedParam.Translated = t.Target
 		properties := map[string]string{
 			"text":       extractedParam.Text,
-			"translated": extractedParam.Translated,
-			"pos":        strconv.Itoa(int(extractedParam.Pos)),
+			"translated": t.GetTranslated(),
+			"pos":        strconv.Itoa(int(t.GetPos())),
 			"audioId":    strconv.Itoa(int(audioID)),
 			"lang":       app.Lang2JA.String(),
 		}
@@ -346,64 +349,32 @@ func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, repo a
 	return id, err
 }
 
-func (p *englishWordProblemProcessor) translateWithPos(ctx context.Context, text string, pos plugin.WordPos, fromLang, toLang app.Lang2) (string, error) {
+func (p *englishWordProblemProcessor) translateWithPos(ctx context.Context, text string, pos plugin.WordPos, fromLang, toLang app.Lang2) (plugin.Translation, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("translateWithPos. text: %s", text)
 
-	result, err := p.translator.DictionaryLookup(ctx, text, fromLang, toLang)
-	if err != nil {
-		return "", err
-	}
-
-	logger.Infof("translate:%v", result)
-	var translated string
-	var confidence = 0.0
-	for _, r := range result {
-		if r.Pos == pos && r.Confidence > confidence {
-			confidence = r.Confidence
-			translated = r.Target
-		}
-	}
-
-	return translated, nil
+	return p.translator.DictionaryLookupWithPos(ctx, text, fromLang, toLang, pos)
 }
 
-func (p *englishWordProblemProcessor) translate(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]plugin.TranslationResult, error) {
+func (p *englishWordProblemProcessor) translate(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]plugin.Translation, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("translate. text: %s", text)
 
-	result, err := p.translator.DictionaryLookup(ctx, text, fromLang, toLang)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Infof("translate:%v", result)
-
-	posList := make(map[plugin.WordPos]plugin.TranslationResult)
-	for _, r := range result {
-		if _, ok := posList[r.Pos]; !ok {
-			posList[r.Pos] = r
-		} else if r.Confidence > posList[r.Pos].Confidence {
-			posList[r.Pos] = r
-		}
-	}
-
-	translated := make([]plugin.TranslationResult, 0)
-	for _, v := range posList {
-		translated = append(translated, v)
-	}
-
-	return translated, nil
+	return p.translator.DictionaryLookup(ctx, text, fromLang, toLang)
 }
+
 func (p *englishWordProblemProcessor) GetUnitForSizeQuota() app.QuotaUnit {
 	return quotaSizeUnit
 }
+
 func (p *englishWordProblemProcessor) GetLimitForSizeQuota() int {
 	return quotaSizeLimit
 }
+
 func (p *englishWordProblemProcessor) GetUnitForUpdateQuota() app.QuotaUnit {
 	return quotaUpdateUnit
 }
+
 func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
 	return quotaUpdateLimit
 }

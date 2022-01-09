@@ -70,7 +70,7 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 		return nil, err
 	}
 
-	logger.Info("Add student")
+	logger.Infof("Add student. %+v", appUser)
 	parameter, err := user.NewAppUserAddParameter(
 		googleUserInfo.Email,
 		googleUserInfo.Name,

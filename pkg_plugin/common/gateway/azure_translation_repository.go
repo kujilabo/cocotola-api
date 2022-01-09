@@ -32,7 +32,7 @@ func NewAzureTranslationRepository(db *gorm.DB) domain.AzureTranslationRepositor
 	}
 }
 
-func (r *azureTranslationRepository) Add(ctx context.Context, text string, lang app.Lang2, result []domain.TranslationResult) error {
+func (r *azureTranslationRepository) Add(ctx context.Context, text string, lang app.Lang2, result []domain.AzureTranslation) error {
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (r *azureTranslationRepository) Add(ctx context.Context, text string, lang 
 	return nil
 }
 
-func (r *azureTranslationRepository) Find(ctx context.Context, text string, lang app.Lang2) ([]domain.TranslationResult, error) {
+func (r *azureTranslationRepository) Find(ctx context.Context, text string, lang app.Lang2) ([]domain.AzureTranslation, error) {
 	entity := azureTranslationEntity{}
 
 	if result := r.db.Where(&azureTranslationEntity{
@@ -59,13 +59,13 @@ func (r *azureTranslationRepository) Find(ctx context.Context, text string, lang
 		Lang: lang.String(),
 	}).First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrAzureTranslationNotFound
+			return nil, domain.ErrTranslationNotFound
 		}
 
 		return nil, result.Error
 	}
 
-	result := make([]domain.TranslationResult, 0)
+	result := make([]domain.AzureTranslation, 0)
 	if err := json.Unmarshal([]byte(entity.Result), &result); err != nil {
 		return nil, err
 	}
@@ -73,33 +73,33 @@ func (r *azureTranslationRepository) Find(ctx context.Context, text string, lang
 	return result, nil
 }
 
-func (r *azureTranslationRepository) FindTranslations(ctx context.Context, param *domain.TranslationSearchCondition) (*domain.TranslationSearchResult, error) {
-	limit := param.PageSize
-	offset := (param.PageNo - 1) * param.PageSize
-	var entities []azureTranslationEntity
-	if result := r.db.Limit(limit).Offset(offset).Find(&entities); result.Error != nil {
-		return nil, result.Error
-	}
+// func (r *azureTranslationRepository) FindTranslations(ctx context.Context, param *domain.AzureTranslationSearchCondition) (*domain.AzureTranslation, error) {
+// 	limit := param.PageSize
+// 	offset := (param.PageNo - 1) * param.PageSize
+// 	var entities []azureTranslationEntity
+// 	if result := r.db.Limit(limit).Offset(offset).Find(&entities); result.Error != nil {
+// 		return nil, result.Error
+// 	}
 
-	var count int64
-	if result := r.db.Model(azureTranslationEntity{}).Count(&count); result.Error != nil {
-		return nil, result.Error
-	}
+// 	var count int64
+// 	if result := r.db.Model(azureTranslationEntity{}).Count(&count); result.Error != nil {
+// 		return nil, result.Error
+// 	}
 
-	results := make([][]domain.TranslationResult, len(entities))
-	for i, e := range entities {
-		result := make([]domain.TranslationResult, 0)
-		if err := json.Unmarshal([]byte(e.Result), &result); err != nil {
-			return nil, err
-		}
-		results[i] = result
-	}
+// 	results := make([][]domain.AzureTranslation, len(entities))
+// 	for i, e := range entities {
+// 		result := make([]domain.AzureTranslation, 0)
+// 		if err := json.Unmarshal([]byte(e.Result), &result); err != nil {
+// 			return nil, err
+// 		}
+// 		results[i] = result
+// 	}
 
-	return &domain.TranslationSearchResult{
-		TotalCount: count,
-		Results:    results,
-	}, nil
-}
+// 	return &domain.AzureTranslationSearchResult{
+// 		TotalCount: count,
+// 		Results:    results,
+// 	}, nil
+// }
 
 func (r *azureTranslationRepository) Contain(ctx context.Context, text string, lang app.Lang2) (bool, error) {
 	entity := azureTranslationEntity{}

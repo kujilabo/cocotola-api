@@ -28,7 +28,7 @@ func HandleRoleFunction(c *gin.Context, targetRole string, fn func(organizationI
 	logger := log.FromContext(ctx)
 	organizationID := domain.OrganizationID((c.GetInt("OrganizationID")))
 	operatorID := domain.AppUserID(uint(c.GetInt("AuthorizedUser")))
-	role := c.GetString("role")
+	role := c.GetString("Role")
 
 	logger.Infof("OperatorID: %d, OrganizationID: %d, Role: %s", operatorID, organizationID, role)
 	if role != targetRole {
