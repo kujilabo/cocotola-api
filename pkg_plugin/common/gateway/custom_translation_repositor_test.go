@@ -25,7 +25,7 @@ func Test_customTranslationRepository_FindByFirstLetter(t *testing.T) {
 		result := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from custom_translation")
 		assert.NoError(t, result.Error)
 
-		book, err := domain.NewTranslation(1, 1, time.Now(), time.Now(), "book", domain.PosNoun, app.Lang2JA, "本")
+		book, err := domain.NewTranslation(1, 1, time.Now(), time.Now(), "book", domain.PosNoun, app.Lang2JA, "本", "custom")
 		assert.NoError(t, err)
 
 		result = db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec(fmt.Sprintf("insert into custom_translation (version,text,pos,lang,translated) values(%d,'%s',%d,'%s','%s')", uint(book.GetVersion()), book.GetText(), int(book.GetPos()), book.GetLang().String(), book.GetTranslated()))
@@ -54,7 +54,7 @@ func Test_customTranslationRepository_FindByFirstLetter(t *testing.T) {
 				r := &customTranslationRepository{
 					db: db,
 				}
-				got, err := r.FindByFirstLetter(bg, tt.args.firstLetter, tt.args.lang)
+				got, err := r.FindByFirstLetter(bg, tt.args.lang, tt.args.firstLetter)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("customTranslationRepository.FindByFirstLetter() error = %v, wantErr %v", err, tt.wantErr)
 					return

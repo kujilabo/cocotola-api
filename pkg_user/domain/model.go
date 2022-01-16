@@ -16,12 +16,12 @@ type Model interface {
 }
 
 type model struct {
-	ID        uint `validate:"required,gte=0"`
+	ID        uint `validate:"gte=0"`
 	Version   int  `validate:"required,gte=1"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	CreatedBy uint `validate:"required,gte=0"`
-	UpdatedBy uint `validate:"required,gte=0"`
+	CreatedBy uint `validate:"gte=0"`
+	UpdatedBy uint `validate:"gte=0"`
 }
 
 func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, updatedBy uint) (Model, error) {

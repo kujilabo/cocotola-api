@@ -276,8 +276,9 @@ func main() {
 	{
 		plugin.Use(authMiddleware)
 		pluginTranslation := plugin.Group("translation")
-		translationHandler := handlerP.NewTranslationHandler()
+		translationHandler := handlerP.NewTranslationHandler(translator)
 		pluginTranslation.POST("find", translationHandler.FindTranslations)
+		pluginTranslation.GET(":text/:pos", translationHandler.FindTranslationByTextAndPos)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

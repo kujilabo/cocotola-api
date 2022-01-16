@@ -56,9 +56,11 @@ func (p *translationAddParameter) GetTranslated() string {
 type CustomTranslationRepository interface {
 	Add(ctx context.Context, param TranslationAddParameter) (TranslationID, error)
 
-	FindByText(ctx context.Context, text string, lang app.Lang2) ([]Translation, error)
+	FindByText(ctx context.Context, lang app.Lang2, text string) ([]Translation, error)
 
-	FindByFirstLetter(ctx context.Context, firstLetter string, lang app.Lang2) ([]Translation, error)
+	FindByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos WordPos) (Translation, error)
 
-	Contain(ctx context.Context, text string, lang app.Lang2) (bool, error)
+	FindByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]Translation, error)
+
+	Contain(ctx context.Context, lang app.Lang2, text string) (bool, error)
 }

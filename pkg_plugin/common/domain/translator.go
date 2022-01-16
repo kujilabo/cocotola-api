@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -13,9 +14,10 @@ import (
 var ErrTranslationNotFound = errors.New("translation not found")
 
 type Translator interface {
-	DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]Translation, error)
-	DictionaryLookupWithPos(ctx context.Context, text string, fromLang, toLang app.Lang2, pos WordPos) (Translation, error)
-	FindWords(ctx context.Context, letter string) ([]Translation, error)
+	DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]Translation, error)
+	DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos WordPos) (Translation, error)
+	FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]Translation, error)
+	FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos WordPos) (Translation, error)
 }
 
 type translator struct {
@@ -66,7 +68,7 @@ func (t *translator) customDictionaryLookup(ctx context.Context, text string, fr
 	if err != nil {
 		return nil, err
 	}
-	customContained, err := customRepo.Contain(ctx, text, toLang)
+	customContained, err := customRepo.Contain(ctx, toLang, text)
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +76,14 @@ func (t *translator) customDictionaryLookup(ctx context.Context, text string, fr
 		return nil, ErrTranslationNotFound
 	}
 
-	customResults, err := customRepo.FindByText(ctx, text, toLang)
+	customResults, err := customRepo.FindByText(ctx, toLang, text)
 	if err != nil {
 		return nil, err
 	}
 	return customResults, nil
 }
 
-func (t *translator) azureDictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]AzureTranslation, error) {
+func (t *translator) azureDictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]AzureTranslation, error) {
 	// repo, err := t.repo(t.db)
 	// if err != nil {
 	// 	return nil, err
@@ -91,12 +93,12 @@ func (t *translator) azureDictionaryLookup(ctx context.Context, text string, fro
 	if err != nil {
 		return nil, err
 	}
-	azureContained, err := azureRepo.Contain(ctx, text, toLang)
+	azureContained, err := azureRepo.Contain(ctx, toLang, text)
 	if err != nil {
 		return nil, err
 	}
 	if azureContained {
-		azureResults, err := azureRepo.Find(ctx, text, toLang)
+		azureResults, err := azureRepo.Find(ctx, toLang, text)
 		if err != nil {
 			return nil, err
 		}
@@ -108,14 +110,14 @@ func (t *translator) azureDictionaryLookup(ctx context.Context, text string, fro
 		return nil, err
 	}
 
-	if err := azureRepo.Add(ctx, text, toLang, azureResults); err != nil {
+	if err := azureRepo.Add(ctx, toLang, text, azureResults); err != nil {
 		return nil, xerrors.Errorf("failed to add auzre_translation. err: %w", err)
 	}
 
 	return azureResults, nil
 }
 
-func (t *translator) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]Translation, error) {
+func (t *translator) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]Translation, error) {
 	// find translations from custom reopository
 	customResults, err := t.customDictionaryLookup(ctx, text, fromLang, toLang)
 	if err != nil && !errors.Is(err, ErrTranslationNotFound) {
@@ -126,7 +128,7 @@ func (t *translator) DictionaryLookup(ctx context.Context, text string, fromLang
 	}
 
 	// find translations from azure
-	azureResults, err := t.azureDictionaryLookup(ctx, text, fromLang, toLang)
+	azureResults, err := t.azureDictionaryLookup(ctx, fromLang, toLang, text)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +138,7 @@ func (t *translator) DictionaryLookup(ctx context.Context, text string, fromLang
 	}
 	results := make([]Translation, 0)
 	for _, v := range azureResultMap {
-		result, err := NewTranslation(0, 0, time.Now(), time.Now(), text, v.Pos, fromLang, v.Target)
+		result, err := NewTranslation(0, 0, time.Now(), time.Now(), text, v.Pos, fromLang, v.Target, "azure")
 		if err != nil {
 			return nil, err
 		}
@@ -145,8 +147,8 @@ func (t *translator) DictionaryLookup(ctx context.Context, text string, fromLang
 	return results, nil
 }
 
-func (t *translator) DictionaryLookupWithPos(ctx context.Context, text string, fromLang, toLang app.Lang2, pos WordPos) (Translation, error) {
-	results, err := t.DictionaryLookup(ctx, text, fromLang, toLang)
+func (t *translator) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos WordPos) (Translation, error) {
+	results, err := t.DictionaryLookup(ctx, fromLang, toLang, text)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +160,66 @@ func (t *translator) DictionaryLookupWithPos(ctx context.Context, text string, f
 	return nil, ErrTranslationNotFound
 }
 
-func (t *translator) FindWords(ctx context.Context, letter string) ([]Translation, error) {
-	return nil, nil
+func (t *translator) FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]Translation, error) {
+	customRepo, err := t.rf.NewCustomTranslationRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	customResults, err := customRepo.FindByFirstLetter(ctx, lang, firstLetter)
+	if err != nil {
+		return nil, err
+	}
+	azureRepo, err := t.rf.NewAzureTranslationRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	azureResults, err := azureRepo.FindByFirstLetter(ctx, lang, firstLetter)
+	if err != nil {
+		return nil, err
+	}
+
+	makeKey := func(text string, pos WordPos) string {
+		return text + "_" + strconv.Itoa(int(pos))
+	}
+	resultMap := make(map[string]Translation)
+	for _, c := range customResults {
+		key := makeKey(c.GetText(), c.GetPos())
+		resultMap[key] = c
+	}
+	for _, a := range azureResults {
+		key := makeKey(a.GetText(), a.GetPos())
+		if _, ok := resultMap[key]; !ok {
+			resultMap[key] = a
+		}
+	}
+
+	results := make([]Translation, 0)
+	for _, v := range resultMap {
+		results = append(results, v)
+	}
+	return results, nil
+}
+
+func (t *translator) FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos WordPos) (Translation, error) {
+	customRepo, err := t.rf.NewCustomTranslationRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	customResult, err := customRepo.FindByTextAndPos(ctx, lang, text, pos)
+	if err == nil {
+		return customResult, nil
+	}
+	if !errors.Is(err, ErrTranslationNotFound) {
+		return nil, err
+	}
+
+	azureRepo, err := t.rf.NewAzureTranslationRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	azureResult, err := azureRepo.FindByTextAndPos(ctx, lang, text, pos)
+	if err != nil {
+		return nil, err
+	}
+	return azureResult, nil
 }

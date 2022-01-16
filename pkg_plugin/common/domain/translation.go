@@ -19,10 +19,11 @@ type Translation interface {
 	GetPos() WordPos
 	GetLang() app.Lang2
 	GetTranslated() string
+	GetProvider() string
 }
 
 type translation struct {
-	ID         TranslationID `validate:"required,gte=0"`
+	ID         TranslationID `validate:"gte=0"`
 	Version    int           `validate:"required,gte=1"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -30,9 +31,10 @@ type translation struct {
 	Pos        WordPos
 	Lang2      app.Lang2
 	Translated string
+	Provider   string
 }
 
-func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedAt time.Time, text string, pos WordPos, lang app.Lang2, translated string) (Translation, error) {
+func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedAt time.Time, text string, pos WordPos, lang app.Lang2, translated, provider string) (Translation, error) {
 	m := &translation{
 		ID:         id,
 		Version:    version,
@@ -42,6 +44,7 @@ func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedA
 		Pos:        pos,
 		Lang2:      lang,
 		Translated: translated,
+		Provider:   provider,
 	}
 
 	v := validator.New()
@@ -78,4 +81,8 @@ func (t *translation) GetLang() app.Lang2 {
 
 func (t *translation) GetTranslated() string {
 	return t.Translated
+}
+
+func (t *translation) GetProvider() string {
+	return t.Provider
 }

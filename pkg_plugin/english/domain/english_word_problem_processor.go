@@ -353,14 +353,14 @@ func (p *englishWordProblemProcessor) translateWithPos(ctx context.Context, text
 	logger := log.FromContext(ctx)
 	logger.Infof("translateWithPos. text: %s", text)
 
-	return p.translator.DictionaryLookupWithPos(ctx, text, fromLang, toLang, pos)
+	return p.translator.DictionaryLookupWithPos(ctx, fromLang, toLang, text, pos)
 }
 
 func (p *englishWordProblemProcessor) translate(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]plugin.Translation, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("translate. text: %s", text)
 
-	return p.translator.DictionaryLookup(ctx, text, fromLang, toLang)
+	return p.translator.DictionaryLookup(ctx, fromLang, toLang, text)
 }
 
 func (p *englishWordProblemProcessor) GetUnitForSizeQuota() app.QuotaUnit {
