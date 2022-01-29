@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator"
 
@@ -10,6 +11,8 @@ import (
 
 // var ErrCustomTranslationNotFound = errors.New("azure translation not found")
 // var ErrCustomTranslationAlreadyExists = errors.New("azure translation already exists")
+
+var ErrTranslationAlreadyExists = errors.New("custsomtranslation already exists")
 
 type TranslationAddParameter interface {
 	GetText() string
@@ -53,8 +56,33 @@ func (p *translationAddParameter) GetTranslated() string {
 	return p.Translated
 }
 
+type TranslationUpdateParameter interface {
+	GetTranslated() string
+}
+
+type translationUpdateParameter struct {
+	Translated string `validate:"required"`
+}
+
+func NewTransaltionUpdateParameter(translated string) (TranslationUpdateParameter, error) {
+	m := &translationUpdateParameter{
+		Translated: translated,
+	}
+
+	v := validator.New()
+	return m, v.Struct(m)
+}
+
+func (p *translationUpdateParameter) GetTranslated() string {
+	return p.Translated
+}
+
 type CustomTranslationRepository interface {
 	Add(ctx context.Context, param TranslationAddParameter) (TranslationID, error)
+
+	Update(ctx context.Context, lang app.Lang2, text string, pos WordPos, param TranslationUpdateParameter) error
+
+	Remove(ctx context.Context, lang app.Lang2, text string, pos WordPos) error
 
 	FindByText(ctx context.Context, lang app.Lang2, text string) ([]Translation, error)
 

@@ -3,12 +3,12 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -241,7 +241,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 
 		problemID, err := h.problemService.AddProblem(ctx, organizationID, operatorID, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
+			return fmt.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"id": problemID})
@@ -273,7 +273,7 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 		}
 
 		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, parameter); err != nil {
-			return xerrors.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
+			return fmt.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
 		}
 
 		c.Status(http.StatusOK)
@@ -307,7 +307,7 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 		}
 
 		if err := h.problemService.RemoveProblem(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), version); err != nil {
-			return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
+			return fmt.Errorf("failed to RemoveProblem. err: %w", err)
 		}
 
 		c.Status(http.StatusNoContent)
@@ -347,7 +347,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		logger.Infof("fileName: %s", file.Filename)
 		multipartFile, err := file.Open()
 		if err != nil {
-			return xerrors.Errorf("failed to file.Open. err: %w", err)
+			return fmt.Errorf("failed to file.Open. err: %w", err)
 		}
 		defer multipartFile.Close()
 
@@ -356,7 +356,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		}
 
 		if err := h.problemService.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), newIterator); err != nil {
-			return xerrors.Errorf("failed to ImportProblems. err: %w", err)
+			return fmt.Errorf("failed to ImportProblems. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)
@@ -367,10 +367,10 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 func (h *problemHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if xerrors.Is(err, domain.ErrProblemAlreadyExists) {
+	if errors.Is(err, domain.ErrProblemAlreadyExists) {
 		c.JSON(http.StatusConflict, gin.H{"message": "Problem already exists"})
 		return true
-	} else if xerrors.Is(err, domain.ErrWorkbookNotFound) {
+	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}

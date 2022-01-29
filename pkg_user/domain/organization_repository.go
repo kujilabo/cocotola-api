@@ -2,13 +2,13 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator"
-	"golang.org/x/xerrors"
 )
 
-var ErrOrganizationNotFound = xerrors.New("organization not found")
-var ErrOrganizationAlreadyExists = xerrors.New("organization already exists")
+var ErrOrganizationNotFound = errors.New("organization not found")
+var ErrOrganizationAlreadyExists = errors.New("organization already exists")
 
 type FirstOwnerAddParameter interface {
 	GetLoginID() string

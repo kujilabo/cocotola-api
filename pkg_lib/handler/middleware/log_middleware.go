@@ -15,5 +15,7 @@ func NewLogMiddleware() gin.HandlerFunc {
 		}
 		ctx := log.With(c.Request.Context(), log.Str("request_id", tmp.String()))
 		c.Request = c.Request.WithContext(ctx)
+		logger := log.FromContext(ctx)
+		logger.Infof("uri: %s, method: %s", c.Request.RequestURI, c.Request.Method)
 	}
 }

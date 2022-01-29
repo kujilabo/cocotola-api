@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-playground/validator"
+
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 

@@ -3,9 +3,9 @@ package gateway
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
@@ -90,7 +90,7 @@ func (e *appUserEntity) TableName() string {
 
 func (e *appUserEntity) toSystemOwner(rf domain.RepositoryFactory) (domain.SystemOwner, error) {
 	if e.LoginID != SystemOwnerLoginID {
-		return nil, xerrors.Errorf("invalid system owner. loginID: %s", e.LoginID)
+		return nil, fmt.Errorf("invalid system owner. loginID: %s", e.LoginID)
 	}
 
 	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
@@ -142,7 +142,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context,
 		Where("login_id = ?", SystemOwnerLoginID).
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, xerrors.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, domain.ErrSystemOwnerNotFound)
+			return nil, fmt.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, domain.ErrSystemOwnerNotFound)
 		}
 		return nil, result.Error
 	}
@@ -157,7 +157,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationName(ctx context.Contex
 		Joins("inner join app_user on organization.id = app_user.organization_id").
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, xerrors.Errorf("system owner not found. organization name: %s, err: %w", organizationName, domain.ErrSystemOwnerNotFound)
+			return nil, fmt.Errorf("system owner not found. organization name: %s, err: %w", organizationName, domain.ErrSystemOwnerNotFound)
 		}
 
 		return nil, result.Error

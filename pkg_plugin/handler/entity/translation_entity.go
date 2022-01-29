@@ -15,3 +15,14 @@ type Translation struct {
 type TranslationFindResponse struct {
 	Results []Translation `json:"results"`
 }
+
+type TranslationAddParameter struct {
+	Lang       string `json:"lang" binding:"required"`
+	Text       string `json:"text" binding:"required"`
+	Pos        int    `json:"pos" binding:"required"`
+	Translated string `json:"translated" binding:"required"`
+}
+
+type TranslationUpdateParameter struct {
+	Translated string `json:"translated" binding:"required"`
+}

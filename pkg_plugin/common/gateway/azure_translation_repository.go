@@ -95,6 +95,23 @@ func (r *azureTranslationRepository) FindByTextAndPos(ctx context.Context, lang 
 	return nil, domain.ErrTranslationNotFound
 }
 
+func (r *azureTranslationRepository) FindByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
+	azureTranslations, err := r.Find(ctx, lang, text)
+	if err != nil {
+		return nil, err
+	}
+
+	translations := make([]domain.Translation, 0)
+	for _, r := range azureTranslations {
+		t, err := r.ToTranslation(lang, text)
+		if err != nil {
+			return nil, err
+		}
+		translations = append(translations, t)
+	}
+
+	return translations, nil
+}
 func (r *azureTranslationRepository) FindByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error) {
 	if len(firstLetter) != 1 {
 		return nil, libD.ErrInvalidArgument

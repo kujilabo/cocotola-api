@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -56,7 +56,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to retrieve access token.err: %w", err)
+		return nil, fmt.Errorf("failed to retrieve access token.err: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -67,7 +67,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 		}
 		logger.Debugf("status:%d", resp.StatusCode)
 		logger.Debugf("Resp:%s", string(respBytes))
-		return nil, xerrors.New(string(respBytes))
+		return nil, errors.New(string(respBytes))
 	}
 
 	googleAuthResponse := domain.GoogleAuthResponse{}

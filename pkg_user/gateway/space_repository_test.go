@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"log"
 	"strconv"
 	"testing"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
@@ -54,7 +54,7 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := spaceRepo.FindDefaultSpace(bg, tt.args.operator)
-				if err != nil && !xerrors.Is(err, tt.err) {
+				if err != nil && !errors.Is(err, tt.err) {
 					t.Errorf("spaceRepository.FindDefaultSpace() error = %v, err %v", err, tt.err)
 					return
 				}
@@ -108,7 +108,7 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := spaceRepo.FindPersonalSpace(bg, tt.args.operator)
-				if err != nil && !xerrors.Is(err, tt.err) {
+				if err != nil && !errors.Is(err, tt.err) {
 					t.Errorf("spaceRepository.FindPersonalSpace() error = %v, err %v", err, tt.err)
 					return
 				}

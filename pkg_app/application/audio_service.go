@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
+	"fmt"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -33,7 +33,7 @@ func (s *audioService) FindAudioByID(ctx context.Context, audioID domain.AudioID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo, err := s.repo(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return fmt.Errorf("failed to repo. err: %w", err)
 		}
 		audioRepo, err := repo.NewAudioRepository(ctx)
 		if err != nil {

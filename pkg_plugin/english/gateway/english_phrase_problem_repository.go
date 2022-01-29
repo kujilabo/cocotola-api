@@ -3,11 +3,11 @@ package gateway
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/go-playground/validator"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -117,21 +117,21 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 	where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
 	if result := where.Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
+		return nil, fmt.Errorf("failed to Find. err: %w", result.Error)
 	}
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem()
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, fmt.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
 
 	var count int64
 	if result := where.Model(&englishPhraseProblemEntity{}).Count(&count); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
+		return nil, fmt.Errorf("failed to Count. err: %w", result.Error)
 	}
 
 	return &app.ProblemSearchResult{
@@ -149,21 +149,21 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 	}
 	if result := where().Order("workbook_id, number, created_at").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
+		return nil, fmt.Errorf("failed to Find. err: %w", result.Error)
 	}
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem()
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, fmt.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
 
 	var count int64
 	if result := where().Model(&englishPhraseProblemEntity{}).Count(&count); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
+		return nil, fmt.Errorf("failed to Count. err: %w", result.Error)
 	}
 
 	return &app.ProblemSearchResult{

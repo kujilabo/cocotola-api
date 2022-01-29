@@ -2,14 +2,14 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator"
-	"golang.org/x/xerrors"
 )
 
-var ErrProblemAlreadyExists = xerrors.New("problem already exists")
-var ErrProblemNotFound = xerrors.New("problem not found")
-var ErrProblemOtherError = xerrors.New("problem other error")
+var ErrProblemAlreadyExists = errors.New("problem already exists")
+var ErrProblemNotFound = errors.New("problem not found")
+var ErrProblemOtherError = errors.New("problem other error")
 
 type ProblemAddParameter interface {
 	GetWorkbookID() WorkbookID

@@ -21,7 +21,6 @@ import (
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
@@ -196,7 +195,7 @@ func registerEnglishWordProblems(ctx context.Context, operator appD.Student, rep
 			continue
 		}
 
-		pos, err := domain.ParsePos(line[0])
+		pos, err := pluginCommonDomain.ParsePos(line[0])
 		if err != nil {
 			fmt.Println("parsePos")
 			return err

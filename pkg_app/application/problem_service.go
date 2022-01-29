@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -153,7 +153,7 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 		}
 		tmpResult, err := s.addProblem(ctx, student, workbook, param)
 		if err != nil {
-			return xerrors.Errorf("failed to AddProblem. err: %w", err)
+			return fmt.Errorf("failed to AddProblem. err: %w", err)
 		}
 		result = tmpResult
 		return nil
@@ -171,7 +171,7 @@ func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.
 			return err
 		}
 		if err := s.updateProblem(ctx, student, workbook, param); err != nil {
-			return xerrors.Errorf("failed to UpdateProblem. err: %w", err)
+			return fmt.Errorf("failed to UpdateProblem. err: %w", err)
 		}
 		return nil
 	}); err != nil {
@@ -245,7 +245,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			}
 
 			if err != nil {
-				return xerrors.Errorf("failed to addProblem. err: %w", err)
+				return fmt.Errorf("failed to addProblem. err: %w", err)
 			}
 			logger.Infof("%d", id)
 
@@ -267,7 +267,7 @@ func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB
 	}
 	student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+		return nil, nil, fmt.Errorf("failed to findStudent. err: %w", err)
 	}
 	workbook, err := student.FindWorkbookByID(ctx, workbookID)
 	if err != nil {

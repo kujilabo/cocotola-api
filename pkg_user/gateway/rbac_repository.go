@@ -4,7 +4,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
-	"golang.org/x/xerrors"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -84,7 +84,7 @@ func (r *rbacRepository) AddNamedGroupingPolicy(subject domain.RBACUser, object 
 		return err
 	}
 	if e == nil {
-		return xerrors.Errorf("Nil")
+		return errors.Errorf("Nil")
 	}
 
 	if _, err := e.AddNamedGroupingPolicy("g", string(subject), string(object)); err != nil {

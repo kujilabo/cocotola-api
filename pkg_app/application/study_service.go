@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
+	"fmt"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -38,23 +38,23 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo, err := s.repo(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return fmt.Errorf("failed to repo. err: %w", err)
 		}
 		userRepo, err := s.userRepo(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to userRepo. err: %w", err)
+			return fmt.Errorf("failed to userRepo. err: %w", err)
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 		tmpResult, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
-			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+			return fmt.Errorf("failed to FindRecordbook. err: %w", err)
 		}
 		tmpResults, err := tmpResult.GetResultsSortedLevel(ctx)
 		if err != nil {
-			return xerrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
+			return fmt.Errorf("failed to GetResultsSortedLevel. err: %w", err)
 		}
 		results = tmpResults
 		return nil
@@ -69,15 +69,15 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		repo, err := s.repo(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return fmt.Errorf("failed to repo. err: %w", err)
 		}
 		userRepo, err := s.userRepo(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to userRepo. err: %w", err)
+			return fmt.Errorf("failed to userRepo. err: %w", err)
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 		workbook, err := student.FindWorkbookByID(ctx, workbookID)
 		if err != nil {
@@ -85,10 +85,10 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 		}
 		tmpResult, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
-			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+			return fmt.Errorf("failed to FindRecordbook. err: %w", err)
 		}
 		if err := tmpResult.SetResult(ctx, workbook.GetProblemType(), problemID, result, memorized); err != nil {
-			return xerrors.Errorf("failed to SetResult. err: %w", err)
+			return fmt.Errorf("failed to SetResult. err: %w", err)
 		}
 		return nil
 	}); err != nil {

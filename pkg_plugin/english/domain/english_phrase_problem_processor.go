@@ -2,10 +2,11 @@ package domain
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/go-playground/validator"
-	"golang.org/x/xerrors"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
@@ -21,15 +22,15 @@ type englishPhraseProblemAddParemeter struct {
 
 func toEnglishPhraseProblemAddParemeter(param app.ProblemAddParameter) (*englishPhraseProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["translated"]; !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	m := &englishPhraseProblemAddParemeter{
@@ -65,26 +66,26 @@ func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app
 
 	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
 	if err != nil {
-		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return 0, 0, fmt.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	extractedParam, err := toEnglishPhraseProblemAddParemeter(param)
 	if err != nil {
-		return 0, 0, xerrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
+		return 0, 0, fmt.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
 	}
 
 	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
 	if err != nil {
-		return 0, 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
+		return 0, 0, fmt.Errorf("failed to p.findOrAddAudio. err: %w", err)
 	}
 
 	if audioID == 0 {
-		return 0, 0, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
+		return 0, 0, fmt.Errorf("audio ID is zero. text: %s", extractedParam.Text)
 	}
 
 	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
 	if err != nil {
-		return 0, 0, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+		return 0, 0, fmt.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
 	return 1, problemID, err
@@ -104,12 +105,12 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 	}
 	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+		return 0, fmt.Errorf("failed to NewParameter. err: %w", err)
 	}
 
 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+		return 0, fmt.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 	}
 
 	return problemID, nil
@@ -119,7 +120,7 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, problemID app.ProblemID, version int) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, EnglishPhraseProblemType)
 	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return fmt.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, problemID, version); err != nil {
@@ -138,8 +139,8 @@ func (p *englishPhraseProblemProcessor) findOrAddAudio(ctx context.Context, repo
 	{
 		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
 		if err != nil {
-			if !xerrors.Is(err, app.ErrAudioNotFound) {
-				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)
+			if !errors.Is(err, app.ErrAudioNotFound) {
+				return 0, fmt.Errorf("failed to FindAudioID. err: %w", err)
 			}
 		} else {
 			return id, nil

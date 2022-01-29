@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
+	"fmt"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -54,17 +54,17 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 
 		condition, err := domain.NewWorkbookSearchCondition(DefaultPageNo, DefaultPageSize, []user.SpaceID{})
 		if err != nil {
-			return xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
+			return fmt.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 		}
 
 		tmpResult, err := student.FindWorkbooksFromPersonalSpace(ctx, condition)
 		if err != nil {
-			return xerrors.Errorf("failed to FindWorkbooksFromPersonalSpace. err: %w", err)
+			return fmt.Errorf("failed to FindWorkbooksFromPersonalSpace. err: %w", err)
 		}
 
 		result = tmpResult
@@ -88,12 +88,12 @@ func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizat
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 
 		tmpResult, err := student.FindWorkbookByID(ctx, workBookID)
 		if err != nil {
-			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+			return fmt.Errorf("failed to FindWorkbookByID. err: %w", err)
 		}
 
 		result = tmpResult
@@ -117,12 +117,12 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 
 		tmpResult, err := student.AddWorkbookToPersonalSpace(ctx, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+			return fmt.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
 		}
 
 		result = tmpResult
@@ -145,7 +145,7 @@ func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizatio
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 
 		return student.UpdateWorkbook(ctx, workbookID, version, parameter)
@@ -167,7 +167,7 @@ func (s *privateWorkbookService) RemoveWorkbook(ctx context.Context, organizatio
 		}
 		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return fmt.Errorf("failed to findStudent. err: %w", err)
 		}
 
 		return student.RemoveWorkbook(ctx, workbookID, version)

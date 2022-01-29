@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -63,10 +64,40 @@ func (r *customTranslationRepository) Add(ctx context.Context, param domain.Tran
 	}
 
 	if result := r.db.Create(&entity); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrAzureTranslationAlreadyExists)
+		err := libG.ConvertDuplicatedError(result.Error, domain.ErrTranslationAlreadyExists)
+		return 0, fmt.Errorf("xxx, err: %w", err)
 	}
 
 	return domain.TranslationID(entity.ID), nil
+}
+
+func (r *customTranslationRepository) Update(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param domain.TranslationUpdateParameter) error {
+	result := r.db.Model(&customTranslationEntity{}).
+		Where("lang = ? and text = ? and pos = ?",
+			lang.String(), text, int(pos)).
+		Updates(map[string]interface{}{
+			"translated": param.GetTranslated(),
+		})
+	if result.Error != nil {
+		return libG.ConvertDuplicatedError(result.Error, domain.ErrTranslationAlreadyExists)
+	}
+
+	if result.RowsAffected != 1 {
+		return errors.New("Error")
+	}
+
+	return nil
+}
+
+func (r *customTranslationRepository) Remove(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error {
+	result := r.db.
+		Where("lang = ? and text = ? and pos = ?",
+			lang.String(), text, int(pos)).
+		Delete(&customTranslationEntity{})
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
 
 func (r *customTranslationRepository) FindByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {

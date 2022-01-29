@@ -37,6 +37,8 @@ type AzureTranslationRepository interface {
 
 	FindByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos WordPos) (Translation, error)
 
+	FindByText(ctx context.Context, lang app.Lang2, text string) ([]Translation, error)
+
 	FindByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]Translation, error)
 
 	Contain(ctx context.Context, lang app.Lang2, text string) (bool, error)

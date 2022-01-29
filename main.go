@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -17,7 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
@@ -278,7 +278,12 @@ func main() {
 		pluginTranslation := plugin.Group("translation")
 		translationHandler := handlerP.NewTranslationHandler(translator)
 		pluginTranslation.POST("find", translationHandler.FindTranslations)
-		pluginTranslation.GET(":text/:pos", translationHandler.FindTranslationByTextAndPos)
+		pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
+		pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
+		pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
+		pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
+		pluginTranslation.POST("", translationHandler.AddTranslation)
+		pluginTranslation.POST("export", translationHandler.ExportTranslations)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -338,7 +343,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := initDB(cfg.DB)
 	if err != nil {
-		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	rf, err := userG.NewRepositoryFactory(db)
@@ -408,7 +413,7 @@ func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
 		}
 
 		if err := appG.MigrateMySQLDB(db); err != nil {
-			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
+			return nil, nil, fmt.Errorf("failed to MigrateMySQLDB. err: %w", err)
 		}
 
 		return db, sqlDB, nil
@@ -423,7 +428,7 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
-			if !xerrors.Is(err, userD.ErrOrganizationNotFound) {
+			if !errors.Is(err, userD.ErrOrganizationNotFound) {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
 
@@ -461,7 +466,7 @@ func callback(ctx context.Context, testUserEmail string, pf appD.ProcessorFactor
 	if appUser.GetLoginID() == testUserEmail {
 		student, err := appD.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
-			return xerrors.Errorf("failed to NewStudent. err: %w", err)
+			return fmt.Errorf("failed to NewStudent. err: %w", err)
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {

@@ -2,11 +2,11 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
@@ -113,7 +113,7 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := appUserRepo.AddAppUser(bg, tt.args.operator, tt.args.param)
-				if err != nil && !xerrors.Is(err, tt.err) {
+				if err != nil && !errors.Is(err, tt.err) {
 					t.Errorf("AddAppUser() error = %v, err %v", err, tt.err)
 					return
 				}
