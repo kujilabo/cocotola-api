@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -61,7 +61,7 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 func (h *audioHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if xerrors.Is(err, domain.ErrAudioNotFound) {
+	if errors.Is(err, domain.ErrAudioNotFound) {
 		logger.Warnf("audioHandler err: %+v", err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "Audio not found"})
 		return true

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
@@ -21,6 +20,7 @@ import (
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
+	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
@@ -131,12 +131,12 @@ func initWorkbook(ctx context.Context, operator appD.Student, workbookName strin
 func initProblems(ctx context.Context, operator appD.Student, workbook appD.Workbook) (map[string]bool, error) {
 	searchCondition, err := appD.NewProblemSearchCondition(appD.WorkbookID(workbook.GetID()), defaultPageNo, defaultPageSize, "")
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemSearchCondition. err: %w", err)
+		return nil, fmt.Errorf("failed to NewProblemSearchCondition. err: %w", err)
 	}
 
 	problems, err := workbook.FindProblems(ctx, operator, searchCondition)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindProblems. err: %w", err)
+		return nil, fmt.Errorf("failed to FindProblems. err: %w", err)
 	}
 
 	problemMap := make(map[string]bool)
@@ -169,17 +169,17 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 	workbookName := "flush sentence"
 	workbook, err := initWorkbook(ctx, operator, workbookName)
 	if err != nil {
-		return xerrors.Errorf("failed to initWorkbook. err: %w", err)
+		return fmt.Errorf("failed to initWorkbook. err: %w", err)
 	}
 
 	problemMap, err := initProblems(ctx, operator, workbook)
 	if err != nil {
-		return xerrors.Errorf("failed to initProblems. err: %w", err)
+		return fmt.Errorf("failed to initProblems. err: %w", err)
 	}
 
 	file, err := os.Open(csvFilePath)
 	if err != nil {
-		return xerrors.Errorf("failed to Open file. err: %w", err)
+		return fmt.Errorf("failed to Open file. err: %w", err)
 	}
 	defer file.Close()
 
@@ -203,12 +203,12 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 		}
 		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, properties)
 		if err != nil {
-			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return fmt.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		if _, ok := problemMap[line[0]]; !ok {
 			if _, _, err := processor.AddProblem(ctx, repo, operator, workbook, param); err != nil {
-				return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", param, err)
+				return fmt.Errorf("failed to AddProblem. param: %+v, err: %w", param, err)
 			}
 		}
 
@@ -265,9 +265,15 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
 
-	translatorClient := pluginCommonGateway.NewAzureTranslatorClient(cfg.Azure.SubscriptionKey)
-	translatorRepository := pluginCommonGateway.NewAzureTranslationRepository(db)
-	translator := pluginCommonGateway.NewAzureCachedTranslatorClient(translatorClient, translatorRepository)
+	azureTranslationClient := pluginCommonGateway.NewAzureTranslationClient(cfg.Azure.SubscriptionKey)
+	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
+	if err != nil {
+		panic(err)
+	}
+	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
+	if err != nil {
+		panic(err)
+	}
 
 	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{

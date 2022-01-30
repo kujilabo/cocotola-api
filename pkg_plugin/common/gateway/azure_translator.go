@@ -12,7 +12,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
-type azureTranslatorClient struct {
+type azureTranslationClient struct {
 	client translatortext.TranslatorClient
 }
 
@@ -22,16 +22,16 @@ type AzureDisplayTranslation struct {
 	Confidence float64
 }
 
-func NewAzureTranslatorClient(subscriptionKey string) domain.Translator {
+func NewAzureTranslationClient(subscriptionKey string) domain.AzureTranslationClient {
 	client := translatortext.NewTranslatorClient("https://api.cognitive.microsofttranslator.com")
 	client.Authorizer = autorest.NewCognitiveServicesAuthorizer(subscriptionKey)
-	return &azureTranslatorClient{
+	return &azureTranslationClient{
 		client: client,
 	}
 
 }
 
-func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]domain.TranslationResult, error) {
+func (c *azureTranslationClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]domain.AzureTranslation, error) {
 	logger := log.FromContext(ctx)
 	result, err := c.client.DictionaryLookup(context.Background(), fromLang.String(), toLang.String(), []translatortext.DictionaryLookupTextInput{{Text: to.StringPtr(text)}}, "")
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text strin
 		return nil, nil
 	}
 
-	translations := make([]domain.TranslationResult, 0)
+	translations := make([]domain.AzureTranslation, 0)
 	for _, v := range *result.Value {
 		if v.Translations == nil {
 			continue
@@ -55,7 +55,7 @@ func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text strin
 			if pos == domain.PosOther {
 				logger.Warnf("PosOther. text: %s, pos: %s", text, *t.PosTag)
 			}
-			translations = append(translations, domain.TranslationResult{
+			translations = append(translations, domain.AzureTranslation{
 				Pos:        pos,
 				Target:     c.pointerToString(t.DisplayTarget),
 				Confidence: c.pointerToFloat64(t.Confidence),
@@ -65,21 +65,21 @@ func (c *azureTranslatorClient) DictionaryLookup(ctx context.Context, text strin
 	return translations, nil
 }
 
-func (c *azureTranslatorClient) pointerToString(value *string) string {
+func (c *azureTranslationClient) pointerToString(value *string) string {
 	if value == nil {
 		return ""
 	}
 	return *value
 }
 
-func (c *azureTranslatorClient) pointerToFloat64(value *float64) float64 {
+func (c *azureTranslationClient) pointerToFloat64(value *float64) float64 {
 	if value == nil {
 		return 0
 	}
 	return *value
 }
 
-// func (c *azureTranslatorClient) stringToPos(value string) int {
+// func (c *azureTranslationClient) stringToPos(value string) int {
 // 	switch value {
 // 	case "ADJ":
 // 		return 1

@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -98,7 +99,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		// }
 
 		if err := h.studyService.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
-			return xerrors.Errorf("failed to SetResult. err: %w", err)
+			return fmt.Errorf("failed to SetResult. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)
@@ -109,10 +110,10 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 func (h *recordbookHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if xerrors.Is(err, domain.ErrProblemAlreadyExists) {
+	if errors.Is(err, domain.ErrProblemAlreadyExists) {
 		c.JSON(http.StatusConflict, gin.H{"message": "Problem already exists"})
 		return true
-	} else if xerrors.Is(err, domain.ErrWorkbookNotFound) {
+	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}

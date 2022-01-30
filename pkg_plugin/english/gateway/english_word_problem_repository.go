@@ -3,11 +3,11 @@ package gateway
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/go-playground/validator"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -90,19 +90,19 @@ type englishWordProblemAddParemeter struct {
 
 func toEnglishWordProblemAddParameter(param app.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["audioId"]; !ok {
-		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["pos"]; !ok {
-		return nil, xerrors.Errorf("pos is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("pos is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
@@ -143,11 +143,11 @@ type englishWordProblemUpdateParemeter struct {
 
 func toEnglishWordProblemUpdateParameter(param app.ProblemUpdateParameter) (*englishWordProblemUpdateParemeter, error) {
 	if _, ok := param.GetProperties()["audioId"]; !ok {
-		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, fmt.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
@@ -328,7 +328,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 
 	problemParam, err := toEnglishWordProblemAddParameter(param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to toEnglishWordProblemAddParameter. param: %+v, err: %w", param, err)
+		return 0, fmt.Errorf("failed to toEnglishWordProblemAddParameter. param: %+v, err: %w", param, err)
 	}
 	englishWordProblem := englishWordProblemEntity{
 		Version:           1,
@@ -351,7 +351,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 
 	logger.Infof("englishWordProblemRepository.AddProblem. text: %s", problemParam.Text)
 	if result := r.db.Create(&englishWordProblem); result.Error != nil {
-		return 0, xerrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
+		return 0, fmt.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
 	}
 
 	return app.ProblemID(englishWordProblem.ID), nil
@@ -362,7 +362,7 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 
 	problemParam, err := toEnglishWordProblemUpdateParameter(param)
 	if err != nil {
-		return xerrors.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
+		return fmt.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
 	}
 	englishWordProblem := englishWordProblemEntity{
 		Version:           1,
@@ -379,7 +379,7 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 
 	logger.Infof("englishWordProblemRepository.UpdateProblem. text: %s", problemParam.Text)
 	if result := r.db.UpdateColumns(&englishWordProblem); result.Error != nil {
-		return xerrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
+		return fmt.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
 	}
 
 	return nil

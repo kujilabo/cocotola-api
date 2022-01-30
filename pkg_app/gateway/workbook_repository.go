@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -64,12 +64,12 @@ func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.Proce
 
 	properties, err := jsonToStringMap(e.Properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
+		return nil, fmt.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
 	workbook, err := domain.NewWorkbook(rf, pf, model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
+		return nil, fmt.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
 	return workbook, nil
 }
@@ -141,7 +141,7 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 	for i, e := range workbooks {
 		w, err := e.toWorkbook(r.rf, r.pf, operator, r.toProblemType(e.ProblemTypeID), priv)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toWorkbook. err: %w", err)
+			return nil, fmt.Errorf("failed to toWorkbook. err: %w", err)
 		}
 		results[i] = w
 	}
@@ -203,14 +203,14 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
 	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
+		return nil, fmt.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
 	}
 	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
 	privs := r.getAllWorkbookPrivileges() // TODO
 
 	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+		return nil, fmt.Errorf("failed to checkPrivileges. err: %w", err)
 	}
 
 	// defaultSpace, err := operator.GetDefaultSpace(ctx)
@@ -238,14 +238,14 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator do
 	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
 	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
+		return nil, fmt.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
 	}
 	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
 	privs := r.getAllWorkbookPrivileges() // TODO
 
 	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+		return nil, fmt.Errorf("failed to checkPrivileges. err: %w", err)
 	}
 
 	logger := log.FromContext(ctx)
@@ -317,7 +317,7 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator do
 func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.Student, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
-		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
+		return 0, fmt.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
 	}
 	propertiesJSON, err := stringMapToJSON(param.GetProperties())
 	if err != nil {

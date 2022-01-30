@@ -3,10 +3,9 @@ package gateway
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
-
-	"golang.org/x/xerrors"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	common "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
@@ -42,7 +41,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 		return nil, nil
 	}
 	if err != nil {
-		return nil, xerrors.Errorf("failed to reader.Read. err: %w", err)
+		return nil, fmt.Errorf("failed to reader.Read. err: %w", err)
 	}
 	if len(line) == 0 {
 		return nil, nil
@@ -55,7 +54,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 	if len(line) >= lenPos {
 		posTmp, err := common.ParsePos(line[posPos])
 		if err != nil {
-			return nil, xerrors.Errorf("failed to ParsePos. err: %w", err)
+			return nil, fmt.Errorf("failed to ParsePos. err: %w", err)
 		}
 		pos = posTmp
 	}
@@ -73,7 +72,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 	}
 	param, err := app.NewProblemAddParameter(r.workbookID, r.num, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		return nil, fmt.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 
 	r.num++

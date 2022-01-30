@@ -2,16 +2,16 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/xerrors"
 
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
-var ErrWorkbookNotFound = xerrors.New("Workbook not found")
-var ErrWorkbookAlreadyExists = xerrors.New("Workbook already exists")
-var ErrWorkbookPermissionDenied = xerrors.New("Permission denied")
+var ErrWorkbookNotFound = errors.New("workbook not found")
+var ErrWorkbookAlreadyExists = errors.New("workbook already exists")
+var ErrWorkbookPermissionDenied = errors.New("permission denied")
 
 type WorkbookSearchCondition interface {
 	GetPageNo() int

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -17,7 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
@@ -38,6 +38,7 @@ import (
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
@@ -135,9 +136,17 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
 
-	translatorClient := pluginCommonGateway.NewAzureTranslatorClient(cfg.Azure.SubscriptionKey)
-	translatorRepository := pluginCommonGateway.NewAzureTranslationRepository(db)
-	translator := pluginCommonGateway.NewAzureCachedTranslatorClient(translatorClient, translatorRepository)
+	azureTranslationClient := pluginCommonGateway.NewAzureTranslationClient(cfg.Azure.SubscriptionKey)
+
+	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
+	if err != nil {
+		panic(err)
+	}
+
+	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
+	if err != nil {
+		panic(err)
+	}
 
 	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
@@ -265,9 +274,16 @@ func main() {
 
 	plugin := router.Group("plugin")
 	{
+		plugin.Use(authMiddleware)
 		pluginTranslation := plugin.Group("translation")
-		translationHandler := handlerP.NewTranslationHandler()
+		translationHandler := handlerP.NewTranslationHandler(translator)
 		pluginTranslation.POST("find", translationHandler.FindTranslations)
+		pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
+		pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
+		pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
+		pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
+		pluginTranslation.POST("", translationHandler.AddTranslation)
+		pluginTranslation.POST("export", translationHandler.ExportTranslations)
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -327,7 +343,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := initDB(cfg.DB)
 	if err != nil {
-		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	rf, err := userG.NewRepositoryFactory(db)
@@ -397,7 +413,7 @@ func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
 		}
 
 		if err := appG.MigrateMySQLDB(db); err != nil {
-			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
+			return nil, nil, fmt.Errorf("failed to MigrateMySQLDB. err: %w", err)
 		}
 
 		return db, sqlDB, nil
@@ -412,7 +428,7 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
-			if !xerrors.Is(err, userD.ErrOrganizationNotFound) {
+			if !errors.Is(err, userD.ErrOrganizationNotFound) {
 				return fmt.Errorf("failed to AddOrganization: %w", err)
 			}
 
@@ -450,7 +466,7 @@ func callback(ctx context.Context, testUserEmail string, pf appD.ProcessorFactor
 	if appUser.GetLoginID() == testUserEmail {
 		student, err := appD.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
-			return xerrors.Errorf("failed to NewStudent. err: %w", err)
+			return fmt.Errorf("failed to NewStudent. err: %w", err)
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {

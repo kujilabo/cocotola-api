@@ -1,5 +1,5 @@
 package domain
 
-import "golang.org/x/xerrors"
+import "errors"
 
-var ErrInvalidArgument = xerrors.New("invalid argument")
+var ErrInvalidArgument = errors.New("invalid argument")

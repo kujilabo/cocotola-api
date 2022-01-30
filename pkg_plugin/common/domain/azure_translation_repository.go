@@ -3,17 +3,43 @@ package domain
 import (
 	"context"
 	"errors"
+	"time"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
-var ErrAzureTranslationNotFound = errors.New("azure translation not found")
 var ErrAzureTranslationAlreadyExists = errors.New("azure translation already exists")
 
+type AzureTranslation struct {
+	Pos        WordPos
+	Target     string
+	Confidence float64
+}
+
+func (t *AzureTranslation) ToTranslation(lang app.Lang2, text string) (Translation, error) {
+	return NewTranslation(0, 1, time.Now(), time.Now(), text, t.Pos, lang, t.Target, "azure")
+}
+
+type TranslationSearchCondition struct {
+	PageNo   int
+	PageSize int
+}
+
+type TranslationSearchResult struct {
+	TotalCount int64
+	Results    [][]AzureTranslation
+}
+
 type AzureTranslationRepository interface {
-	Add(ctx context.Context, text string, lang app.Lang2, result []TranslationResult) error
+	Add(ctx context.Context, lang app.Lang2, text string, result []AzureTranslation) error
 
-	Find(ctx context.Context, text string, lang app.Lang2) ([]TranslationResult, error)
+	Find(ctx context.Context, lang app.Lang2, text string) ([]AzureTranslation, error)
 
-	Contain(ctx context.Context, text string, lang app.Lang2) (bool, error)
+	FindByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos WordPos) (Translation, error)
+
+	FindByText(ctx context.Context, lang app.Lang2, text string) ([]Translation, error)
+
+	FindByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]Translation, error)
+
+	Contain(ctx context.Context, lang app.Lang2, text string) (bool, error)
 }
