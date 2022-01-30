@@ -311,7 +311,7 @@ func (t *translator) UpdateTranslation(ctx context.Context, lang app.Lang2, text
 		return nil
 	}
 
-	paramToAdd, err := NewTransaltionAddParameter(text, pos, lang, param.GetTranslated())
+	paramToAdd, err := NewTransalationAddParameter(text, pos, lang, param.GetTranslated())
 	if err != nil {
 		return err
 	}

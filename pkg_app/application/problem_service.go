@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"gorm.io/gorm"
 
@@ -223,6 +224,9 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 
 	for {
 		param, err := iterator.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
 		if err != nil {
 			return err
 		}
@@ -254,6 +258,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			return err
 		}
 	}
+	return nil
 }
 
 func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {

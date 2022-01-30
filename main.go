@@ -38,6 +38,7 @@ import (
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	pluginApplication "github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
@@ -141,6 +142,9 @@ func main() {
 	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
 	if err != nil {
 		panic(err)
+	}
+	pluginRepoFunc := func(db *gorm.DB) (pluginCommonDomain.RepositoryFactory, error) {
+		return pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
 	}
 
 	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
@@ -275,15 +279,31 @@ func main() {
 	plugin := router.Group("plugin")
 	{
 		plugin.Use(authMiddleware)
-		pluginTranslation := plugin.Group("translation")
-		translationHandler := handlerP.NewTranslationHandler(translator)
-		pluginTranslation.POST("find", translationHandler.FindTranslations)
-		pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
-		pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
-		pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
-		pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
-		pluginTranslation.POST("", translationHandler.AddTranslation)
-		pluginTranslation.POST("export", translationHandler.ExportTranslations)
+		{
+			pluginTranslation := plugin.Group("translation")
+			translationHandler := handlerP.NewTranslationHandler(translator)
+			pluginTranslation.POST("find", translationHandler.FindTranslations)
+			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
+			pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
+			pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
+			pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
+			pluginTranslation.POST("", translationHandler.AddTranslation)
+			pluginTranslation.POST("export", translationHandler.ExportTranslations)
+		}
+		{
+			newSentenceReader := func(reader io.Reader) pluginCommonDomain.TatoebaSentenceAddParameterIterator {
+				return pluginCommonGateway.NewTatoebaSentenceAddParameterReader(reader)
+			}
+			newLinkReader := func(reader io.Reader) pluginCommonDomain.TatoebaLinkAddParameterIterator {
+				return pluginCommonGateway.NewTatoebaLinkAddParameterReader(reader)
+			}
+			pluginTatoeba := plugin.Group("tatoeba")
+			tatoebaService := pluginApplication.NewTatoebaService(db, pluginRepoFunc)
+			tatoebaHandler := handlerP.NewTatoebaHandler(tatoebaService, newSentenceReader, newLinkReader)
+			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
+			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
+
+		}
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

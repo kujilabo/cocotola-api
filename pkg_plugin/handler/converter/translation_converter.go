@@ -61,7 +61,7 @@ func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAdd
 	if err != nil {
 		return nil, err
 	}
-	return domain.NewTransaltionAddParameter(param.Text, pos, lang, param.Translated)
+	return domain.NewTransalationAddParameter(param.Text, pos, lang, param.Translated)
 }
 
 func ToTranslationUpdateParameter(ctx context.Context, param *entity.TranslationUpdateParameter) (domain.TranslationUpdateParameter, error) {

@@ -26,3 +26,11 @@ func (f *repositoryFactory) NewAzureTranslationRepository(ctx context.Context) (
 func (f *repositoryFactory) NewCustomTranslationRepository(ctx context.Context) (domain.CustomTranslationRepository, error) {
 	return NewCustomTranslationRepository(f.db), nil
 }
+
+func (f *repositoryFactory) NewTatoebaSentenceRepository(ctx context.Context) (domain.TatoebaSentenceRepository, error) {
+	return NewTatoebaSentenceRepository(f.db), nil
+}
+
+func (f *repositoryFactory) NewTatoebaLinkRepository(ctx context.Context) (domain.TatoebaLinkRepository, error) {
+	return NewTatoebaLinkRepository(f.db), nil
+}
