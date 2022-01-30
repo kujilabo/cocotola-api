@@ -28,7 +28,7 @@ type translationAddParameter struct {
 	Translated string
 }
 
-func NewTransaltionAddParameter(text string, pos WordPos, lang app.Lang2, translated string) (TranslationAddParameter, error) {
+func NewTransalationAddParameter(text string, pos WordPos, lang app.Lang2, translated string) (TranslationAddParameter, error) {
 	m := &translationAddParameter{
 		Text:       text,
 		Pos:        pos,

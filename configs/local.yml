@@ -32,7 +32,7 @@ shutdown:
   timeSec1: 1
   timeSec2: 1
 log:
-  level: debug
+  level: info
 debug:
   ginMode: true
   wait: true

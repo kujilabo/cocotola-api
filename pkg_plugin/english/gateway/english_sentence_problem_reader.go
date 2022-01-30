@@ -8,7 +8,7 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
-type engliushSentenceProblemAddParameterCSVReader struct {
+type englishSentenceProblemAddParameterCSVReader struct {
 	workbookID app.WorkbookID
 	// problemType string
 	reader *csv.Reader
@@ -16,7 +16,7 @@ type engliushSentenceProblemAddParameterCSVReader struct {
 }
 
 func NewEnglishSentenceProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator {
-	return &engliushSentenceProblemAddParameterCSVReader{
+	return &englishSentenceProblemAddParameterCSVReader{
 		workbookID: workbookID,
 		// problemType: problemType,
 		reader: csv.NewReader(reader),
@@ -24,11 +24,11 @@ func NewEnglishSentenceProblemAddParameterCSVReader(workbookID app.WorkbookID, r
 	}
 }
 
-func (r *engliushSentenceProblemAddParameterCSVReader) Next() (app.ProblemAddParameter, error) {
+func (r *englishSentenceProblemAddParameterCSVReader) Next() (app.ProblemAddParameter, error) {
 	var line []string
 	line, err := r.reader.Read()
 	if errors.Is(err, io.EOF) {
-		return nil, nil
+		return nil, err
 	}
 
 	if err != nil {
