@@ -197,17 +197,27 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 		return nil
 	}, h.errorHandle)
 }
+
 func (h *translationHandler) ExportTranslations(c *gin.Context) {
-	csvStruct := [][]string{
-		{"name", "address", "phone"},
-		{"Ram", "Tokyo", "1236524"},
-		{"Shaym", "Beijing", "8575675484"},
-	}
-	b := new(bytes.Buffer)
-	w := csv.NewWriter(b)
-	w.WriteAll(csvStruct)
-	c.Writer.Write(b.Bytes())
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+		csvStruct := [][]string{
+			{"name", "address", "phone"},
+			{"Ram", "Tokyo", "1236524"},
+			{"Shaym", "Beijing", "8575675484"},
+		}
+		b := new(bytes.Buffer)
+		w := csv.NewWriter(b)
+		if err := w.WriteAll(csvStruct); err != nil {
+			return err
+		}
+		if _, err := c.Writer.Write(b.Bytes()); err != nil {
+			return err
+		}
+		c.Status(http.StatusOK)
+		return nil
+	}, h.errorHandle)
 }
+
 func (h *translationHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)

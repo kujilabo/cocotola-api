@@ -9,9 +9,9 @@ import (
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
-var ErrWorkbookNotFound = errors.New("Workbook not found")
-var ErrWorkbookAlreadyExists = errors.New("Workbook already exists")
-var ErrWorkbookPermissionDenied = errors.New("Permission denied")
+var ErrWorkbookNotFound = errors.New("workbook not found")
+var ErrWorkbookAlreadyExists = errors.New("workbook already exists")
+var ErrWorkbookPermissionDenied = errors.New("permission denied")
 
 type WorkbookSearchCondition interface {
 	GetPageNo() int

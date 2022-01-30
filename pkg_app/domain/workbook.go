@@ -213,7 +213,7 @@ func (m *workbook) UpdateWorkbook(ctx context.Context, operator Student, version
 
 	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewWorkbookRepository. err: %v", err)
+		return fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.UpdateWorkbook(ctx, operator, WorkbookID(m.GetID()), version, parameter)
@@ -226,7 +226,7 @@ func (m *workbook) RemoveWorkbook(ctx context.Context, operator Student, version
 
 	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewWorkbookRepository. err: %v", err)
+		return fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.RemoveWorkbook(ctx, operator, WorkbookID(m.GetID()), version)
