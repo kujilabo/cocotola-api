@@ -3,9 +3,9 @@ package gateway
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -90,7 +90,7 @@ func (r *recordbookRepository) toStudyTypeID(studyType string) uint {
 func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
 	studyTypeID := r.toStudyTypeID(studyType)
 	if studyTypeID == 0 {
-		return nil, fmt.Errorf("unsupported studyType. studyType: %s", studyType)
+		return nil, xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
 	}
 
 	var entities []recordbookEntity
@@ -116,12 +116,12 @@ func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.St
 
 	studyTypeID := r.toStudyTypeID(studyType)
 	if studyTypeID == 0 {
-		return fmt.Errorf("unsupported studyType. studyType: %s", studyType)
+		return xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
 	}
 
 	problemTypeID := r.toProblemTypeID(problemType)
 	if studyTypeID == 0 {
-		return fmt.Errorf("unsupported problemType. problemType: %s", problemType)
+		return xerrors.Errorf("unsupported problemType. problemType: %s", problemType)
 	}
 
 	if memorized {

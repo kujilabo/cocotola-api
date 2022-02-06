@@ -3,11 +3,11 @@ package gateway
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -65,7 +65,7 @@ func (r *customTranslationRepository) Add(ctx context.Context, param domain.Tran
 
 	if result := r.db.Create(&entity); result.Error != nil {
 		err := libG.ConvertDuplicatedError(result.Error, domain.ErrTranslationAlreadyExists)
-		return 0, fmt.Errorf("failed to Add translation. err: %w", err)
+		return 0, xerrors.Errorf("failed to Add translation. err: %w", err)
 	}
 
 	return domain.TranslationID(entity.ID), nil

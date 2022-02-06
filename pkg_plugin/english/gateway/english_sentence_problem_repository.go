@@ -3,10 +3,10 @@ package gateway
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -66,20 +66,20 @@ type newEnglishSentenceProblemParam struct {
 
 func toNewEnglishSentenceProblemParam(param app.ProblemAddParameter) (*newEnglishSentenceProblemParam, error) {
 	if _, ok := param.GetProperties()["audioId"]; !ok {
-		return nil, fmt.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, fmt.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, fmt.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
-		return nil, fmt.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
 	}
 
 	m := &newEnglishSentenceProblemParam{
@@ -156,7 +156,7 @@ func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, 
 	for i, e := range problemEntities {
 		p, err := e.toProblem()
 		if err != nil {
-			return nil, fmt.Errorf("failed to toProblem. err: %w", err)
+			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}

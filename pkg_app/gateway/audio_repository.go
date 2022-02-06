@@ -3,8 +3,8 @@ package gateway
 import (
 	"context"
 	"errors"
-	"fmt"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -81,7 +81,7 @@ func (r *audioRepository) FindAudioIDByText(ctx context.Context, lang domain.Lan
 	}
 	model, err := entity.toAudio()
 	if err != nil {
-		return 0, fmt.Errorf("failed to toAudio. entity: %v, err: %w", entity, err)
+		return 0, xerrors.Errorf("failed to toAudio. entity: %v, err: %w", entity, err)
 	}
 	return domain.AudioID(model.GetID()), nil
 }

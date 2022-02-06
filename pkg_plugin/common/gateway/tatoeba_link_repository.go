@@ -3,8 +3,8 @@ package gateway
 import (
 	"context"
 	"errors"
-	"fmt"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
@@ -38,14 +38,15 @@ func (r *tatoebaLinkRepository) Add(ctx context.Context, param domain.TatoebaLin
 
 	if result := r.db.Create(&entity); result.Error != nil {
 		if err := libG.ConvertDuplicatedError(result.Error, domain.ErrTatoebaLinkAlreadyExists); errors.Is(err, domain.ErrTatoebaLinkAlreadyExists) {
-			return fmt.Errorf("failed to Add tatoebaLink. err: %w", err)
+			return xerrors.Errorf("failed to Add tatoebaLink. err: %w", err)
 		}
 
 		if err := libG.ConvertRelationError(result.Error, domain.ErrTatoebaLinkSourceNotFound); errors.Is(err, domain.ErrTatoebaLinkSourceNotFound) {
+			// nothing
 			return nil
 		}
 
-		return fmt.Errorf("failed to Add tatoebaLink. err: %w", result.Error)
+		return xerrors.Errorf("failed to Add tatoebaLink. err: %w", result.Error)
 	}
 
 	return nil

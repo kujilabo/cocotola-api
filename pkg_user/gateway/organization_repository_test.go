@@ -1,4 +1,4 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
 
 func TestGetOrganization(t *testing.T) {
@@ -29,9 +30,9 @@ func TestGetOrganization(t *testing.T) {
 		defer sqlDB.Close()
 
 		// delete all organizations
-		db.Where("true").Delete(&organizationEntity{})
+		db.Exec("delete from organization")
 
-		orgRepo := NewOrganizationRepository(db)
+		orgRepo := gateway.NewOrganizationRepository(db)
 
 		// register new organization
 		orgID, err := orgRepo.AddOrganization(bg, sysAd, orgAddParam)
@@ -76,9 +77,10 @@ func TestFindOrganizationByName(t *testing.T) {
 		defer sqlDB.Close()
 
 		// delete all organizations
-		db.Where("true").Delete(&organizationEntity{})
+		db.Exec("delete from organization")
+		// db.Where("true").Delete(&organizationEntity{})
 
-		orgRepo := NewOrganizationRepository(db)
+		orgRepo := gateway.NewOrganizationRepository(db)
 
 		// register new organization
 		orgID, err := orgRepo.AddOrganization(bg, sysAd, orgAddParam)
@@ -117,9 +119,10 @@ func TestAddOrganization(t *testing.T) {
 		defer sqlDB.Close()
 
 		// delete all organizations
-		db.Where("true").Delete(&organizationEntity{})
+		db.Exec("delete from organization")
+		// db.Where("true").Delete(&organizationEntity{})
 
-		orgRepo := NewOrganizationRepository(db)
+		orgRepo := gateway.NewOrganizationRepository(db)
 
 		// register new organization
 		{

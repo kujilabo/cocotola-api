@@ -2,13 +2,13 @@ package english_word
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
+	"golang.org/x/xerrors"
 )
 
 func CreateDemoWorkbook(ctx context.Context, student appD.Student) error {
@@ -371,17 +371,17 @@ func CreateWorkbook(ctx context.Context, student appD.Student, workbookName stri
 	}
 	param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
 	if err != nil {
-		return fmt.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
+		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
 	}
 
 	workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
 	if err != nil {
-		return fmt.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+		return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
 	}
 
 	workbook, err := student.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
-		return fmt.Errorf("failed to FindWorkbookByID. err: %w", err)
+		return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 	}
 
 	for i, word := range words {
@@ -392,12 +392,12 @@ func CreateWorkbook(ctx context.Context, student appD.Student, workbookName stri
 		}
 		param, err := appD.NewProblemAddParameter(workbookID, i+1, properties)
 		if err != nil {
-			return fmt.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		_, problemID, err := workbook.AddProblem(ctx, student, param)
 		if err != nil {
-			return fmt.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 		logger.Infof("problemID: %d", problemID)
 	}

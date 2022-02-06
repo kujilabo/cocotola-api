@@ -3,13 +3,13 @@ package domain
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 	"time"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	"golang.org/x/xerrors"
 )
 
 var ErrTranslationNotFound = errors.New("translation not found")
@@ -116,7 +116,7 @@ func (t *translator) azureDictionaryLookup(ctx context.Context, fromLang, toLang
 	}
 
 	if err := azureRepo.Add(ctx, toLang, text, azureResults); err != nil {
-		return nil, fmt.Errorf("failed to add auzre_translation. err: %w", err)
+		return nil, xerrors.Errorf("failed to add auzre_translation. err: %w", err)
 	}
 
 	return azureResults, nil

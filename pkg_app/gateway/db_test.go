@@ -1,10 +1,9 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 )
 
@@ -52,16 +52,16 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 
 	driver, err := withInstance(sqlDB)
 	if err != nil {
-		log.Fatal(fmt.Errorf("failed to WithInstance. err: %w", err))
+		log.Fatal(xerrors.Errorf("failed to WithInstance. err: %w", err))
 	}
 	m, err := migrate.NewWithDatabaseInstance("file://"+dir, driverName, driver)
 	if err != nil {
-		log.Fatal(fmt.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
+		log.Fatal(xerrors.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
 	}
 
 	if err := m.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal(fmt.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
+			log.Fatal(xerrors.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
 		}
 	}
 }

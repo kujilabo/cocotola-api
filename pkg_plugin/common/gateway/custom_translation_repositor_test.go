@@ -1,4 +1,4 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 )
 
 func Test_customTranslationRepository_FindByFirstLetter(t *testing.T) {
@@ -49,11 +50,9 @@ func Test_customTranslationRepository_FindByFirstLetter(t *testing.T) {
 				wantErr: false,
 			},
 		}
+		r := gateway.NewCustomTranslationRepository(db)
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				r := &customTranslationRepository{
-					db: db,
-				}
 				got, err := r.FindByFirstLetter(bg, tt.args.lang, tt.args.firstLetter)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("customTranslationRepository.FindByFirstLetter() error = %v, wantErr %v", err, tt.wantErr)

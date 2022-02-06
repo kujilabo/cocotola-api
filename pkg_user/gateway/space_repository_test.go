@@ -1,4 +1,4 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
 
 func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
@@ -50,7 +51,7 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 				err:  nil,
 			},
 		}
-		spaceRepo := NewSpaceRepository(db)
+		spaceRepo := gateway.NewSpaceRepository(db)
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := spaceRepo.FindDefaultSpace(bg, tt.args.operator)
@@ -104,7 +105,7 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 				err:  nil,
 			},
 		}
-		spaceRepo := NewSpaceRepository(db)
+		spaceRepo := gateway.NewSpaceRepository(db)
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := spaceRepo.FindPersonalSpace(bg, tt.args.operator)

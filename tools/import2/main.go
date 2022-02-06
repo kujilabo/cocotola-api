@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
@@ -89,7 +90,7 @@ func checkFile(csvFilePath string) error {
 		}
 
 		if len(line) != columnLength {
-			return fmt.Errorf("invalid umber of column. row: %d", i)
+			return xerrors.Errorf("invalid umber of column. row: %d", i)
 		}
 
 		i++
@@ -144,11 +145,11 @@ func initProblems(ctx context.Context, operator appD.Student, workbook appD.Work
 		m := p.GetProperties(ctx)
 		textObj, ok := m["text"]
 		if !ok {
-			return nil, fmt.Errorf("text not found. %v", m)
+			return nil, xerrors.Errorf("text not found. %v", m)
 		}
 		text, ok := textObj.(string)
 		if !ok {
-			return nil, fmt.Errorf("text is not string. %v", m)
+			return nil, xerrors.Errorf("text is not string. %v", m)
 		}
 
 		problemMap[text] = true

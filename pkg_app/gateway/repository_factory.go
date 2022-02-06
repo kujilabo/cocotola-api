@@ -2,8 +2,8 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -59,7 +59,7 @@ func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.W
 func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (domain.ProblemRepository, error) {
 	problemRepository, ok := f.problemRepositories[problemType]
 	if !ok {
-		return nil, fmt.Errorf("problem repository not found. problemType: %s", problemType)
+		return nil, xerrors.Errorf("problem repository not found. problemType: %s", problemType)
 	}
 	return problemRepository(f.db)
 }

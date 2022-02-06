@@ -1,6 +1,6 @@
 package domain
 
-import "fmt"
+import "golang.org/x/xerrors"
 
 const Lang2Len = 2
 const Lang3Len = 3
@@ -17,7 +17,7 @@ type lang2 struct {
 
 func NewLang2(lang string) (Lang2, error) {
 	if len(lang) != Lang2Len {
-		return nil, fmt.Errorf("invalid parameter. Lang2: %s", lang)
+		return nil, xerrors.Errorf("invalid parameter. Lang2: %s", lang)
 	}
 
 	return &lang2{
@@ -50,7 +50,7 @@ type lang3 struct {
 
 func NewLang3(lang string) (Lang3, error) {
 	if len(lang) != Lang3Len {
-		return nil, fmt.Errorf("invalid parameter. Lang3: %s", lang)
+		return nil, xerrors.Errorf("invalid parameter. Lang3: %s", lang)
 	}
 
 	return &lang3{
@@ -73,7 +73,7 @@ type lang5 struct {
 
 func NewLang5(lang string) (Lang5, error) {
 	if len(lang) != Lang5Len {
-		return nil, fmt.Errorf("invalid parameter. Lang5: %s", lang)
+		return nil, xerrors.Errorf("invalid parameter. Lang5: %s", lang)
 	}
 
 	return &lang5{

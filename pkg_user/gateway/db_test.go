@@ -1,10 +1,9 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -13,7 +12,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 )
 
@@ -51,16 +52,16 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 
 	driver, err := withInstance(sqlDB)
 	if err != nil {
-		log.Fatal(fmt.Errorf("failed to WithInstance. err: %w", err))
+		log.Fatal(xerrors.Errorf("failed to WithInstance. err: %w", err))
 	}
 	m, err := migrate.NewWithDatabaseInstance("file://"+dir, driverName, driver)
 	if err != nil {
-		log.Fatal(fmt.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
+		log.Fatal(xerrors.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
 	}
 
 	if err := m.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal(fmt.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
+			log.Fatal(xerrors.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
 		}
 	}
 }
@@ -75,18 +76,21 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	assert.NoError(t, err)
 
 	// delete all organizations
-	db.Where("true").Delete(&spaceEntity{})
-	db.Where("true").Delete(&appUserEntity{})
-	db.Where("true").Delete(&organizationEntity{})
+	db.Exec("delete from space")
+	db.Exec("delete from app_user")
+	db.Exec("delete from organization")
+	// db.Where("true").Delete(&spaceEntity{})
+	// db.Where("true").Delete(&appUserEntity{})
+	// db.Where("true").Delete(&organizationEntity{})
 
-	orgRepo := NewOrganizationRepository(db)
+	orgRepo := gateway.NewOrganizationRepository(db)
 
 	// register new organization
 	orgID, err := orgRepo.AddOrganization(bg, sysAd, orgAddParam)
 	assert.NoError(t, err)
 	assert.Greater(t, int(uint(orgID)), 0)
 
-	appUserRepo := NewAppUserRepository(nil, db)
+	appUserRepo := gateway.NewAppUserRepository(nil, db)
 	sysOwnerID, err := appUserRepo.AddSystemOwner(bg, sysAd, orgID)
 	assert.NoError(t, err)
 	assert.Greater(t, int(uint(sysOwnerID)), 0)
@@ -102,7 +106,7 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	firstOwner, err := appUserRepo.FindOwnerByLoginID(bg, sysOwner, "OWNER_ID")
 	assert.NoError(t, err)
 
-	spaceRepo := NewSpaceRepository(db)
+	spaceRepo := gateway.NewSpaceRepository(db)
 	_, err = spaceRepo.AddDefaultSpace(bg, sysOwner)
 	assert.NoError(t, err)
 	_, err = spaceRepo.AddPersonalSpace(bg, sysOwner, firstOwner)
