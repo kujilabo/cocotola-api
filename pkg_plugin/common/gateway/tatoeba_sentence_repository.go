@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	shuffleBufferRate = 10
+)
+
 type tatoebaSentenceRepository struct {
 	db *gorm.DB
 }
@@ -225,7 +229,7 @@ func min(x, y int) int {
 func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("tatoebaSentenceRepository.FindTatoebaSentences")
-	limit := param.GetPageSize() * 10
+	limit := param.GetPageSize() * shuffleBufferRate
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 
 	where := func() *gorm.DB {
