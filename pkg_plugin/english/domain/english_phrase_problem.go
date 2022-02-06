@@ -3,9 +3,8 @@ package domain
 import (
 	"context"
 
-	"github.com/go-playground/validator"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 const EnglishPhraseProblemType = "english_phrase"
@@ -35,8 +34,7 @@ func NewEnglishPhraseProblem(problem app.Problem, audioID app.AudioID, text stri
 		Translated: translated,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *englishPhraseProblem) GetAudioID() app.AudioID {

@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/go-playground/validator"
+import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type OrganizationID uint
 
@@ -19,8 +19,7 @@ func NewOrganization(model Model, name string) (Organization, error) {
 		Model: model,
 		Name:  name,
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *organization) GetName() string {

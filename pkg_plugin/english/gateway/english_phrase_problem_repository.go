@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-playground/validator"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
@@ -93,8 +93,7 @@ func toNewEnglishPhraseProblemParam(param app.ProblemAddParameter) (*newEnglishP
 		Text:       text,
 		Translated: translated,
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type englishPhraseProblemRepository struct {
@@ -201,12 +200,12 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 	}, nil
 }
 
-func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, workbookID app.WorkbookID, problemID app.ProblemID) (app.Problem, error) {
+func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
 	var problemEntity englishPhraseProblemEntity
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(workbookID))
-	db = db.Where("id = ?", uint(problemID))
+	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID()))
 	if result := db.First(&problemEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, app.ErrProblemNotFound
@@ -274,15 +273,15 @@ func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operato
 	return app.ProblemID(englishPhraseProblem.ID), nil
 }
 
-func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) error {
 	return errors.New("not implemented")
 }
 
-func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {
+func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 
-	logger.Infof("englishPhraseProblemRepository.RemoveProblem. text: %d", problemID)
-	result := r.db.Where("id = ? and version = ?", uint(problemID), version).Delete(&englishPhraseProblemEntity{})
+	logger.Infof("englishPhraseProblemRepository.RemoveProblem. text: %d", id.GetProblemID())
+	result := r.db.Where("id = ? and version = ?", uint(id.GetProblemID()), id.GetVersion()).Delete(&englishPhraseProblemEntity{})
 	if result.Error != nil {
 		return result.Error
 	} else if result.RowsAffected == 0 {

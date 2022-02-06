@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/go-playground/validator"
+import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type StudyType interface {
 	GetID() uint
@@ -18,8 +18,7 @@ func NewStudyType(id uint, name string) (StudyType, error) {
 		Name: name,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *studyType) GetID() uint {

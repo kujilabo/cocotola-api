@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 var ErrOrganizationNotFound = errors.New("organization not found")
@@ -28,8 +28,7 @@ func NewFirstOwnerAddParameter(loginID, username, password string) (FirstOwnerAd
 		Username: username,
 		Password: password,
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *firstOwnerAddParameter) GetLoginID() string {
@@ -57,8 +56,7 @@ func NewOrganizationAddParameter(name string, firstOwner FirstOwnerAddParameter)
 		Name:       name,
 		FirstOwner: firstOwner,
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *organizationAddParameter) GetName() string {

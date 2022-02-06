@@ -20,3 +20,12 @@ func ConvertDuplicatedError(err error, newErr error) error {
 
 	return err
 }
+
+func ConvertRelationError(err error, newErr error) error {
+	var mysqlErr *mysql.MySQLError
+	if ok := errors.As(err, &mysqlErr); ok && mysqlErr.Number == 1452 {
+		return newErr
+	}
+
+	return err
+}

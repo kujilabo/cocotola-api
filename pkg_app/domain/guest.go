@@ -1,8 +1,7 @@
 package domain
 
 import (
-	"github.com/go-playground/validator"
-
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -19,6 +18,5 @@ func NewGuest(appUser user.AppUser) (Guest, error) {
 		AppUser: appUser,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }

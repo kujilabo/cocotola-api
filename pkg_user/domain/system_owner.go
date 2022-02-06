@@ -3,8 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/go-playground/validator"
-
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
@@ -33,8 +32,7 @@ func NewSystemOwner(rf RepositoryFactory, appUser AppUser) (SystemOwner, error) 
 		AppUser: appUser,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (s *systemOwner) GetOrganization(ctx context.Context) (Organization, error) {

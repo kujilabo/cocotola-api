@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-playground/validator"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -122,8 +121,7 @@ func toEnglishWordProblemAddParameter(param app.ProblemAddParameter) (*englishWo
 		Pos:        pos,
 		Translated: param.GetProperties()["translated"],
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type englishWordProblemUpdateParemeter struct {
@@ -160,8 +158,7 @@ func toEnglishWordProblemUpdateParameter(param app.ProblemUpdateParameter) (*eng
 		Text:       param.GetProperties()["text"],
 		Translated: param.GetProperties()["translated"],
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type englishWordProblemRepository struct {
@@ -184,7 +181,8 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 	var problemEntities []englishWordProblemEntity
 
 	where := func() *gorm.DB {
-		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
+		return r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(param.GetWorkbookID()))
 	}
 	if result := where().Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
@@ -220,7 +218,8 @@ func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, oper
 	var problemEntities []englishWordProblemEntity
 
 	where := func() *gorm.DB {
-		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+		return r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(workbookID))
 	}
 	if result := where().Order("workbook_id, number, created_at").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
@@ -257,9 +256,9 @@ func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Cont
 		ids = append(ids, uint(id))
 	}
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(param.GetWorkbookID()))
-	db = db.Where("id in ?", ids)
+	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(param.GetWorkbookID())).
+		Where("id in ?", ids)
 	if result := db.Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -278,12 +277,12 @@ func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Cont
 	}, nil
 }
 
-func (r *englishWordProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, workbookID app.WorkbookID, problemID app.ProblemID) (app.Problem, error) {
+func (r *englishWordProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
 	var problemEntity englishWordProblemEntity
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(workbookID))
-	db = db.Where("id = ?", uint(problemID))
+	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID()))
 	if result := db.First(&problemEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, app.ErrProblemNotFound
@@ -303,7 +302,8 @@ func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, opera
 		offset := (pageNo - 1) * pageSize
 		var problemEntities []englishWordProblemEntity
 
-		where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+		where := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(workbookID))
 		if result := where.Order("workbook_id, number, created_at").
 			Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 			return nil, result.Error
@@ -357,7 +357,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 	return app.ProblemID(englishWordProblem.ID), nil
 }
 
-func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, param app.ProblemUpdateParameter) error {
+func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) error {
 	logger := log.FromContext(ctx)
 
 	problemParam, err := toEnglishWordProblemUpdateParameter(param)
@@ -365,7 +365,7 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 		return fmt.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
 	}
 	englishWordProblem := englishWordProblemEntity{
-		Version:           1,
+		Version:           id.GetVersion() + 1,
 		UpdatedBy:         operator.GetID(),
 		AudioID:           problemParam.AudioID,
 		Number:            param.GetNumber(),
@@ -378,18 +378,26 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 	}
 
 	logger.Infof("englishWordProblemRepository.UpdateProblem. text: %s", problemParam.Text)
-	if result := r.db.UpdateColumns(&englishWordProblem); result.Error != nil {
+	if result := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID())).
+		Where("version = ?", id.GetVersion()).
+		UpdateColumns(&englishWordProblem); result.Error != nil {
 		return fmt.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists))
 	}
 
 	return nil
 }
 
-func (r *englishWordProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, problemID app.ProblemID, version int) error {
+func (r *englishWordProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 
-	logger.Infof("englishWordProblemRepository.RemoveProblem. text: %d", problemID)
-	result := r.db.Where("id = ? and version = ?", uint(problemID), version).Delete(&englishWordProblemEntity{})
+	logger.Infof("englishWordProblemRepository.RemoveProblem. ProblemID: %d", id.GetProblemID())
+	result := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID())).
+		Where("version = ?", id.GetVersion()).
+		Delete(&englishWordProblemEntity{})
 	if result.Error != nil {
 		return result.Error
 	} else if result.RowsAffected == 0 {

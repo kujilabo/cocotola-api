@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/go-playground/validator"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -26,8 +26,7 @@ func NewModel(model user.Model) (Model, error) {
 		UpdatedBy: model.GetUpdatedBy(),
 	}
 
-	v := validator.New()
-	return m, v.Struct(&m)
+	return m, lib.Validator.Struct(m)
 }
 
 type Workbook struct {

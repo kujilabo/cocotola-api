@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator"
-
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -51,8 +50,7 @@ func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRepo user.Reposit
 		userRepo: userRepo,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (s *student) GetDefaultSpace(ctx context.Context) (user.Space, error) {

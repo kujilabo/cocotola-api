@@ -13,11 +13,11 @@ type ProblemAddProcessor interface {
 }
 
 type ProblemUpdateProcessor interface {
-	UpdateProblem(ctx context.Context, repo RepositoryFactory, operator Student, workbook Workbook, param ProblemUpdateParameter) (Added, Updated, error)
+	UpdateProblem(ctx context.Context, repo RepositoryFactory, operator Student, workbook Workbook, id ProblemSelectParameter2, param ProblemUpdateParameter) (Added, Updated, error)
 }
 
 type ProblemRemoveProcessor interface {
-	RemoveProblem(ctx context.Context, repo RepositoryFactory, operator Student, problemID ProblemID, version int) error
+	RemoveProblem(ctx context.Context, repo RepositoryFactory, operator Student, id ProblemSelectParameter2) error
 }
 
 type ProblemImportProcessor interface {

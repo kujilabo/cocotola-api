@@ -9,7 +9,7 @@ import (
 )
 
 func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindParameter, workbookID domain.WorkbookID) (domain.ProblemSearchCondition, error) {
-	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, "")
+	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, param.Keyword)
 }
 
 func ToProblemFindResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
@@ -103,11 +103,11 @@ func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAd
 	return domain.NewProblemAddParameter(workbookID, param.Number, properties)
 }
 
-func ToProblemUpdateParameter(workbookID domain.WorkbookID, param *entity.ProblemUpdateParameter) (domain.ProblemUpdateParameter, error) {
+func ToProblemUpdateParameter(param *entity.ProblemUpdateParameter) (domain.ProblemUpdateParameter, error) {
 	var properties map[string]string
 	if err := json.Unmarshal(param.Properties, &properties); err != nil {
 		return nil, err
 	}
 
-	return domain.NewProblemUpdateParameter(workbookID, param.Number, properties)
+	return domain.NewProblemUpdateParameter(param.Number, properties)
 }

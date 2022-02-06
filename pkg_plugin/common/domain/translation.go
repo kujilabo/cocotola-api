@@ -3,9 +3,8 @@ package domain
 import (
 	"time"
 
-	"github.com/go-playground/validator"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type TranslationID uint
@@ -47,8 +46,7 @@ func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedA
 		Provider:   provider,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (t *translation) GetID() TranslationID {

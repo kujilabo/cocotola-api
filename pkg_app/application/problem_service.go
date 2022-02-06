@@ -20,15 +20,15 @@ type ProblemService interface {
 
 	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error)
 
-	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error)
+	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter1) (domain.Problem, error)
 
 	FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
 
 	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error)
 
-	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemUpdateParameter) error
+	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error
 
-	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error
+	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2) error
 
 	ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error
 }
@@ -106,14 +106,14 @@ func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID) (domain.Problem, error) {
+func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter1) (domain.Problem, error) {
 	var result domain.Problem
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		tmpResult, err := workbook.FindProblemByID(ctx, student, problemID)
+		tmpResult, err := workbook.FindProblemByID(ctx, student, id.GetProblemID())
 		if err != nil {
 			return err
 		}
@@ -165,13 +165,13 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 	return result, nil
 }
 
-func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemUpdateParameter) error {
+func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		if err := s.updateProblem(ctx, student, workbook, param); err != nil {
+		if err := s.updateProblem(ctx, student, workbook, id, param); err != nil {
 			return fmt.Errorf("failed to UpdateProblem. err: %w", err)
 		}
 		return nil
@@ -181,16 +181,16 @@ func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.
 	return nil
 }
 
-func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, version int) error {
+func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("ProblemService.RemoveProblem")
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		if err := workbook.RemoveProblem(ctx, student, problemID, version); err != nil {
+		if err := workbook.RemoveProblem(ctx, student, id); err != nil {
 			return err
 		}
 		problemType := workbook.GetProblemType()
@@ -302,7 +302,7 @@ func (s *problemService) addProblem(ctx context.Context, student domain.Student,
 	return id, nil
 }
 
-func (s *problemService) updateProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, param domain.ProblemUpdateParameter) error {
+func (s *problemService) updateProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
 		return err
@@ -310,9 +310,9 @@ func (s *problemService) updateProblem(ctx context.Context, student domain.Stude
 	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
 		return err
 	}
-	added, updated, err := workbook.UpdateProblem(ctx, student, param)
+	added, updated, err := workbook.UpdateProblem(ctx, student, id, param)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to UpdateProblem. err: %w", err)
 	}
 	if added > 0 {
 		if err := student.IncrementQuotaUsage(ctx, problemType, "Size", int(added)); err != nil {

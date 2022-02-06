@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator/v10"
-
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -32,8 +31,7 @@ func NewWorkbookSearchCondition(pageNo, pageSize int, spaceIDs []user.SpaceID) (
 		SpaceIDs: spaceIDs,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *workbookSearchCondition) GetPageNo() int {
@@ -70,8 +68,7 @@ func NewWorkbookAddParameter(problemType string, name, questionText string, prop
 		Properties:   properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *workbookAddParameter) GetProblemType() string {
@@ -106,8 +103,7 @@ func NewWorkbookUpdateParameter(name, questionText string) (WorkbookUpdateParame
 		QuestionText: questionText,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *workbookUpdateParameter) GetName() string {

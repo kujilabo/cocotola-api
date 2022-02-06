@@ -3,8 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/go-playground/validator"
-
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -32,8 +31,7 @@ func NewProblem(model user.Model, number int, problemType string, properties map
 		Properties:  properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *problem) GetNumber() int {

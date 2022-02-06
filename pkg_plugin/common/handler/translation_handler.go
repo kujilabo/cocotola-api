@@ -11,8 +11,8 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/handler/converter"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
@@ -221,6 +221,7 @@ func (h *translationHandler) ExportTranslations(c *gin.Context) {
 func (h *translationHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
+
 	if errors.Is(err, domain.ErrTranslationAlreadyExists) {
 		logger.Warnf("translationHandler. err: %v", err)
 		c.JSON(http.StatusConflict, gin.H{"message": "Translation already exists"})

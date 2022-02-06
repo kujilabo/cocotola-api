@@ -5,7 +5,7 @@ import (
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 )
 
 func ToTranslationFindResposne(ctx context.Context, translations []domain.Translation) (*entity.TranslationFindResponse, error) {

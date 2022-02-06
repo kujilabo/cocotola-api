@@ -5,9 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-playground/validator"
-
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 var ErrTatoebaSentenceAlreadyExists = errors.New("tatoebaSentence already exists")
@@ -37,8 +36,7 @@ func NewTatoebaSentenceAddParameter(sentenceNumber int, lang appD.Lang3, text, a
 		UpdatedAt:      updatedAt,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *tatoebaSentenceAddParameter) GetSentenceNumber() int {
@@ -61,6 +59,54 @@ func (p *tatoebaSentenceAddParameter) GetUpdatedAt() time.Time {
 	return p.UpdatedAt
 }
 
+type TatoebaSentenceSearchCondition interface {
+	GetPageNo() int
+	GetPageSize() int
+	GetKeyword() string
+	IsRandom() bool
+}
+
+type tatoebaSentenceSearchCondition struct {
+	PageNo   int `validate:"required,gte=1"`
+	PageSize int `validate:"required,gte=1,lte=100"`
+	Keyword  string
+	Random   bool
+}
+
+func NewTatoebaSentenceSearchCondition(pageNo, pageSize int, keyword string, random bool) (TatoebaSentenceSearchCondition, error) {
+	m := &tatoebaSentenceSearchCondition{
+		PageNo:   pageNo,
+		PageSize: pageSize,
+		Keyword:  keyword,
+		Random:   random,
+	}
+
+	return m, lib.Validator.Struct(m)
+}
+
+func (c *tatoebaSentenceSearchCondition) GetPageNo() int {
+	return c.PageNo
+}
+
+func (c *tatoebaSentenceSearchCondition) GetPageSize() int {
+	return c.PageSize
+}
+
+func (c *tatoebaSentenceSearchCondition) GetKeyword() string {
+	return c.Keyword
+}
+
+func (c *tatoebaSentenceSearchCondition) IsRandom() bool {
+	return c.Random
+}
+
+type TatoebaSentenceSearchResult struct {
+	TotalCount int64
+	Results    []TatoebaSentencePair
+}
+
 type TatoebaSentenceRepository interface {
+	FindTatoebaSentences(ctx context.Context, param TatoebaSentenceSearchCondition) (*TatoebaSentenceSearchResult, error)
+
 	Add(ctx context.Context, param TatoebaSentenceAddParameter) error
 }

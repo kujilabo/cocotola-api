@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-playground/validator"
-
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
@@ -46,9 +45,9 @@ type Workbook interface {
 
 	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (Added, ProblemID, error)
 
-	UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) (Added, Updated, error)
+	UpdateProblem(ctx context.Context, operator Student, id ProblemSelectParameter2, param ProblemUpdateParameter) (Added, Updated, error)
 
-	RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error
+	RemoveProblem(ctx context.Context, operator Student, id ProblemSelectParameter2) error
 
 	UpdateWorkbook(ctx context.Context, operator Student, version int, parameter WorkbookUpdateParameter) error
 
@@ -88,8 +87,7 @@ func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, mode
 		Properties:   properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *workbook) GetSpaceID() user.SpaceID {
@@ -153,7 +151,11 @@ func (m *workbook) FindProblemByID(ctx context.Context, operator Student, proble
 	if err != nil {
 		return nil, err
 	}
-	return problemRepo.FindProblemByID(ctx, operator, WorkbookID(m.GetID()), problemID)
+	id, err := NewProblemSelectParameter1(WorkbookID(m.GetID()), problemID)
+	if err != nil {
+		return nil, err
+	}
+	return problemRepo.FindProblemByID(ctx, operator, id)
 }
 
 func (m *workbook) AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (Added, ProblemID, error) {
@@ -173,7 +175,7 @@ func (m *workbook) AddProblem(ctx context.Context, operator Student, param Probl
 	return processor.AddProblem(ctx, m.repo, operator, m, param)
 }
 
-func (m *workbook) UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) (Added, Updated, error) {
+func (m *workbook) UpdateProblem(ctx context.Context, operator Student, id ProblemSelectParameter2, param ProblemUpdateParameter) (Added, Updated, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbook.UpdateProblem")
 
@@ -186,10 +188,10 @@ func (m *workbook) UpdateProblem(ctx context.Context, operator Student, param Pr
 		return 0, 0, fmt.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
-	return processor.UpdateProblem(ctx, m.repo, operator, m, param)
+	return processor.UpdateProblem(ctx, m.repo, operator, m, id, param)
 }
 
-func (m *workbook) RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error {
+func (m *workbook) RemoveProblem(ctx context.Context, operator Student, id ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbook.RemoveProblem")
 
@@ -202,7 +204,7 @@ func (m *workbook) RemoveProblem(ctx context.Context, operator Student, problemI
 		return fmt.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
-	return processor.RemoveProblem(ctx, m.repo, operator, problemID, version)
+	return processor.RemoveProblem(ctx, m.repo, operator, id)
 
 }
 
