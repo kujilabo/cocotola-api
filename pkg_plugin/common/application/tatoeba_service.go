@@ -16,7 +16,10 @@ const (
 )
 
 type TatoebaService interface {
+	FindSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error)
+
 	ImportSentences(ctx context.Context, iterator domain.TatoebaSentenceAddParameterIterator) error
+
 	ImportLinks(ctx context.Context, iterator domain.TatoebaLinkAddParameterIterator) error
 }
 
@@ -30,6 +33,31 @@ func NewTatoebaService(db *gorm.DB, rf func(db *gorm.DB) (domain.RepositoryFacto
 		db: db,
 		rf: rf,
 	}
+}
+
+func (s *tatoebaService) FindSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
+	var result *domain.TatoebaSentenceSearchResult
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		rf, err := s.rf(tx)
+		if err != nil {
+			return err
+		}
+
+		repo, err := rf.NewTatoebaSentenceRepository(ctx)
+		if err != nil {
+			return err
+		}
+
+		tmpResult, err := repo.FindTatoebaSentences(ctx, param)
+		if err != nil {
+			return err
+		}
+		result = tmpResult
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *tatoebaService) ImportSentences(ctx context.Context, iterator domain.TatoebaSentenceAddParameterIterator) error {
@@ -65,14 +93,14 @@ func (s *tatoebaService) ImportSentences(ctx context.Context, iterator domain.Ta
 				}
 
 				if err := repo.Add(ctx, param); err != nil {
-					logger.Warnf("failed to add .commit i: %d, err: %v", i, err)
+					logger.Warnf("failed to Add. count: %d, err: %v", count, err)
 					continue
 				}
 				i++
 				count++
 				if i >= commitSize {
 					if count%logSize == 0 {
-						logger.Infof("commit i: %d", i)
+						logger.Infof("commit count: %d", count)
 					}
 					break
 				}
@@ -115,19 +143,19 @@ func (s *tatoebaService) ImportLinks(ctx context.Context, iterator domain.Tatoeb
 					return err
 				}
 				if param == nil {
-					logger.Infof("skip count: %d", count)
+					logger.Infof("skip to Add Link. count: %d", count)
 					continue
 				}
 
 				if err := repo.Add(ctx, param); err != nil {
-					logger.Warnf("commit i: %d", i)
+					logger.Warnf("failed to Add Link. count: %d", count)
 					continue
 				}
 				i++
 				count++
 				if i >= commitSize {
 					if count%logSize == 0 {
-						logger.Infof("commit i: %d", i)
+						logger.Infof("commit count: %d", count)
 					}
 					break
 				}

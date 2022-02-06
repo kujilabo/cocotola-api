@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/go-playground/validator"
+import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type AppUserGroupID uint
 
@@ -30,8 +30,7 @@ func NewAppUserGroup(model Model, organizationID OrganizationID, key, name, desc
 		Description:    description,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (g *appUserGroup) GetOrganizationID() OrganizationID {

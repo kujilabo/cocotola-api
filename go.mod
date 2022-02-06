@@ -14,7 +14,6 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/google/uuid v1.3.0
@@ -24,6 +23,7 @@ require (
 	github.com/onrik/logrus v0.9.0
 	github.com/pecolynx/casbin-query v0.0.1
 	github.com/pkg/errors v0.9.1
+	github.com/pkg/profile v1.6.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14

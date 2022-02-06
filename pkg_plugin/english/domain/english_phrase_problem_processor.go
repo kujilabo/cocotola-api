@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-playground/validator"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -39,8 +37,7 @@ func toEnglishPhraseProblemAddParemeter(param app.ProblemAddParameter) (*english
 		Translated: param.GetProperties()["translated"],
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type EnglishPhraseProblemProcessor interface {
@@ -117,13 +114,13 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 
 }
 
-func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, problemID app.ProblemID, version int) error {
+func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, id app.ProblemSelectParameter2) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, EnglishPhraseProblemType)
 	if err != nil {
 		return fmt.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
-	if err := problemRepo.RemoveProblem(ctx, operator, problemID, version); err != nil {
+	if err := problemRepo.RemoveProblem(ctx, operator, id); err != nil {
 		return err
 	}
 

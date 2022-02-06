@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/go-playground/validator"
+import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type AudioID uint
 
@@ -26,8 +26,7 @@ func NewAudio(id uint, lang Lang5, text, audioContent string) (Audio, error) {
 		AudioContent: audioContent,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (a *audio) GetID() uint {

@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"github.com/gin-contrib/cors"
-	"github.com/go-playground/validator"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type AppConfig struct {
@@ -94,8 +95,7 @@ func LoadConfig(env string) (*Config, error) {
 		return nil, err
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(conf); err != nil {
+	if err := lib.Validator.Struct(conf); err != nil {
 		return nil, err
 	}
 

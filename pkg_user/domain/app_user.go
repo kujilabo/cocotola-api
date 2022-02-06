@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/go-playground/validator"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type AppUserID uint
@@ -41,8 +41,7 @@ func NewAppUser(rf RepositoryFactory, model Model, organizationID OrganizationID
 		Properties:     properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (a *appUser) GetOrganizationID() OrganizationID {

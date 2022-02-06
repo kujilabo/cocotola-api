@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 // var ErrCustomTranslationNotFound = errors.New("azure translation not found")
@@ -36,8 +35,7 @@ func NewTransalationAddParameter(text string, pos WordPos, lang app.Lang2, trans
 		Translated: translated,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *translationAddParameter) GetText() string {
@@ -69,8 +67,7 @@ func NewTransaltionUpdateParameter(translated string) (TranslationUpdateParamete
 		Translated: translated,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *translationUpdateParameter) GetTranslated() string {

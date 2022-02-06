@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 var ErrProblemAlreadyExists = errors.New("problem already exists")
@@ -30,8 +30,7 @@ func NewProblemAddParameter(workbookID WorkbookID, number int, properties map[st
 		Properties: properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *problemAddParameter) GetWorkbookID() WorkbookID {
@@ -44,32 +43,84 @@ func (p *problemAddParameter) GetProperties() map[string]string {
 	return p.Properties
 }
 
-type ProblemUpdateParameter interface {
+type ProblemSelectParameter1 interface {
 	GetWorkbookID() WorkbookID
+	GetProblemID() ProblemID
+}
+
+type problemSelectParameter1 struct {
+	WorkbookID WorkbookID
+	ProblemID  ProblemID
+}
+
+func NewProblemSelectParameter1(WorkbookID WorkbookID, problemID ProblemID) (ProblemSelectParameter1, error) {
+	m := &problemSelectParameter1{
+		WorkbookID: WorkbookID,
+		ProblemID:  problemID,
+	}
+
+	return m, libD.Validator.Struct(m)
+}
+
+func (p *problemSelectParameter1) GetWorkbookID() WorkbookID {
+	return p.WorkbookID
+}
+func (p *problemSelectParameter1) GetProblemID() ProblemID {
+	return p.ProblemID
+}
+
+type ProblemSelectParameter2 interface {
+	GetWorkbookID() WorkbookID
+	GetProblemID() ProblemID
+	GetVersion() int
+}
+
+type problemSelectParameter2 struct {
+	WorkbookID WorkbookID
+	ProblemID  ProblemID
+	Version    int
+}
+
+func NewProblemSelectParameter2(WorkbookID WorkbookID, problemID ProblemID, version int) (ProblemSelectParameter2, error) {
+	m := &problemSelectParameter2{
+		WorkbookID: WorkbookID,
+		ProblemID:  problemID,
+		Version:    version,
+	}
+
+	return m, libD.Validator.Struct(m)
+}
+
+func (p *problemSelectParameter2) GetWorkbookID() WorkbookID {
+	return p.WorkbookID
+}
+func (p *problemSelectParameter2) GetProblemID() ProblemID {
+	return p.ProblemID
+}
+
+func (p *problemSelectParameter2) GetVersion() int {
+	return p.Version
+}
+
+type ProblemUpdateParameter interface {
 	GetNumber() int
 	GetProperties() map[string]string
 }
 
 type problemUpdateParameter struct {
-	WorkbookID WorkbookID `validate:"required"`
-	Number     int        `validate:"required"`
+	Number     int `validate:"required"`
 	Properties map[string]string
 }
 
-func NewProblemUpdateParameter(workbookID WorkbookID, number int, properties map[string]string) (ProblemUpdateParameter, error) {
+func NewProblemUpdateParameter(number int, properties map[string]string) (ProblemUpdateParameter, error) {
 	m := &problemUpdateParameter{
-		WorkbookID: workbookID,
 		Number:     number,
 		Properties: properties,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
-func (p *problemUpdateParameter) GetWorkbookID() WorkbookID {
-	return p.WorkbookID
-}
 func (p *problemUpdateParameter) GetNumber() int {
 	return p.Number
 }
@@ -99,8 +150,7 @@ func NewProblemSearchCondition(workbookID WorkbookID, pageNo, pageSize int, keyw
 		Keyword:    keyword,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (c *problemSearchCondition) GetWorkbookID() WorkbookID {
@@ -135,8 +185,7 @@ func NewProblemIDsCondition(workbookID WorkbookID, ids []ProblemID) (ProblemIDsC
 		IDs:        ids,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (c *problemIDsCondition) GetWorkbookID() WorkbookID {
@@ -161,11 +210,11 @@ type ProblemRepository interface {
 
 	FindProblemIDs(ctx context.Context, operator Student, workbookID WorkbookID) ([]ProblemID, error)
 
-	FindProblemByID(ctx context.Context, operator Student, workbookID WorkbookID, problemID ProblemID) (Problem, error)
+	FindProblemByID(ctx context.Context, operator Student, id ProblemSelectParameter1) (Problem, error)
 
 	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error)
 
-	UpdateProblem(ctx context.Context, operator Student, param ProblemUpdateParameter) error
+	UpdateProblem(ctx context.Context, operator Student, id ProblemSelectParameter2, param ProblemUpdateParameter) error
 
-	RemoveProblem(ctx context.Context, operator Student, problemID ProblemID, version int) error
+	RemoveProblem(ctx context.Context, operator Student, id ProblemSelectParameter2) error
 }

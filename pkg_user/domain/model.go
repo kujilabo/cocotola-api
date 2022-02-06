@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/go-playground/validator"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type Model interface {
@@ -33,9 +33,7 @@ func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, u
 		CreatedBy: createdBy,
 		UpdatedBy: updatedBy,
 	}
-
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (m *model) GetID() uint {

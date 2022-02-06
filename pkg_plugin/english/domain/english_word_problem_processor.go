@@ -7,8 +7,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/go-playground/validator"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -62,8 +60,7 @@ func toEnglishWordProblemAddParemeter(param app.ProblemAddParameter) (*englishWo
 		Translated: translated,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type englishWordProblemUpdateParemeter struct {
@@ -89,9 +86,7 @@ func toEnglishWordProblemUpdateParemeter(param app.ProblemUpdateParameter) (*eng
 		Text:       param.GetProperties()["text"],
 		Translated: translated,
 	}
-
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 type EnglishWordProblemProcessor interface {
@@ -246,7 +241,7 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 	return app.Added(len(translated)), 0, nil
 }
 
-func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemUpdateParameter) (app.Added, app.Updated, error) {
+func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) (app.Added, app.Updated, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.UpdateProblem, param: %+v", param)
 
@@ -274,14 +269,14 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo ap
 		audioID = audioIDtmp
 	}
 
-	if err := p.updateSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID); err != nil {
-		return 0, 0, fmt.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+	if err := p.updateSingleProblem(ctx, operator, problemRepo, id, param, extractedParam, audioID); err != nil {
+		return 0, 0, fmt.Errorf("failed to updateSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
 	return 1, 1, nil
 }
 
-func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, param app.ProblemUpdateParameter, extractedParam *englishWordProblemUpdateParemeter, audioID app.AudioID) error {
+func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter, extractedParam *englishWordProblemUpdateParemeter, audioID app.AudioID) error {
 	logger := log.FromContext(ctx)
 	logger.Infof("updateSingleProblem, text: %s, audio ID: %d", extractedParam.Text, audioID)
 
@@ -290,25 +285,25 @@ func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, o
 		"translated": extractedParam.Translated,
 		"audioId":    strconv.Itoa(int(audioID)),
 	}
-	paramToUpdate, err := app.NewProblemUpdateParameter(param.GetWorkbookID(), param.GetNumber(), properties)
+	paramToUpdate, err := app.NewProblemUpdateParameter(param.GetNumber(), properties)
 	if err != nil {
 		return fmt.Errorf("failed to NewParameter. err: %w", err)
 	}
 
-	if err := problemRepo.UpdateProblem(ctx, operator, paramToUpdate); err != nil {
+	if err := problemRepo.UpdateProblem(ctx, operator, id, paramToUpdate); err != nil {
 		return fmt.Errorf("failed to problemRepo.UpdateProblem. param: %+v, err: %w", param, err)
 	}
 
 	return nil
 }
 
-func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, problemID app.ProblemID, version int) error {
+func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, id app.ProblemSelectParameter2) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, EnglishWordProblemType)
 	if err != nil {
 		return fmt.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
-	if err := problemRepo.RemoveProblem(ctx, operator, problemID, version); err != nil {
+	if err := problemRepo.RemoveProblem(ctx, operator, id); err != nil {
 		return err
 	}
 
@@ -378,52 +373,3 @@ func (p *englishWordProblemProcessor) GetUnitForUpdateQuota() app.QuotaUnit {
 func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
 	return quotaUpdateLimit
 }
-
-// func (p *englishWordProblemProcessor) IsExceeded(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
-// 	// logger := log.FromContext(ctx)
-
-// 	userQuotaRepo, err := repo.NewUserQuotaRepository(ctx)
-// 	if err != nil {
-// 		return false, fmt.Errorf("failed to NewProblemRepository. err: %w", err)
-// 	}
-
-// 	switch name {
-// 	case quotaNameSize:
-// 		unit := quotaSizeUnit
-// 		limit := quotaSizeLimit
-// 		return userQuotaRepo.IsExceeded(ctx, operator, EnglishWordProblemType+"_size", unit, limit)
-// 	case "Update":
-// 		unit := quotaUpdateUnit
-// 		limit := quotaUpdateLimit
-// 		return userQuotaRepo.IsExceeded(ctx, operator, EnglishWordProblemType+"_update", unit, limit)
-// 	default:
-// 		return false, fmt.Errorf("invalid name. name: %s", name)
-// 	}
-// }
-
-// func (p *englishWordProblemProcessor) Increment(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
-// 	// logger := log.FromContext(ctx)
-// 	userQuotaRepo, err := repo.NewUserQuotaRepository(ctx)
-// 	if err != nil {
-// 		return false, fmt.Errorf("failed to NewProblemRepository. err: %w", err)
-// 	}
-
-// 	switch name {
-// 	case quotaNameSize:
-// 		unit := quotaSizeUnit
-// 		limit := quotaSizeLimit
-// 		return userQuotaRepo.Increment(ctx, operator, EnglishWordProblemType+"_size", unit, limit, 1)
-// 	case "Update":
-// 		unit := quotaUpdateUnit
-// 		limit := quotaUpdateLimit
-// 		return userQuotaRepo.Increment(ctx, operator, EnglishWordProblemType+"_update", unit, limit, 1)
-// 	default:
-// 		return false, fmt.Errorf("invalid name. name: %s", name)
-// 	}
-
-// }
-
-// func (p *englishWordProblemProcessor) Decrement(ctx context.Context, repo app.RepositoryFactory, operator app.Student, name string) (bool, error) {
-// 	// logger := log.FromContext(ctx)
-// 	return false, nil
-// }

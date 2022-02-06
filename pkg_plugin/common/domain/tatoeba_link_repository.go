@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 var ErrTatoebaLinkAlreadyExists = errors.New("tatoebaLink already exists")
+var ErrTatoebaLinkSourceNotFound = errors.New("tatoebaLink source not found")
 
 type TatoebaLinkAddParameter interface {
 	GetFrom() int
@@ -24,9 +25,7 @@ func NewTatoebaLinkAddParameter(from, to int) (TatoebaLinkAddParameter, error) {
 		From: from,
 		To:   to,
 	}
-
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *tatoebaLinkAddParameter) GetFrom() int {

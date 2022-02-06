@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type Recordbook interface {
@@ -29,8 +29,7 @@ func NewRecordbook(rf RepositoryFactory, student Student, workbookID WorkbookID,
 		studyType:  studyType,
 	}
 
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *recordbook) GetWorkbookID() WorkbookID {

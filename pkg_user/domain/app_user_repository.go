@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-playground/validator"
+	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 var ErrAppUserNotFound = errors.New("AppUser not found")
@@ -33,8 +33,7 @@ func NewAppUserAddParameter(loginID, username string, roles []string, properties
 		Roles:      roles,
 		Properties: properties,
 	}
-	v := validator.New()
-	return m, v.Struct(m)
+	return m, lib.Validator.Struct(m)
 }
 
 func (p *appUserAddParameter) GetLoginID() string {

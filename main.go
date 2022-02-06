@@ -41,9 +41,9 @@ import (
 	pluginApplication "github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
+	pluginCommonHandler "github.com/kujilabo/cocotola-api/pkg_plugin/common/handler"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
-	handlerP "github.com/kujilabo/cocotola-api/pkg_plugin/handler"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
@@ -256,6 +256,7 @@ func main() {
 		v1Problem.POST("problem", problemHandler.AddProblem)
 		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
 		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
+		v1Problem.PUT("problem/:problemID", problemHandler.UpdateProblem)
 		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
 		v1Problem.POST("problem/find", problemHandler.FindProblems)
 		v1Problem.POST("problem/find_all", problemHandler.FindAllProblems)
@@ -281,7 +282,7 @@ func main() {
 		plugin.Use(authMiddleware)
 		{
 			pluginTranslation := plugin.Group("translation")
-			translationHandler := handlerP.NewTranslationHandler(translator)
+			translationHandler := pluginCommonHandler.NewTranslationHandler(translator)
 			pluginTranslation.POST("find", translationHandler.FindTranslations)
 			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
 			pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
@@ -299,7 +300,8 @@ func main() {
 			}
 			pluginTatoeba := plugin.Group("tatoeba")
 			tatoebaService := pluginApplication.NewTatoebaService(db, pluginRepoFunc)
-			tatoebaHandler := handlerP.NewTatoebaHandler(tatoebaService, newSentenceReader, newLinkReader)
+			tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaService, newSentenceReader, newLinkReader)
+			pluginTatoeba.POST("find", tatoebaHandler.FindSentences)
 			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
 			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
 

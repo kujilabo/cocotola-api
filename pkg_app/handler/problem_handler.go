@@ -14,6 +14,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -161,19 +162,13 @@ func (h *problemHandler) FindProblemByID(c *gin.Context) {
 	logger.Info("FindProblemByID")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		id, err := h.toProblemSelectParameter1(c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
 
-		problemID, err := ginhelper.GetUint(c, "problemID")
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return nil
-		}
-
-		result, err := h.problemService.FindProblemByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID))
+		result, err := h.problemService.FindProblemByID(ctx, organizationID, operatorID, id)
 		if err != nil {
 			return err
 		}
@@ -255,7 +250,7 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 	logger.Infof("UpdateProblem")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		id, err := h.toProblemSelectParameter2(c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -267,12 +262,12 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 			return nil
 		}
 
-		parameter, err := converter.ToProblemUpdateParameter(domain.WorkbookID(workbookID), &param)
+		parameter, err := converter.ToProblemUpdateParameter(&param)
 		if err != nil {
 			return err
 		}
 
-		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, parameter); err != nil {
+		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, id, parameter); err != nil {
 			return fmt.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
 		}
 
@@ -288,25 +283,13 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 		logger.Infof("RemvoeProblem. organizationID: %d, operatorID: %d", organizationID, operatorID)
 
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		id, err := h.toProblemSelectParameter2(c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
 
-		problemID, err := ginhelper.GetUint(c, "problemID")
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return nil
-		}
-
-		version, err := ginhelper.GetIntFromQuery(c, "version")
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return nil
-		}
-
-		if err := h.problemService.RemoveProblem(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), version); err != nil {
+		if err := h.problemService.RemoveProblem(ctx, organizationID, operatorID, id); err != nil {
 			return fmt.Errorf("failed to RemoveProblem. err: %w", err)
 		}
 
@@ -362,6 +345,44 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		c.Status(http.StatusOK)
 		return nil
 	}, h.errorHandle)
+}
+
+func (h *problemHandler) toProblemSelectParameter1(c *gin.Context) (domain.ProblemSelectParameter1, error) {
+	workbookID, err := ginhelper.GetUint(c, "workbookID")
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+	problemID, err := ginhelper.GetUint(c, "problemID")
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+	param, err := domain.NewProblemSelectParameter1(domain.WorkbookID(workbookID), domain.ProblemID(problemID))
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+
+	return param, nil
+}
+
+func (h *problemHandler) toProblemSelectParameter2(c *gin.Context) (domain.ProblemSelectParameter2, error) {
+	workbookID, err := ginhelper.GetUint(c, "workbookID")
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+	problemID, err := ginhelper.GetUint(c, "problemID")
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+	version, err := ginhelper.GetIntFromQuery(c, "version")
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+	param, err := domain.NewProblemSelectParameter2(domain.WorkbookID(workbookID), domain.ProblemID(problemID), version)
+	if err != nil {
+		return nil, libD.ErrInvalidArgument
+	}
+
+	return param, nil
 }
 
 func (h *problemHandler) errorHandle(c *gin.Context, err error) bool {
