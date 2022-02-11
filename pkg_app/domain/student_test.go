@@ -26,8 +26,8 @@ func student_Init(t *testing.T, ctx context.Context) (*user_mock.SpaceRepository
 
 func Test_student_GetDefaultSpace(t *testing.T) {
 	ctx := context.Background()
-	userRf := new(user_mock.RepositoryFactoryMock)
-	spaceRepo := new(user_mock.SpaceRepositoryMock)
+	spaceRepo, userRf, _, _ := student_Init(t, ctx)
+
 	userRf.On("NewSpaceRepository").Return(spaceRepo)
 	expected := new(user_mock.SpaceMock)
 	spaceRepo.On("FindDefaultSpace", ctx, mock.Anything).Return(expected, nil)
@@ -46,9 +46,8 @@ func Test_student_GetDefaultSpace(t *testing.T) {
 
 func Test_student_GetPersonalSpace(t *testing.T) {
 	ctx := context.Background()
-	userRf := new(user_mock.RepositoryFactoryMock)
-	spaceRepo := new(user_mock.SpaceRepositoryMock)
-	userRf.On("NewSpaceRepository").Return(spaceRepo)
+	spaceRepo, userRf, _, _ := student_Init(t, ctx)
+
 	expected := new(user_mock.SpaceMock)
 	spaceRepo.On("FindPersonalSpace", ctx, mock.Anything).Return(expected, nil)
 	s, err := domain.NewStudent(nil, nil, userRf, nil)
@@ -66,15 +65,12 @@ func Test_student_GetPersonalSpace(t *testing.T) {
 
 func Test_student_FindWorkbooksFromPersonalSpace(t *testing.T) {
 	ctx := context.Background()
+	spaceRepo, userRf, workbookRepo, rf := student_Init(t, ctx)
+
 	expected := domain.WorkbookSearchResult{}
-	workbookRepo := new(domain_mock.WorkbookRepositoryMock)
 	workbookRepo.On("FindPersonalWorkbooks", ctx, mock.Anything, mock.Anything).Return(&expected, nil)
-	rf := new(domain_mock.RepositoryFactoryMock)
-	rf.On("NewWorkbookRepository", ctx).Return(workbookRepo, nil)
-	userRf := new(user_mock.RepositoryFactoryMock)
-	spaceRepo := new(user_mock.SpaceRepositoryMock)
-	userRf.On("NewSpaceRepository").Return(spaceRepo)
 	space := new(user_mock.SpaceMock)
+	space.On("GetID").Return(uint(100))
 	spaceRepo.On("FindPersonalSpace", ctx, mock.Anything).Return(space, nil)
 
 	s, err := domain.NewStudent(nil, rf, userRf, nil)
