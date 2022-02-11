@@ -2,9 +2,9 @@ package domain
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
+	"golang.org/x/xerrors"
 )
 
 const SystemAdminID = 1
@@ -58,18 +58,18 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param OrganizationAdd
 	// add organization
 	organizationID, err := s.rf.NewOrganizationRepository().AddOrganization(ctx, s, param)
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddOrganization. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddOrganization. error: %w", err)
 	}
 
 	// add system owner
 	systemOwnerID, err := s.rf.NewAppUserRepository().AddSystemOwner(ctx, s, organizationID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddSystemOwner. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddSystemOwner. error: %w", err)
 	}
 
 	systemOwner, err := s.rf.NewAppUserRepository().FindSystemOwnerByOrganizationName(ctx, s, param.GetName())
 	if err != nil {
-		return 0, fmt.Errorf("failed to FindSystemOwnerByOrganizationName. error: %w", err)
+		return 0, xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. error: %w", err)
 	}
 
 	// // add system student
@@ -81,29 +81,29 @@ func (s *systemAdmin) AddOrganization(ctx context.Context, param OrganizationAdd
 	// add owner
 	ownerID, err := s.rf.NewAppUserRepository().AddFirstOwner(ctx, systemOwner, param.GetFirstOwner())
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddFirstOwner. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddFirstOwner. error: %w", err)
 	}
 
 	owner, err := s.rf.NewAppUserRepository().FindOwnerByLoginID(ctx, systemOwner, param.GetFirstOwner().GetLoginID())
 	if err != nil {
-		return 0, fmt.Errorf("failed to FindOwnerByLoginID. error: %w", err)
+		return 0, xerrors.Errorf("failed to FindOwnerByLoginID. error: %w", err)
 	}
 
 	// add public group
 	publicGroupID, err := s.rf.NewAppUserGroupRepository().AddPublicGroup(ctx, systemOwner)
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddPublicGroup. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddPublicGroup. error: %w", err)
 	}
 
 	// public-group <-> owner
 	if err := s.rf.NewGroupUserRepository().AddGroupUser(ctx, systemOwner, publicGroupID, ownerID); err != nil {
-		return 0, fmt.Errorf("failed to AddGroupUser. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddGroupUser. error: %w", err)
 	}
 
 	// add default space
 	spaceID, err := s.rf.NewSpaceRepository().AddDefaultSpace(ctx, systemOwner)
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddDefaultSpace. error: %w", err)
+		return 0, xerrors.Errorf("failed to AddDefaultSpace. error: %w", err)
 	}
 
 	logger.Infof("SystemOwnerID:%d, owner: %+v, spaceID: %d", systemOwnerID, owner, spaceID)

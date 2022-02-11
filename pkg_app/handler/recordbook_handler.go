@@ -2,10 +2,10 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -99,7 +99,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		// }
 
 		if err := h.studyService.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
-			return fmt.Errorf("failed to SetResult. err: %w", err)
+			return xerrors.Errorf("failed to SetResult. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)

@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
@@ -48,12 +48,12 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 	systemAdmin := user.SystemAdminInstance()
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, organizationName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 	}
 
 	organization, err := systemOwner.GetOrganization(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindOrganization. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindOrganization. err: %w", err)
 	}
 
 	loginID := googleUserInfo.Email
@@ -84,21 +84,21 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("invalid AppUserAddParameter. err: %w", err)
+		return nil, xerrors.Errorf("invalid AppUserAddParameter. err: %w", err)
 	}
 
 	studentID, err := systemOwner.AddAppUser(ctx, parameter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to AddStudent. err: %w", err)
+		return nil, xerrors.Errorf("failed to AddStudent. err: %w", err)
 	}
 
 	student2, err := systemOwner.FindAppUserByID(ctx, studentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindStudentByID. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindStudentByID. err: %w", err)
 	}
 
 	if err := s.registerAppUserCallback(ctx, organizationName, student2); err != nil {
-		return nil, fmt.Errorf("failed to registerStudentCallback. err: %w", err)
+		return nil, xerrors.Errorf("failed to registerStudentCallback. err: %w", err)
 	}
 
 	return s.authTokenManager.CreateTokenSet(ctx, student2, organization)

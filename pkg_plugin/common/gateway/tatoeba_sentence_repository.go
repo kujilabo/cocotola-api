@@ -2,18 +2,17 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
 
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -44,15 +43,10 @@ type tatoebaSentencePairEntity struct {
 	DstUpdatedAt      time.Time
 }
 
-//d-4606-95fd-c6eea05f9301","severity":"info","time":"2022-02-06T11:55:46+09:00"}
-// {"message":"tatoebaHandler. err: failed to FindSentences. err: failed to NewLang3. err: invalid parameter. Lang3: I brought you a little something.","request_id":"ef49ae01-609d-4606-95fd-c6eea05f9301","severity":"error","time":"2022-02-06T11:55:46+09:00"}
-// {"ip":"127.0.0.1","latency":"1.004609819s","message":"POST /plugin/tatoeba/find","severity":"error","status":500,"time":"2022-02-06T11:55:46+09:00"}
-
 func (e *tatoebaSentenceEntity) toModel() (domain.TatoebaSentence, error) {
 	lang, err := app.NewLang3(e.Lang)
 	if err != nil {
-		// return nil, fmt.Errorf("failed to NewLang3. err: %w", err)
-		return nil, errors.WithMessage(err, "failed to NewLang3.")
+		return nil, xerrors.Errorf("failed to NewLang3. err: %w", err)
 	}
 	author := e.Author
 	if author == "\\N" {
@@ -299,7 +293,7 @@ func (r *tatoebaSentenceRepository) Add(ctx context.Context, param domain.Tatoeb
 
 	if result := r.db.Create(&entity); result.Error != nil {
 		err := libG.ConvertDuplicatedError(result.Error, domain.ErrTatoebaSentenceAlreadyExists)
-		return fmt.Errorf("failed to Add tatoebaSentence. err: %w", err)
+		return xerrors.Errorf("failed to Add tatoebaSentence. err: %w", err)
 	}
 
 	return nil

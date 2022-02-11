@@ -2,10 +2,10 @@ package domain
 
 import (
 	"context"
-	"fmt"
 
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"golang.org/x/xerrors"
 )
 
 type Student interface {
@@ -64,18 +64,18 @@ func (s *student) GetPersonalSpace(ctx context.Context) (user.Space, error) {
 func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	// specify space
 	newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []user.SpaceID{user.SpaceID(space.GetID())})
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindPersonalWorkbooks(ctx, s, newCondition)
@@ -84,7 +84,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error) {
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByID(ctx, s, id)
@@ -93,12 +93,12 @@ func (s *student) FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook
 func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByName(ctx, s, user.SpaceID(space.GetID()), name)
@@ -107,17 +107,17 @@ func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (WorkbookID, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return 0, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	workbookID, err := workbookRepo.AddWorkbook(ctx, s, user.SpaceID(space.GetID()), parameter)
 	if err != nil {
-		return 0, fmt.Errorf("failed to AddWorkbook. err: %w", err)
+		return 0, xerrors.Errorf("failed to AddWorkbook. err: %w", err)
 	}
 
 	return workbookID, nil
@@ -149,7 +149,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 
 	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewProblemRepository. err: %w", err)
+		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	switch name {
@@ -180,7 +180,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 
 		return nil
 	default:
-		return fmt.Errorf("invalid name. name: %s", name)
+		return xerrors.Errorf("invalid name. name: %s", name)
 	}
 
 	// isExceeded, err := processor.IsExceeded(ctx, s.rf, s, name)
@@ -245,7 +245,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 
 	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewProblemRepository. err: %w", err)
+		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	switch name {
@@ -276,7 +276,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 
 		return nil
 	default:
-		return fmt.Errorf("invalid name. name: %s", name)
+		return xerrors.Errorf("invalid name. name: %s", name)
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
@@ -198,7 +198,7 @@ func main() {
 		if ok {
 			return processor.CreateCSVReader(ctx, workbookID, reader)
 		}
-		return nil, fmt.Errorf("processor not found. problemType: %s", problemType)
+		return nil, xerrors.Errorf("processor not found. problemType: %s", problemType)
 	}
 
 	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
@@ -365,7 +365,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := initDB(cfg.DB)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	rf, err := userG.NewRepositoryFactory(db)
@@ -435,7 +435,7 @@ func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
 		}
 
 		if err := appG.MigrateMySQLDB(db); err != nil {
-			return nil, nil, fmt.Errorf("failed to MigrateMySQLDB. err: %w", err)
+			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
 		}
 
 		return db, sqlDB, nil
@@ -451,22 +451,22 @@ func initApp(ctx context.Context, db *gorm.DB, password string) error {
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
 			if !errors.Is(err, userD.ErrOrganizationNotFound) {
-				return fmt.Errorf("failed to AddOrganization: %w", err)
+				return xerrors.Errorf("failed to AddOrganization: %w", err)
 			}
 
 			firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("cocotola-owner", "Owner(cocotola)", password)
 			if err != nil {
-				return fmt.Errorf("failed to AddOrganization: %w", err)
+				return xerrors.Errorf("failed to AddOrganization: %w", err)
 			}
 
 			organizationAddParameter, err := userD.NewOrganizationAddParameter("cocotola", firstOwnerAddParam)
 			if err != nil {
-				return fmt.Errorf("failed to AddOrganization: %w", err)
+				return xerrors.Errorf("failed to AddOrganization: %w", err)
 			}
 
 			organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
 			if err != nil {
-				return fmt.Errorf("failed to AddOrganization: %w", err)
+				return xerrors.Errorf("failed to AddOrganization: %w", err)
 			}
 
 			logger.Infof("organizationID: %d", organizationID)
@@ -488,7 +488,7 @@ func callback(ctx context.Context, testUserEmail string, pf appD.ProcessorFactor
 	if appUser.GetLoginID() == testUserEmail {
 		student, err := appD.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
-			return fmt.Errorf("failed to NewStudent. err: %w", err)
+			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {

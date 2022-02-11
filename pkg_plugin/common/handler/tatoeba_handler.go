@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
+	"golang.org/x/xerrors"
 )
 
 type TatoebaHandler interface {
@@ -50,7 +50,7 @@ func (h *tatoebaHandler) FindSentences(c *gin.Context) {
 		}
 		result, err := h.tatoebaService.FindSentences(ctx, parameter)
 		if err != nil {
-			return fmt.Errorf("failed to FindSentences. err: %w", err)
+			return xerrors.Errorf("failed to FindSentences. err: %w", err)
 		}
 		response, err := converter.ToTatoebaSentenceResponse(ctx, result)
 		if err != nil {
@@ -79,14 +79,14 @@ func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 
 		multipartFile, err := file.Open()
 		if err != nil {
-			return fmt.Errorf("failed to file.Open. err: %w", err)
+			return xerrors.Errorf("failed to file.Open. err: %w", err)
 		}
 		defer multipartFile.Close()
 
 		iterator := h.newTatoebaSentenceAddParameterReader(multipartFile)
 
 		if err := h.tatoebaService.ImportSentences(ctx, iterator); err != nil {
-			return fmt.Errorf("failed to ImportSentences. err: %w", err)
+			return xerrors.Errorf("failed to ImportSentences. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)
@@ -111,14 +111,14 @@ func (h *tatoebaHandler) ImportLinks(c *gin.Context) {
 
 		multipartFile, err := file.Open()
 		if err != nil {
-			return fmt.Errorf("failed to file.Open. err: %w", err)
+			return xerrors.Errorf("failed to file.Open. err: %w", err)
 		}
 		defer multipartFile.Close()
 
 		iterator := h.newTatoebaLinkAddParameterReader(multipartFile)
 
 		if err := h.tatoebaService.ImportLinks(ctx, iterator); err != nil {
-			return fmt.Errorf("failed to ImportLinks. err: %w", err)
+			return xerrors.Errorf("failed to ImportLinks. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)

@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"fmt"
 	"strings"
+
+	"golang.org/x/xerrors"
 )
 
 type WordPos int
@@ -54,5 +55,5 @@ func NewWordPos(i int) (WordPos, error) {
 	if i == int(PosOther) {
 		return WordPos(i), nil
 	}
-	return WordPos(0), fmt.Errorf("invalid word pos. %d", i)
+	return WordPos(0), xerrors.Errorf("invalid word pos. %d", i)
 }

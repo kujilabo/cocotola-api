@@ -1,10 +1,11 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
 	"testing"
 
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/sirupsen/logrus"
@@ -42,7 +43,7 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 		assert.Equal(t, "LOGIN_ID_2", user2.GetLoginID())
 
 		englishWord := testNewProblemType(t, "english_word_problem")
-		workbookRepo := NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
 		spaceRepo := userG.NewSpaceRepository(db)
 
 		// user1 has two workbooks
@@ -183,7 +184,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		assert.Equal(t, "LOGIN_ID_2", user2.GetLoginID())
 
 		englishWord := testNewProblemType(t, "english_word_problem")
-		workbookRepo := NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
 		spaceRepo := userG.NewSpaceRepository(db)
 
 		// user1 has two workbooks

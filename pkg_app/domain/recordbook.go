@@ -2,9 +2,9 @@ package domain
 
 import (
 	"context"
-	"fmt"
 
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	"golang.org/x/xerrors"
 )
 
 type Recordbook interface {
@@ -39,22 +39,22 @@ func (m *recordbook) GetWorkbookID() WorkbookID {
 func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]StudyStatus, error) {
 	repo, err := m.rf.NewRecordbookRepository(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewRecordbookRepository. err: %w", err)
+		return nil, xerrors.Errorf("failed to NewRecordbookRepository. err: %w", err)
 	}
 
 	studyResults, err := repo.FindStudyResults(ctx, m.student, m.workbookID, m.studyType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindStudyResults. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindStudyResults. err: %w", err)
 	}
 
 	workbook, err := m.student.FindWorkbookByID(ctx, m.workbookID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindWorkbookByID. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 	}
 
 	problemIDs, err := workbook.FindProblemIDs(ctx, m.student)
 	if err != nil {
-		return nil, fmt.Errorf("failed to FindProblemIDs. err: %w", err)
+		return nil, xerrors.Errorf("failed to FindProblemIDs. err: %w", err)
 	}
 
 	results := make(map[ProblemID]StudyStatus)
@@ -75,7 +75,7 @@ func (m *recordbook) GetResults(ctx context.Context) (map[ProblemID]StudyStatus,
 func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLevel, error) {
 	problems1, err := m.GetResults(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to GetResults. err: %w", err)
+		return nil, xerrors.Errorf("failed to GetResults. err: %w", err)
 	}
 
 	problems2 := make([]ProblemWithLevel, len(problems1))
@@ -95,11 +95,11 @@ func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]ProblemWithLe
 func (m *recordbook) SetResult(ctx context.Context, problemType string, problemID ProblemID, result, memorized bool) error {
 	repo, err := m.rf.NewRecordbookRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewStudyResultRepository. err: %w", err)
+		return xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
 	}
 
 	if err := repo.SetResult(ctx, m.student, m.workbookID, m.studyType, problemType, problemID, result, memorized); err != nil {
-		return fmt.Errorf("failed to SetResult. err: %w", err)
+		return xerrors.Errorf("failed to SetResult. err: %w", err)
 	}
 
 	return nil

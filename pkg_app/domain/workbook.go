@@ -3,11 +3,11 @@ package domain
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"golang.org/x/xerrors"
 )
 
 type WorkbookID uint
@@ -168,7 +168,7 @@ func (m *workbook) AddProblem(ctx context.Context, operator Student, param Probl
 
 	processor, err := m.processorFactory.NewProblemAddProcessor(m.GetProblemType())
 	if err != nil {
-		return 0, 0, fmt.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
+		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
 	logger.Infof("processor.AddProblem")
@@ -185,7 +185,7 @@ func (m *workbook) UpdateProblem(ctx context.Context, operator Student, id Probl
 
 	processor, err := m.processorFactory.NewProblemUpdateProcessor(m.GetProblemType())
 	if err != nil {
-		return 0, 0, fmt.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
+		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
 	return processor.UpdateProblem(ctx, m.repo, operator, m, id, param)
@@ -201,7 +201,7 @@ func (m *workbook) RemoveProblem(ctx context.Context, operator Student, id Probl
 
 	processor, err := m.processorFactory.NewProblemRemoveProcessor(m.GetProblemType())
 	if err != nil {
-		return fmt.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
+		return xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
 	return processor.RemoveProblem(ctx, m.repo, operator, id)
@@ -215,7 +215,7 @@ func (m *workbook) UpdateWorkbook(ctx context.Context, operator Student, version
 
 	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.UpdateWorkbook(ctx, operator, WorkbookID(m.GetID()), version, parameter)
@@ -228,7 +228,7 @@ func (m *workbook) RemoveWorkbook(ctx context.Context, operator Student, version
 
 	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.RemoveWorkbook(ctx, operator, WorkbookID(m.GetID()), version)

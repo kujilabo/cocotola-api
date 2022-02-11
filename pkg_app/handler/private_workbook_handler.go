@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
@@ -84,7 +85,7 @@ func (h *privateWorkbookHandler) FindWorkbookByID(c *gin.Context) {
 
 		workbook, err := h.privateWorkbookService.FindWorkbookByID(ctx, organizationID, operatorID, domain.WorkbookID(uint(workbookID)))
 		if err != nil {
-			return fmt.Errorf("failed to FindWorkbookByID. err: %w", err)
+			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 		}
 
 		workbookResponse := entity.WorkbookWithProblems{
@@ -125,12 +126,12 @@ func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
 
 		parameter, err := converter.ToWorkbookAddParameter(&param)
 		if err != nil {
-			return fmt.Errorf("failed to ToAdd. err: %w", err)
+			return xerrors.Errorf("failed to ToAdd. err: %w", err)
 		}
 
 		workbookID, err := h.privateWorkbookService.AddWorkbook(ctx, organizationID, operatorID, parameter)
 		if err != nil {
-			return fmt.Errorf("failed to addWorkbook. err: %w", err)
+			return xerrors.Errorf("failed to addWorkbook. err: %w", err)
 		}
 
 		c.JSON(http.StatusOK, handlerhelper.IDResponse{ID: uint(workbookID)})

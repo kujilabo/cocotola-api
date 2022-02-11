@@ -3,7 +3,6 @@ package gateway
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -80,12 +80,12 @@ func (r *tatoebaSentenceAddParameterReader) Next(ctx context.Context) (domain.Ta
 
 	sentenceNumber, err := strconv.Atoi(line[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse sentenceNumber. rowNumber: %d, value: %s, err: %w", r.num, line[0], err)
+		return nil, xerrors.Errorf("failed to parse sentenceNumber. rowNumber: %d, value: %s, err: %w", r.num, line[0], err)
 	}
 
 	lang, err := app.NewLang3(line[1])
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewLang3. rowNumber: %d, value: %s, err: %w", r.num, line[1], err)
+		return nil, xerrors.Errorf("failed to NewLang3. rowNumber: %d, value: %s, err: %w", r.num, line[1], err)
 	}
 
 	text := line[2]
@@ -113,14 +113,14 @@ func (r *tatoebaSentenceAddParameterReader) Next(ctx context.Context) (domain.Ta
 
 		timeTmp, err := time.Parse("2006-01-02 15:04:05", timeS)
 		if err != nil {
-			return nil, fmt.Errorf("failed to Parse. rowNumber: %d, value: %s, err: %w", r.num, timeS, err)
+			return nil, xerrors.Errorf("failed to Parse. rowNumber: %d, value: %s, err: %w", r.num, timeS, err)
 		}
 		updatedAt = timeTmp
 	}
 
 	param, err := domain.NewTatoebaSentenceAddParameter(sentenceNumber, lang, text, author, updatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to NewTatoebaSentenceAddParameter. rowNumber: %d, values: %v, err: %w", r.num, line, err)
+		return nil, xerrors.Errorf("failed to NewTatoebaSentenceAddParameter. rowNumber: %d, values: %v, err: %w", r.num, line, err)
 	}
 
 	r.num++

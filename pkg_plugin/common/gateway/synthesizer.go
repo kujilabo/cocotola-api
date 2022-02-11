@@ -3,7 +3,6 @@ package gateway
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"golang.org/x/xerrors"
 )
 
 type synthesizer struct {
@@ -80,7 +80,7 @@ func (s *synthesizer) Synthesize(lang app.Lang5, text string) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("%s", string(body))
+		return "", xerrors.Errorf("%s", string(body))
 	}
 
 	response := synthesizeResponse{}

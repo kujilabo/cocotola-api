@@ -1,4 +1,4 @@
-package gateway
+package gateway_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
 )
 
 // func TestAddUser(t *testing.T) {
@@ -109,7 +110,7 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 				err: domain.ErrAppUserAlreadyExists,
 			},
 		}
-		appUserRepo := NewAppUserRepository(nil, db)
+		appUserRepo := gateway.NewAppUserRepository(nil, db)
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				got, err := appUserRepo.AddAppUser(bg, tt.args.operator, tt.args.param)
