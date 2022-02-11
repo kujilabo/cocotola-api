@@ -37,28 +37,28 @@ type Student interface {
 
 type student struct {
 	user.AppUser
-	rf       RepositoryFactory
-	pf       ProcessorFactory
-	userRepo user.RepositoryFactory
+	rf     RepositoryFactory
+	pf     ProcessorFactory
+	userRf user.RepositoryFactory
 }
 
-func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRepo user.RepositoryFactory, appUser user.AppUser) (Student, error) {
+func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRf user.RepositoryFactory, appUser user.AppUser) (Student, error) {
 	m := &student{
-		AppUser:  appUser,
-		pf:       pf,
-		rf:       rf,
-		userRepo: userRepo,
+		AppUser: appUser,
+		pf:      pf,
+		rf:      rf,
+		userRf:  userRf,
 	}
 
 	return m, lib.Validator.Struct(m)
 }
 
 func (s *student) GetDefaultSpace(ctx context.Context) (user.Space, error) {
-	return s.userRepo.NewSpaceRepository().FindDefaultSpace(ctx, s)
+	return s.userRf.NewSpaceRepository().FindDefaultSpace(ctx, s)
 }
 
 func (s *student) GetPersonalSpace(ctx context.Context) (user.Space, error) {
-	return s.userRepo.NewSpaceRepository().FindPersonalSpace(ctx, s)
+	return s.userRf.NewSpaceRepository().FindPersonalSpace(ctx, s)
 }
 
 func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error) {
