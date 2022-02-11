@@ -10,6 +10,10 @@ import (
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
+const (
+	two = 2
+)
+
 type WorkbookMock struct {
 	mock.Mock
 }
@@ -96,12 +100,12 @@ func (m *WorkbookMock) FindProblemByID(ctx context.Context, operator domain.Stud
 
 func (m *WorkbookMock) AddProblem(ctx context.Context, operator domain.Student, param domain.ProblemAddParameter) (domain.Added, domain.ProblemID, error) {
 	args := m.Called(ctx, operator, param)
-	return args.Get(0).(domain.Added), args.Get(1).(domain.ProblemID), args.Error(2)
+	return args.Get(0).(domain.Added), args.Get(1).(domain.ProblemID), args.Error(two)
 }
 
 func (m *WorkbookMock) UpdateProblem(ctx context.Context, operator domain.Student, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) (domain.Added, domain.Updated, error) {
 	args := m.Called(ctx, operator, id, param)
-	return args.Get(0).(domain.Added), args.Get(0).(domain.Updated), args.Error(2)
+	return args.Get(0).(domain.Added), args.Get(0).(domain.Updated), args.Error(two)
 }
 
 func (m *WorkbookMock) RemoveProblem(ctx context.Context, operator domain.Student, id domain.ProblemSelectParameter2) error {
