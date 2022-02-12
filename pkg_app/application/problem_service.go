@@ -14,11 +14,11 @@ import (
 )
 
 type ProblemService interface {
-	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error)
+	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (domain.ProblemSearchResult, error)
 
-	FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (*domain.ProblemSearchResult, error)
+	FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (domain.ProblemSearchResult, error)
 
 	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter1) (domain.Problem, error)
 
@@ -34,23 +34,23 @@ type ProblemService interface {
 }
 
 type problemService struct {
-	db       *gorm.DB
-	pf       domain.ProcessorFactory
-	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
-	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
+	db         *gorm.DB
+	pf         domain.ProcessorFactory
+	rfFunc     func(db *gorm.DB) (domain.RepositoryFactory, error)
+	userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
+func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error), userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
 	return &problemService{
-		db:       db,
-		pf:       pf,
-		repo:     repo,
-		userRepo: userRepo,
+		db:         db,
+		pf:         pf,
+		rfFunc:     rfFunc,
+		userRfFunc: userRfFunc,
 	}
 }
 
-func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
-	var result *domain.ProblemSearchResult
+func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (domain.ProblemSearchResult, error) {
+	var result domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -68,8 +68,8 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (*domain.ProblemSearchResult, error) {
-	var result *domain.ProblemSearchResult
+func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.ProblemSearchResult, error) {
+	var result domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -87,8 +87,8 @@ func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organi
 	return result, nil
 }
 
-func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
-	var result *domain.ProblemSearchResult
+func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (domain.ProblemSearchResult, error) {
+	var result domain.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -262,11 +262,11 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 }
 
 func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
-	repo, err := s.repo(tx)
+	repo, err := s.rfFunc(tx)
 	if err != nil {
 		return nil, nil, err
 	}
-	userRepo, err := s.userRepo(tx)
+	userRepo, err := s.userRfFunc(tx)
 	if err != nil {
 		return nil, nil, err
 	}

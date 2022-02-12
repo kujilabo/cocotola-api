@@ -20,7 +20,7 @@ type Problem struct {
 }
 
 type ProblemFindResponse struct {
-	TotalCount int64     `json:"totalCount"`
+	TotalCount int       `json:"totalCount"`
 	Results    []Problem `json:"results"`
 }
 
@@ -32,7 +32,7 @@ type SimpleProblem struct {
 }
 
 type ProblemFindAllResponse struct {
-	TotalCount int64           `json:"totalCount"`
+	TotalCount int             `json:"totalCount"`
 	Results    []SimpleProblem `json:"results"`
 }
 

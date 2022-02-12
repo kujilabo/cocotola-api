@@ -46,6 +46,32 @@ func (p *workbookSearchCondition) GetSpaceIDs() []user.SpaceID {
 	return p.SpaceIDs
 }
 
+type WorkbookSearchResult interface {
+	GetTotalCount() int
+	GetResults() []Workbook
+}
+
+type workbookSearchResult struct {
+	TotalCount int
+	Results    []Workbook
+}
+
+func NewWorkbookSearchResult(totalCount int, results []Workbook) (WorkbookSearchResult, error) {
+	m := &workbookSearchResult{
+		TotalCount: totalCount,
+		Results:    results,
+	}
+
+	return m, libD.Validator.Struct(m)
+}
+func (m *workbookSearchResult) GetTotalCount() int {
+	return m.TotalCount
+}
+
+func (m *workbookSearchResult) GetResults() []Workbook {
+	return m.Results
+}
+
 type WorkbookAddParameter interface {
 	GetProblemType() string
 	GetName() string
@@ -115,7 +141,7 @@ func (p *workbookUpdateParameter) GetQuestionText() string {
 }
 
 type WorkbookRepository interface {
-	FindPersonalWorkbooks(ctx context.Context, operator Student, param WorkbookSearchCondition) (*WorkbookSearchResult, error)
+	FindPersonalWorkbooks(ctx context.Context, operator Student, param WorkbookSearchCondition) (WorkbookSearchResult, error)
 
 	FindWorkbookByID(ctx context.Context, operator Student, id WorkbookID) (Workbook, error)
 

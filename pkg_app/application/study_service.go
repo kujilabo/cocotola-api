@@ -18,33 +18,33 @@ type StudyService interface {
 }
 
 type studyService struct {
-	db       *gorm.DB
-	pf       domain.ProcessorFactory
-	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
-	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
+	db         *gorm.DB
+	pf         domain.ProcessorFactory
+	rfFunc     func(db *gorm.DB) (domain.RepositoryFactory, error)
+	userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) StudyService {
+func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error), userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)) StudyService {
 	return &studyService{
-		db:       db,
-		pf:       pf,
-		repo:     repo,
-		userRepo: userRepo,
+		db:         db,
+		pf:         pf,
+		rfFunc:     rfFunc,
+		userRfFunc: userRfFunc,
 	}
 }
 
 func (s *studyService) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error) {
 	var results []domain.ProblemWithLevel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rfFunc, err := s.rfFunc(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return xerrors.Errorf("failed to rfFunc. err: %w", err)
 		}
-		userRepo, err := s.userRepo(tx)
+		userRepo, err := s.userRfFunc(tx)
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -67,15 +67,15 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 
 func (s *studyService) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return xerrors.Errorf("failed to rfFunc. err: %w", err)
 		}
-		userRepo, err := s.userRepo(tx)
+		userRepo, err := s.userRfFunc(tx)
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -98,7 +98,7 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 }
 
 // func (s *studyService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error) {
-// 	student, err := findStudent(ctx, s.repositoryFactory, organizationID, operatorID)
+// 	student, err := findStudent(ctx, s.rfFuncsitoryFactory, organizationID, operatorID)
 // 	if err != nil {
 // 		return nil, err
 // 	}

@@ -12,18 +12,6 @@ import (
 
 type WorkbookID uint
 
-type WorkbookSearchResult struct {
-	TotalCount int64
-	Results    []Workbook
-}
-
-//
-// type workbookProperties struct {
-// 	Name         string `validate:"required"`
-// 	ProblemType  string `validate:"required"`
-// 	QuestionText string
-// }
-
 type Workbook interface {
 	user.Model
 	GetSpaceID() user.SpaceID
@@ -33,11 +21,11 @@ type Workbook interface {
 	GetQuestionText() string
 	GetProperties() map[string]string
 
-	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error)
+	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (ProblemSearchResult, error)
 
-	FindAllProblems(ctx context.Context, operator Student) (*ProblemSearchResult, error)
+	FindAllProblems(ctx context.Context, operator Student) (ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (ProblemSearchResult, error)
 
 	FindProblemIDs(ctx context.Context, operator Student) ([]ProblemID, error)
 
@@ -114,7 +102,7 @@ func (m *workbook) GetProperties() map[string]string {
 	return m.Properties
 }
 
-func (m *workbook) FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error) {
+func (m *workbook) FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (ProblemSearchResult, error) {
 	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
@@ -122,7 +110,7 @@ func (m *workbook) FindProblems(ctx context.Context, operator Student, param Pro
 	return problemRepo.FindProblems(ctx, operator, param)
 }
 
-func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (*ProblemSearchResult, error) {
+func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (ProblemSearchResult, error) {
 	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
@@ -130,7 +118,7 @@ func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (*Prob
 	return problemRepo.FindAllProblems(ctx, operator, WorkbookID(m.GetID()))
 }
 
-func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error) {
+func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (ProblemSearchResult, error) {
 	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err

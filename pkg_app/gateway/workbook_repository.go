@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"strconv"
 	"time"
 
@@ -112,7 +113,7 @@ func (r *workbookRepository) toProblemTypeID(problemType string) uint {
 	return 0
 }
 
-func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
+func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (domain.WorkbookSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbookRepository.FindWorkbooks %v", operator)
 	if param == nil {
@@ -161,10 +162,11 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 		count += c
 	}
 
-	return &domain.WorkbookSearchResult{
-		TotalCount: count,
-		Results:    results,
-	}, nil
+	if count > math.MaxInt32 {
+		return nil, errors.New("overflow")
+	}
+
+	return domain.NewWorkbookSearchResult(int(count), results)
 }
 
 func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) []user.RBACRole {

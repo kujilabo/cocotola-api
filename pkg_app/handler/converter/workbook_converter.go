@@ -5,9 +5,9 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 )
 
-func ToWorkbookSearchResponse(result *domain.WorkbookSearchResult) (*entity.WorkbookSearchResponse, error) {
-	workbooks := make([]entity.Workbook, len(result.Results))
-	for i, w := range result.Results {
+func ToWorkbookSearchResponse(result domain.WorkbookSearchResult) (*entity.WorkbookSearchResponse, error) {
+	workbooks := make([]entity.Workbook, len(result.GetResults()))
+	for i, w := range result.GetResults() {
 		model, err := entity.NewModel(w)
 		if err != nil {
 			return nil, err
@@ -22,7 +22,7 @@ func ToWorkbookSearchResponse(result *domain.WorkbookSearchResult) (*entity.Work
 	}
 
 	return &entity.WorkbookSearchResponse{
-		TotalCount: result.TotalCount,
+		TotalCount: result.GetTotalCount(),
 		Results:    workbooks,
 	}, nil
 }

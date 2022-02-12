@@ -12,11 +12,11 @@ type AppUserGroupRepositoryMock struct {
 }
 
 func (m *AppUserGroupRepositoryMock) FindPublicGroup(ctx context.Context, operator domain.SystemOwner) (domain.AppUserGroup, error) {
-	args := m.Called()
+	args := m.Called(ctx, operator)
 	return args.Get(0).(domain.AppUserGroup), args.Error(1)
 }
 
 func (m *AppUserGroupRepositoryMock) AddPublicGroup(ctx context.Context, operator domain.SystemOwner) (domain.AppUserGroupID, error) {
-	args := m.Called()
+	args := m.Called(ctx, operator)
 	return args.Get(0).(domain.AppUserGroupID), args.Error(1)
 }

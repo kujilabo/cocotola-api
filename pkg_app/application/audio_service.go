@@ -15,14 +15,14 @@ type AudioService interface {
 }
 
 type audioService struct {
-	db   *gorm.DB
-	repo func(db *gorm.DB) (domain.RepositoryFactory, error)
+	db     *gorm.DB
+	rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error)
 }
 
-func NewAudioService(db *gorm.DB, repo func(db *gorm.DB) (domain.RepositoryFactory, error)) AudioService {
+func NewAudioService(db *gorm.DB, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error)) AudioService {
 	return &audioService{
-		db:   db,
-		repo: repo,
+		db:     db,
+		rfFunc: rfFunc,
 	}
 }
 
@@ -31,11 +31,11 @@ func (s *audioService) FindAudioByID(ctx context.Context, audioID domain.AudioID
 	logger.Infof("audioID: %d", audioID)
 	var audio domain.Audio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to repo. err: %w", err)
+			return xerrors.Errorf("failed to rf. err: %w", err)
 		}
-		audioRepo, err := repo.NewAudioRepository(ctx)
+		audioRepo, err := rf.NewAudioRepository(ctx)
 		if err != nil {
 			return err
 		}

@@ -141,7 +141,7 @@ func initProblems(ctx context.Context, operator appD.Student, workbook appD.Work
 	}
 
 	problemMap := make(map[string]bool)
-	for _, p := range problems.Results {
+	for _, p := range problems.GetResults() {
 		m := p.GetProperties(ctx)
 		textObj, ok := m["text"]
 		if !ok {
@@ -253,11 +253,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	rf, err := userG.NewRepositoryFactory(db)
+	userRf, err := userG.NewRepositoryFactory(db)
 	if err != nil {
 		panic(err)
 	}
-	userD.InitSystemAdmin(rf)
+	userD.InitSystemAdmin(userRf)
 	systemAdmin := userD.SystemAdminInstance()
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
 	if err != nil {
@@ -295,28 +295,24 @@ func main() {
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}
 
-	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
-		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	rfFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
 	}
 
-	repo, err := repoFunc(db)
-	if err != nil {
-		panic(err)
-	}
-	userRepo, err := userRepoFunc(db)
+	repo, err := rfFunc(db)
 	if err != nil {
 		panic(err)
 	}
 
-	appUser, err := userRepo.NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
+	appUser, err := userRf.NewAppUserRepository().FindAppUserByLoginID(ctx, systemOwner, cfg.App.TestUserEmail)
 	if err != nil {
 		panic(err)
 	}
 
-	student, err := appD.NewStudent(pf, repo, userRepo, appUser)
+	student, err := appD.NewStudent(pf, repo, userRf, appUser)
 	if err != nil {
 		panic(err)
 	}

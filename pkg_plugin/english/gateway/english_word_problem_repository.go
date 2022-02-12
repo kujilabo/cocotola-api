@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"math"
 	"strconv"
 	"time"
 
@@ -173,7 +174,7 @@ func NewEnglishWordProblemRepository(db *gorm.DB, problemType string) (app.Probl
 	}, nil
 }
 
-func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (*app.ProblemSearchResult, error) {
+func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (app.ProblemSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemRepository.FindProblems")
 	limit := param.GetPageSize()
@@ -205,13 +206,14 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 
 	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
 
-	return &app.ProblemSearchResult{
-		TotalCount: count,
-		Results:    problems,
-	}, nil
+	if count > math.MaxInt32 {
+		return nil, errors.New("overflow")
+	}
+
+	return app.NewProblemSearchResult(int(count), problems)
 }
 
-func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, operator app.Student, workbookID app.WorkbookID) (*app.ProblemSearchResult, error) {
+func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, operator app.Student, workbookID app.WorkbookID) (app.ProblemSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemRepository.FindProblems")
 	limit := 1000
@@ -242,13 +244,14 @@ func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, oper
 
 	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
 
-	return &app.ProblemSearchResult{
-		TotalCount: count,
-		Results:    problems,
-	}, nil
+	if count > math.MaxInt32 {
+		return nil, errors.New("overflow")
+	}
+
+	return app.NewProblemSearchResult(int(count), problems)
 }
 
-func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param app.ProblemIDsCondition) (*app.ProblemSearchResult, error) {
+func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param app.ProblemIDsCondition) (app.ProblemSearchResult, error) {
 	var problemEntities []englishWordProblemEntity
 
 	ids := make([]uint, 0)
@@ -272,9 +275,7 @@ func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Cont
 		problems[i] = p
 	}
 
-	return &app.ProblemSearchResult{
-		Results: problems,
-	}, nil
+	return app.NewProblemSearchResult(0, problems)
 }
 
 func (r *englishWordProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
