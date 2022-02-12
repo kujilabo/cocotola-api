@@ -12,9 +12,9 @@ func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindPara
 	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, param.Keyword)
 }
 
-func ToProblemFindResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
-	problems := make([]entity.Problem, len(result.Results))
-	for i, p := range result.Results {
+func ToProblemFindResponse(ctx context.Context, result domain.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
+	problems := make([]entity.Problem, len(result.GetResults()))
+	for i, p := range result.GetResults() {
 		bytes, err := json.Marshal(p.GetProperties(ctx))
 		if err != nil {
 			return nil, err
@@ -34,14 +34,14 @@ func ToProblemFindResponse(ctx context.Context, result *domain.ProblemSearchResu
 	}
 
 	return &entity.ProblemFindResponse{
-		TotalCount: result.TotalCount,
+		TotalCount: result.GetTotalCount(),
 		Results:    problems,
 	}, nil
 }
 
-func ToProblemFindAllResponse(ctx context.Context, result *domain.ProblemSearchResult) (*entity.ProblemFindAllResponse, error) {
-	problems := make([]entity.SimpleProblem, len(result.Results))
-	for i, p := range result.Results {
+func ToProblemFindAllResponse(ctx context.Context, result domain.ProblemSearchResult) (*entity.ProblemFindAllResponse, error) {
+	problems := make([]entity.SimpleProblem, len(result.GetResults()))
+	for i, p := range result.GetResults() {
 		bytes, err := json.Marshal(p.GetProperties(ctx))
 		if err != nil {
 			return nil, err
@@ -61,7 +61,7 @@ func ToProblemFindAllResponse(ctx context.Context, result *domain.ProblemSearchR
 	}
 
 	return &entity.ProblemFindAllResponse{
-		TotalCount: result.TotalCount,
+		TotalCount: result.GetTotalCount(),
 		Results:    problems,
 	}, nil
 }

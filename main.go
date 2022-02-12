@@ -75,56 +75,6 @@ func main() {
 		done <- true
 	}()
 
-	// cfg, err := config.LoadConfig(*env)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// // init log
-	// if err := config.InitLog(*env, cfg.Log); err != nil {
-	// 	panic(err)
-	// }
-
-	// // cors
-	// corsConfig := config.InitCORS(cfg.CORS)
-	// logrus.Infof("cors: %+v", corsConfig)
-
-	// if err := corsConfig.Validate(); err != nil {
-	// 	panic(err)
-	// }
-
-	// // init db
-	// db, sqlDB, err := initDB(cfg.DB)
-	// if err != nil {
-	// 	fmt.Printf("failed to InitDB. err: %+v", err)
-	// 	panic(err)
-	// }
-	// defer sqlDB.Close()
-
-	// rf, err := userG.NewRepositoryFactory(db)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// userD.InitSystemAdmin(rf)
-
-	// if err := initApp(ctx, db, cfg.App.OwnerPassword); err != nil {
-	// 	panic(err)
-	// }
-
-	// if !cfg.Debug.GinMode {
-	// 	gin.SetMode(gin.ReleaseMode)
-	// }
-
-	// router := gin.New()
-	// router.Use(cors.New(corsConfig))
-	// router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	// router.Use(middleware.NewLogMiddleware(), gin.Recovery())
-
-	// if cfg.Debug.Wait {
-	// 	router.Use(middleware.NewWaitMiddleware())
-	// }
-
 	cfg, db, sqlDB, router, err := initialize(ctx, *env)
 	if err != nil {
 		panic(err)
@@ -143,7 +93,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	pluginRepoFunc := func(db *gorm.DB) (pluginCommonDomain.RepositoryFactory, error) {
+	pluginRfFunc := func(db *gorm.DB) (pluginCommonDomain.RepositoryFactory, error) {
 		return pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
 	}
 
@@ -176,21 +126,21 @@ func main() {
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
 
-	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+	englishWordProblemRepositoryFunc := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
 	}
-	englishPhraseProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+	englishPhraseProblemRepositoryFunc := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
-	englishSentenceProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
+	englishSentenceProblemRepositoryFunc := func(db *gorm.DB) (appD.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 
 	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
-		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepository,
-		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepository,
-		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemRepository,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepositoryFunc,
+		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepositoryFunc,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemRepositoryFunc,
 	}
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
@@ -201,11 +151,11 @@ func main() {
 		return nil, xerrors.Errorf("processor not found. problemType: %s", problemType)
 	}
 
-	userRepoFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	repoFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
-		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRepoFunc, pf, problemRepositories)
+	rfFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
 	}
 
 	signingKey := []byte(cfg.Auth.SigningKey)
@@ -216,21 +166,21 @@ func main() {
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
-		repo, err := repoFunc(db)
+		rf, err := rfFunc(db)
 		if err != nil {
 			return err
 		}
-		userRepo, err := userRepoFunc(db)
+		userRf, err := userRfFunc(db)
 		if err != nil {
 			return err
 		}
-		return callback(ctx, cfg.App.TestUserEmail, pf, repo, userRepo, organizationName, appUser)
+		return callback(ctx, cfg.App.TestUserEmail, pf, rf, userRf, organizationName, appUser)
 	}
 
 	v1 := router.Group("v1")
 	{
 		v1auth := v1.Group("auth")
-		googleAuthService := authA.NewGoogleAuthService(userRepoFunc, googleAuthClient, authTokenManager, registerAppUserCallback)
+		googleAuthService := authA.NewGoogleAuthService(googleAuthClient, authTokenManager, registerAppUserCallback)
 		guestAuthService := authA.NewGuestAuthService(authTokenManager)
 		authHandler := authH.NewAuthHandler(authTokenManager)
 		googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
@@ -239,7 +189,7 @@ func main() {
 		v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
 		v1auth.POST("refresh_token", authHandler.RefreshToken)
 
-		privateWorkbookService := application.NewPrivateWorkbookService(db, pf, repoFunc, userRepoFunc)
+		privateWorkbookService := application.NewPrivateWorkbookService(db, pf, rfFunc, userRfFunc)
 		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
 		v1Workbook := v1.Group("private/workbook")
 		v1Workbook.Use(authMiddleware)
@@ -249,7 +199,7 @@ func main() {
 		v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 
-		problemService := application.NewProblemService(db, pf, repoFunc, userRepoFunc)
+		problemService := application.NewProblemService(db, pf, rfFunc, userRfFunc)
 		problemHandler := appH.NewProblemHandler(problemService, newIterator)
 		v1Problem := v1.Group("workbook/:workbookID")
 		v1Problem.Use(authMiddleware)
@@ -263,14 +213,14 @@ func main() {
 		v1Problem.POST("problem/find_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("problem/import", problemHandler.ImportProblems)
 
-		studyService := application.NewStudyService(db, pf, repoFunc, userRepoFunc)
+		studyService := application.NewStudyService(db, pf, rfFunc, userRfFunc)
 		recordbookHandler := appH.NewRecordbookHandler(studyService)
 		v1Study := v1.Group("study/workbook/:workbookID")
 		v1Study.Use(authMiddleware)
 		v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
 		v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
 
-		audioService := application.NewAudioService(db, repoFunc)
+		audioService := application.NewAudioService(db, rfFunc)
 		audioHandler := appH.NewAudioHandler(audioService)
 		v1Audio := v1.Group("audio")
 		v1Audio.Use(authMiddleware)
@@ -299,7 +249,7 @@ func main() {
 				return pluginCommonGateway.NewTatoebaLinkAddParameterReader(reader)
 			}
 			pluginTatoeba := plugin.Group("tatoeba")
-			tatoebaService := pluginApplication.NewTatoebaService(db, pluginRepoFunc)
+			tatoebaService := pluginApplication.NewTatoebaService(db, pluginRfFunc)
 			tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaService, newSentenceReader, newLinkReader)
 			pluginTatoeba.POST("find", tatoebaHandler.FindSentences)
 			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)

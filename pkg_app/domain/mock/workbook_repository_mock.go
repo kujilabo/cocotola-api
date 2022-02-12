@@ -12,9 +12,9 @@ type WorkbookRepositoryMock struct {
 	mock.Mock
 }
 
-func (m *WorkbookRepositoryMock) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (*domain.WorkbookSearchResult, error) {
+func (m *WorkbookRepositoryMock) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (domain.WorkbookSearchResult, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*domain.WorkbookSearchResult), args.Error(1)
+	return args.Get(0).(domain.WorkbookSearchResult), args.Error(1)
 }
 func (m *WorkbookRepositoryMock) FindWorkbookByID(ctx context.Context, operator domain.Student, id domain.WorkbookID) (domain.Workbook, error) {
 	args := m.Called(ctx)

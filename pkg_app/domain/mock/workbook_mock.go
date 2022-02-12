@@ -73,19 +73,19 @@ func (m *WorkbookMock) GetProperties() map[string]string {
 	return args.Get(0).(map[string]string)
 }
 
-func (m *WorkbookMock) FindProblems(ctx context.Context, operator domain.Student, param domain.ProblemSearchCondition) (*domain.ProblemSearchResult, error) {
+func (m *WorkbookMock) FindProblems(ctx context.Context, operator domain.Student, param domain.ProblemSearchCondition) (domain.ProblemSearchResult, error) {
 	args := m.Called(ctx, operator, param)
-	return args.Get(0).(*domain.ProblemSearchResult), args.Error(1)
+	return args.Get(0).(domain.ProblemSearchResult), args.Error(1)
 }
 
-func (m *WorkbookMock) FindAllProblems(ctx context.Context, operator domain.Student) (*domain.ProblemSearchResult, error) {
+func (m *WorkbookMock) FindAllProblems(ctx context.Context, operator domain.Student) (domain.ProblemSearchResult, error) {
 	args := m.Called(ctx, operator)
-	return args.Get(0).(*domain.ProblemSearchResult), args.Error(1)
+	return args.Get(0).(domain.ProblemSearchResult), args.Error(1)
 }
 
-func (m *WorkbookMock) FindProblemsByProblemIDs(ctx context.Context, operator domain.Student, param domain.ProblemIDsCondition) (*domain.ProblemSearchResult, error) {
+func (m *WorkbookMock) FindProblemsByProblemIDs(ctx context.Context, operator domain.Student, param domain.ProblemIDsCondition) (domain.ProblemSearchResult, error) {
 	args := m.Called(ctx, operator, param)
-	return args.Get(0).(*domain.ProblemSearchResult), args.Error(1)
+	return args.Get(0).(domain.ProblemSearchResult), args.Error(1)
 }
 
 func (m *WorkbookMock) FindProblemIDs(ctx context.Context, operator domain.Student) ([]domain.ProblemID, error) {

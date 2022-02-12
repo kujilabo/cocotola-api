@@ -14,7 +14,7 @@ const DefaultPageNo = 1
 const DefaultPageSize = 10
 
 type PrivateWorkbookService interface {
-	FindWorkbooks(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID) (*domain.WorkbookSearchResult, error)
+	FindWorkbooks(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID) (domain.WorkbookSearchResult, error)
 
 	FindWorkbookByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workBookID domain.WorkbookID) (domain.Workbook, error)
 
@@ -26,33 +26,33 @@ type PrivateWorkbookService interface {
 }
 
 type privateWorkbookService struct {
-	db       *gorm.DB
-	pf       domain.ProcessorFactory
-	repo     func(db *gorm.DB) (domain.RepositoryFactory, error)
-	userRepo func(db *gorm.DB) (user.RepositoryFactory, error)
+	db         *gorm.DB
+	pf         domain.ProcessorFactory
+	rfFunc     func(db *gorm.DB) (domain.RepositoryFactory, error)
+	userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)
 }
 
-func NewPrivateWorkbookService(db *gorm.DB, pf domain.ProcessorFactory, repo func(db *gorm.DB) (domain.RepositoryFactory, error), userRepo func(db *gorm.DB) (user.RepositoryFactory, error)) PrivateWorkbookService {
+func NewPrivateWorkbookService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error), userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)) PrivateWorkbookService {
 	return &privateWorkbookService{
-		db:       db,
-		pf:       pf,
-		repo:     repo,
-		userRepo: userRepo,
+		db:         db,
+		pf:         pf,
+		rfFunc:     rfFunc,
+		userRfFunc: userRfFunc,
 	}
 }
 
-func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID) (*domain.WorkbookSearchResult, error) {
-	var result *domain.WorkbookSearchResult
+func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID) (domain.WorkbookSearchResult, error) {
+	var result domain.WorkbookSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		userRf, err := s.userRfFunc(tx)
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRf, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -78,15 +78,15 @@ func (s *privateWorkbookService) FindWorkbooks(ctx context.Context, organization
 func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workBookID domain.WorkbookID) (domain.Workbook, error) {
 	var result domain.Workbook
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		userRf, err := s.userRfFunc(tx)
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRf, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -107,15 +107,15 @@ func (s *privateWorkbookService) FindWorkbookByID(ctx context.Context, organizat
 func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, parameter domain.WorkbookAddParameter) (domain.WorkbookID, error) {
 	var result domain.WorkbookID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		userRf, err := s.userRfFunc(tx)
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRf, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -135,15 +135,15 @@ func (s *privateWorkbookService) AddWorkbook(ctx context.Context, organizationID
 
 func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int, parameter domain.WorkbookUpdateParameter) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		userRf, err := s.userRfFunc(tx)
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRf, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -157,15 +157,15 @@ func (s *privateWorkbookService) UpdateWorkbook(ctx context.Context, organizatio
 
 func (s *privateWorkbookService) RemoveWorkbook(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, version int) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		repo, err := s.repo(tx)
+		rf, err := s.rfFunc(tx)
 		if err != nil {
 			return err
 		}
-		userRepo, err := s.userRepo(tx)
+		userRf, err := s.userRfFunc(tx)
 		if err != nil {
 			return err
 		}
-		student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+		student, err := findStudent(ctx, s.pf, rf, userRf, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}

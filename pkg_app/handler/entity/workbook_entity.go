@@ -37,13 +37,13 @@ type Workbook struct {
 }
 
 type WorkbookSearchResponse struct {
-	TotalCount int64      `json:"totalCount"`
+	TotalCount int        `json:"totalCount"`
 	Results    []Workbook `json:"results"`
 }
 
 type WorkbookAddParameter struct {
 	Name         string `json:"name" binding:"required"`
-	ProblemType  string `json:"problemType" enums:"english_word,english_phrase,english_sentence,template"`
+	ProblemType  string `json:"problemType" binding:"required"`
 	QuestionText string `json:"questionText"`
 }
 

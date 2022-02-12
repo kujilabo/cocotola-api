@@ -14,7 +14,7 @@ type Student interface {
 	GetDefaultSpace(ctx context.Context) (user.Space, error)
 	GetPersonalSpace(ctx context.Context) (user.Space, error)
 
-	FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error)
+	FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (WorkbookSearchResult, error)
 
 	FindWorkbookByID(ctx context.Context, id WorkbookID) (Workbook, error)
 
@@ -61,7 +61,7 @@ func (s *student) GetPersonalSpace(ctx context.Context) (user.Space, error) {
 	return s.userRf.NewSpaceRepository().FindPersonalSpace(ctx, s)
 }
 
-func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (*WorkbookSearchResult, error) {
+func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (WorkbookSearchResult, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
@@ -182,59 +182,6 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 	default:
 		return xerrors.Errorf("invalid name. name: %s", name)
 	}
-
-	// isExceeded, err := processor.IsExceeded(ctx, s.rf, s, name)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if isExceeded {
-	// 	return ErrQuotaExceeded
-	// }
-
-	// return nil
-
-	// switch name {
-	// case EnglishWordProblemSizeLimit:
-	// 	count, err := s.rf.NewEnglishWordProblemRepository().CountByAppUser(ctx, s)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if count > config.Limit {
-	// 		return NewLimitExceededError(name)
-	// 	}
-	// 	return nil
-	// case EnglishPhraseProblemSizeLimit:
-	// 	count, err := s.rf.NewEnglishPhraseProblemRepository().CountByAppUser(ctx, s)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if count > config.Limit {
-	// 		return NewLimitExceededError(name)
-	// 	}
-	// 	return nil
-	// case TemplateProblemSizeLimit:
-	// 	count, err := s.rf.NewTemplateProblemRepository().CountByAppUser(ctx, s)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if count > config.Limit {
-	// 		return NewLimitExceededError(name)
-	// 	}
-	// 	return nil
-	// case EnglishWordProblemUpdateLimit, EnglishPhraseProblemUpdateLimit, TemplateProblemUpdateLimit:
-	// 	exceeded, err := s.rf.NewQuotaLimitRepository().IsExceeded(ctx, s.OrganizationID(), s.ID(), name, config.Unit, config.Limit)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if exceeded {
-	// 		return NewLimitExceededError(name)
-	// 	}
-	// 	return nil
-	// default:
-	// 	return fmt.Errorf("Invalid name. name2: %s", name)
-	// }
-	// return nil
 }
 
 func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error {

@@ -117,12 +117,12 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 				}
 
 				if err == nil {
-					assert.Len(t, got.Results, len(tt.want))
+					assert.Len(t, got.GetResults(), len(tt.want))
 					for i, want := range tt.want {
-						assert.Equal(t, uint(want.workbookID), got.Results[i].GetID())
-						assert.Equal(t, want.workbookName, got.Results[i].GetName())
+						assert.Equal(t, uint(want.workbookID), got.GetResults()[i].GetID())
+						assert.Equal(t, want.workbookName, got.GetResults()[i].GetName())
 					}
-					assert.Equal(t, int64(len(tt.want)), got.TotalCount)
+					assert.Equal(t, len(tt.want), got.GetTotalCount())
 				}
 			})
 		}

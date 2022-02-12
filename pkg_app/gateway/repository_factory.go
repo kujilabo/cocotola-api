@@ -13,13 +13,13 @@ import (
 type repositoryFactory struct {
 	db                  *gorm.DB
 	driverName          string
-	userRepo            func(db *gorm.DB) (user.RepositoryFactory, error)
+	userRfFunc          func(db *gorm.DB) (user.RepositoryFactory, error)
 	pf                  domain.ProcessorFactory
 	problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)
 	problemTypes        []domain.ProblemType
 }
 
-func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRepo func(db *gorm.DB) (user.RepositoryFactory, error), pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) (domain.RepositoryFactory, error) {
+func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error), pf domain.ProcessorFactory, problemRepositories map[string]func(*gorm.DB) (domain.ProblemRepository, error)) (domain.RepositoryFactory, error) {
 	problemTypeRepo, err := NewProblemTypeRepository(db)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, u
 	return &repositoryFactory{
 		db:                  db,
 		driverName:          driverName,
-		userRepo:            userRepo,
+		userRfFunc:          userRfFunc,
 		pf:                  pf,
 		problemRepositories: problemRepositories,
 		problemTypes:        problemTypes,
@@ -49,11 +49,11 @@ func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.W
 	// }
 	// logger := log.FromContext(ctx)
 	// logger.Infof("problem types: %+v", problemTypes)
-	userRepo, err := f.userRepo(f.db)
+	userRf, err := f.userRfFunc(f.db)
 	if err != nil {
 		return nil, err
 	}
-	return NewWorkbookRepository(ctx, f.driverName, f, userRepo, f.pf, f.db, f.problemTypes), nil
+	return NewWorkbookRepository(ctx, f.driverName, f, userRf, f.pf, f.db, f.problemTypes), nil
 }
 
 func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (domain.ProblemRepository, error) {

@@ -196,17 +196,37 @@ func (c *problemIDsCondition) GetIDs() []ProblemID {
 	return c.IDs
 }
 
-type ProblemSearchResult struct {
-	TotalCount int64
+type ProblemSearchResult interface {
+	GetTotalCount() int
+	GetResults() []Problem
+}
+type problemSearchResult struct {
+	TotalCount int
 	Results    []Problem
 }
 
+func NewProblemSearchResult(totalCount int, results []Problem) (ProblemSearchResult, error) {
+	m := &problemSearchResult{
+		TotalCount: totalCount,
+		Results:    results,
+	}
+
+	return m, libD.Validator.Struct(m)
+}
+func (m *problemSearchResult) GetTotalCount() int {
+	return m.TotalCount
+}
+
+func (m *problemSearchResult) GetResults() []Problem {
+	return m.Results
+}
+
 type ProblemRepository interface {
-	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (*ProblemSearchResult, error)
+	FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (ProblemSearchResult, error)
 
-	FindAllProblems(ctx context.Context, operator Student, workbookID WorkbookID) (*ProblemSearchResult, error)
+	FindAllProblems(ctx context.Context, operator Student, workbookID WorkbookID) (ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (*ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (ProblemSearchResult, error)
 
 	FindProblemIDs(ctx context.Context, operator Student, workbookID WorkbookID) ([]ProblemID, error)
 

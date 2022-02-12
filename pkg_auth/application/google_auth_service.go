@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"golang.org/x/xerrors"
-	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -14,20 +13,20 @@ import (
 
 type GoogleAuthService interface {
 	RetrieveAccessToken(ctx context.Context, code string) (*domain.GoogleAuthResponse, error)
+
 	RetrieveUserInfo(ctx context.Context, GoogleAuthResponse *domain.GoogleAuthResponse) (*domain.GoogleUserInfo, error)
+
 	RegisterStudent(ctx context.Context, googleUserInfo *domain.GoogleUserInfo, googleAuthResponse *domain.GoogleAuthResponse, organizationName string) (*domain.TokenSet, error)
 }
 
 type googleAuthService struct {
-	userRepo                func(db *gorm.DB) (user.RepositoryFactory, error)
 	googleAuthClient        domain.GoogleAuthClient
 	authTokenManager        domain.AuthTokenManager
 	registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error
 }
 
-func NewGoogleAuthService(userRepo func(db *gorm.DB) (user.RepositoryFactory, error), googleAuthClient domain.GoogleAuthClient, authTokenManager domain.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error) GoogleAuthService {
+func NewGoogleAuthService(googleAuthClient domain.GoogleAuthClient, authTokenManager domain.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error) GoogleAuthService {
 	return &googleAuthService{
-		userRepo:                userRepo,
 		googleAuthClient:        googleAuthClient,
 		authTokenManager:        authTokenManager,
 		registerAppUserCallback: registerAppUserCallback,

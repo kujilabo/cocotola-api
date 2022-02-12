@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	quotaSizeUnit  = app.UnitPersitance
+	quotaSizeUnit  = app.QuotaUnitPersitance
 	quotaSizeLimit = 5000
 
-	quotaUpdateUnit  = app.UnitDay
+	quotaUpdateUnit  = app.QuotaUnitDay
 	quotaUpdateLimit = 100
 )
 
