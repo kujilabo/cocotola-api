@@ -26,7 +26,6 @@ import (
 	"github.com/kujilabo/cocotola-api/docs"
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	appH "github.com/kujilabo/cocotola-api/pkg_app/handler"
@@ -584,7 +583,7 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc func(db *gorm.DB) (appD
 			return err
 		}
 
-		systemStudent, err := domain.NewSystemStudent(rf, systemStudentAppUser)
+		systemStudent, err := appD.NewSystemStudent(rf, systemStudentAppUser)
 		if err != nil {
 			return err
 		}
