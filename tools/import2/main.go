@@ -280,7 +280,7 @@ func main() {
 		panic(err)
 	}
 
-	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, nil, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}

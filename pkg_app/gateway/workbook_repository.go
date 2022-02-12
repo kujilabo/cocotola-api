@@ -226,7 +226,7 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
 }
 
-func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator domain.Student, spaceID user.SpaceID, name string) (domain.Workbook, error) {
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, name string) (domain.Workbook, error) {
 	workbook := workbookEntity{}
 	if result := r.db.Where("space_id = ?", uint(spaceID)).Where("name = ?", name).First(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -316,7 +316,7 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator do
 // 	}, nil
 // }
 
-func (r *workbookRepository) AddWorkbook(ctx context.Context, operator domain.Student, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
+func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
 		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())

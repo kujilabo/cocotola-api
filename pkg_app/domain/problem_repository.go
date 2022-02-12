@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
@@ -105,6 +106,8 @@ func (p *problemSelectParameter2) GetVersion() int {
 type ProblemUpdateParameter interface {
 	GetNumber() int
 	GetProperties() map[string]string
+	GetStringProperty(name string) (string, error)
+	GetIntProperty(name string) (int, error)
 }
 
 type problemUpdateParameter struct {
@@ -126,6 +129,20 @@ func (p *problemUpdateParameter) GetNumber() int {
 }
 func (p *problemUpdateParameter) GetProperties() map[string]string {
 	return p.Properties
+}
+func (p *problemUpdateParameter) GetStringProperty(name string) (string, error) {
+	s, ok := p.Properties[name]
+	if !ok {
+		return "", errors.New("key not found")
+	}
+	return s, nil
+}
+func (p *problemUpdateParameter) GetIntProperty(name string) (int, error) {
+	i, err := strconv.Atoi(p.Properties[name])
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
 type ProblemSearchCondition interface {
@@ -231,6 +248,8 @@ type ProblemRepository interface {
 	FindProblemIDs(ctx context.Context, operator Student, workbookID WorkbookID) ([]ProblemID, error)
 
 	FindProblemByID(ctx context.Context, operator Student, id ProblemSelectParameter1) (Problem, error)
+
+	FindProblemsByCustomCondition(ctx context.Context, operator Student, condition interface{}) ([]Problem, error)
 
 	AddProblem(ctx context.Context, operator Student, param ProblemAddParameter) (ProblemID, error)
 

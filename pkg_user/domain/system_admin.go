@@ -3,18 +3,22 @@ package domain
 import (
 	"context"
 
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"golang.org/x/xerrors"
+	"gorm.io/gorm"
+
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
 const SystemAdminID = 1
 
-var systemAdminInstance SystemAdmin
+// var systemAdminInstance SystemAdmin
+var rfFunc func(db *gorm.DB) (RepositoryFactory, error)
 
-func InitSystemAdmin(rf RepositoryFactory) {
-	systemAdminInstance = &systemAdmin{
-		rf: rf,
-	}
+func InitSystemAdmin(rfFuncArg func(db *gorm.DB) (RepositoryFactory, error)) {
+	// systemAdminInstance = &systemAdmin{
+	// 	rf: rf,
+	// }
+	rfFunc = rfFuncArg
 }
 
 type SystemAdmin interface {
@@ -33,8 +37,23 @@ type systemAdmin struct {
 	rf RepositoryFactory
 }
 
-func SystemAdminInstance() SystemAdmin {
-	return systemAdminInstance
+// func SystemAdminInstance() SystemAdmin {
+// 	return systemAdminInstance
+// }
+
+func NewSystemAdmin(rf RepositoryFactory) SystemAdmin {
+	return &systemAdmin{
+		rf: rf,
+	}
+}
+func NewSystemAdminFromDB(db *gorm.DB) (SystemAdmin, error) {
+	rf, err := rfFunc(db)
+	if err != nil {
+		return nil, err
+	}
+	return &systemAdmin{
+		rf: rf,
+	}, nil
 }
 
 func (s *systemAdmin) GetID() uint {

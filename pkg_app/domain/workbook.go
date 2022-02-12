@@ -43,8 +43,8 @@ type Workbook interface {
 }
 
 type workbook struct {
-	repo             RepositoryFactory
-	processorFactory ProcessorFactory
+	rf RepositoryFactory
+	pf ProcessorFactory
 	user.Model
 	spaceID      user.SpaceID    `validate:"required"`
 	ownerID      user.AppUserID  `validate:"required"`
@@ -55,14 +55,14 @@ type workbook struct {
 	Properties   map[string]string
 }
 
-func NewWorkbook(repo RepositoryFactory, processorFactory ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string, properties map[string]string) (Workbook, error) {
+func NewWorkbook(rf RepositoryFactory, pf ProcessorFactory, model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string, properties map[string]string) (Workbook, error) {
 	m := &workbook{
-		repo:             repo,
-		processorFactory: processorFactory,
-		privileges:       privileges,
-		Model:            model,
-		spaceID:          spaceID,
-		ownerID:          ownerID,
+		rf:         rf,
+		pf:         pf,
+		privileges: privileges,
+		Model:      model,
+		spaceID:    spaceID,
+		ownerID:    ownerID,
 		// Properties: workbookProperties{
 		// 	Name:         name,
 		// 	ProblemType:  problemType,
@@ -103,7 +103,7 @@ func (m *workbook) GetProperties() map[string]string {
 }
 
 func (m *workbook) FindProblems(ctx context.Context, operator Student, param ProblemSearchCondition) (ProblemSearchResult, error) {
-	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (m *workbook) FindProblems(ctx context.Context, operator Student, param Pro
 }
 
 func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (ProblemSearchResult, error) {
-	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (m *workbook) FindAllProblems(ctx context.Context, operator Student) (Probl
 }
 
 func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Student, param ProblemIDsCondition) (ProblemSearchResult, error) {
-	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (m *workbook) FindProblemsByProblemIDs(ctx context.Context, operator Studen
 }
 
 func (m *workbook) FindProblemIDs(ctx context.Context, operator Student) ([]ProblemID, error) {
-	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (m *workbook) FindProblemIDs(ctx context.Context, operator Student) ([]Prob
 }
 
 func (m *workbook) FindProblemByID(ctx context.Context, operator Student, problemID ProblemID) (Problem, error) {
-	problemRepo, err := m.repo.NewProblemRepository(ctx, m.GetProblemType())
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetProblemType())
 	if err != nil {
 		return nil, err
 	}
@@ -154,13 +154,13 @@ func (m *workbook) AddProblem(ctx context.Context, operator Student, param Probl
 		return 0, 0, errors.New("no update privilege")
 	}
 
-	processor, err := m.processorFactory.NewProblemAddProcessor(m.GetProblemType())
+	processor, err := m.pf.NewProblemAddProcessor(m.GetProblemType())
 	if err != nil {
 		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
 	logger.Infof("processor.AddProblem")
-	return processor.AddProblem(ctx, m.repo, operator, m, param)
+	return processor.AddProblem(ctx, m.rf, operator, m, param)
 }
 
 func (m *workbook) UpdateProblem(ctx context.Context, operator Student, id ProblemSelectParameter2, param ProblemUpdateParameter) (Added, Updated, error) {
@@ -171,12 +171,12 @@ func (m *workbook) UpdateProblem(ctx context.Context, operator Student, id Probl
 		return 0, 0, errors.New("no update privilege")
 	}
 
-	processor, err := m.processorFactory.NewProblemUpdateProcessor(m.GetProblemType())
+	processor, err := m.pf.NewProblemUpdateProcessor(m.GetProblemType())
 	if err != nil {
 		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
-	return processor.UpdateProblem(ctx, m.repo, operator, m, id, param)
+	return processor.UpdateProblem(ctx, m.rf, operator, m, id, param)
 }
 
 func (m *workbook) RemoveProblem(ctx context.Context, operator Student, id ProblemSelectParameter2) error {
@@ -187,12 +187,12 @@ func (m *workbook) RemoveProblem(ctx context.Context, operator Student, id Probl
 		return errors.New("no update privilege")
 	}
 
-	processor, err := m.processorFactory.NewProblemRemoveProcessor(m.GetProblemType())
+	processor, err := m.pf.NewProblemRemoveProcessor(m.GetProblemType())
 	if err != nil {
 		return xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetProblemType(), err)
 	}
 
-	return processor.RemoveProblem(ctx, m.repo, operator, id)
+	return processor.RemoveProblem(ctx, m.rf, operator, id)
 
 }
 
@@ -201,7 +201,7 @@ func (m *workbook) UpdateWorkbook(ctx context.Context, operator Student, version
 		return ErrWorkbookPermissionDenied
 	}
 
-	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
+	workbookRepo, err := m.rf.NewWorkbookRepository(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
@@ -214,7 +214,7 @@ func (m *workbook) RemoveWorkbook(ctx context.Context, operator Student, version
 		return ErrWorkbookPermissionDenied
 	}
 
-	workbookRepo, err := m.repo.NewWorkbookRepository(ctx)
+	workbookRepo, err := m.rf.NewWorkbookRepository(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}

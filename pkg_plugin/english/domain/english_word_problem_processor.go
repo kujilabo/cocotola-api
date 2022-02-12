@@ -6,19 +6,24 @@ import (
 	"io"
 	"strconv"
 
+	"golang.org/x/xerrors"
+
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	plugin "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
-	"golang.org/x/xerrors"
 )
 
 var (
 	quotaSizeUnit  = app.QuotaUnitPersitance
 	quotaSizeLimit = 5000
 
-	quotaUpdateUnit  = app.QuotaUnitDay
-	quotaUpdateLimit = 100
+	quotaUpdateUnit                             = app.QuotaUnitDay
+	quotaUpdateLimit                            = 100
+	EnglishWordProblemUpdatePropertyText        = "text"
+	EnglishWordProblemUpdatePropertyTranslated  = "translated"
+	EnglishWordProblemUpdatePropertyAudioID     = "audioId"
+	EnglishWordProblemUpdatePropertySentenceID1 = "sentenceId1"
 )
 
 type englishWordProblemAddParemeter struct {
@@ -100,22 +105,24 @@ type EnglishWordProblemProcessor interface {
 type englishWordProblemProcessor struct {
 	synthesizer                     plugin.Synthesizer
 	translator                      plugin.Translator
+	tatoebaSentenceRepository       plugin.TatoebaSentenceRepositoryReadOnly
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator
 }
 
-func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator) EnglishWordProblemProcessor {
+func NewEnglishWordProblemProcessor(synthesizer plugin.Synthesizer, translator plugin.Translator, tatoebaSentenceRepository plugin.TatoebaSentenceRepositoryReadOnly, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator) EnglishWordProblemProcessor {
 	return &englishWordProblemProcessor{
 		synthesizer:                     synthesizer,
 		translator:                      translator,
+		tatoebaSentenceRepository:       tatoebaSentenceRepository,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
 }
 
-func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.Added, app.ProblemID, error) {
+func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf app.RepositoryFactory, operator app.Student, workbook app.Workbook, param app.ProblemAddParameter) (app.Added, app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.AddProblem, param: %+v", param)
 
-	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
+	problemRepo, err := rf.NewProblemRepository(ctx, workbook.GetProblemType())
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
@@ -127,7 +134,7 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, repo app.R
 
 	audioID := app.AudioID(0)
 	if workbook.GetProperties()["audioEnabled"] == "true" {
-		audioIDtmp, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
+		audioIDtmp, err := p.findOrAddAudio(ctx, rf, extractedParam.Text)
 		if err != nil {
 			return 0, 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
 		}
@@ -241,11 +248,11 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 	return app.Added(len(translated)), 0, nil
 }
 
-func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, workbook app.Workbook, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) (app.Added, app.Updated, error) {
+func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf app.RepositoryFactory, operator app.Student, workbook app.Workbook, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) (app.Added, app.Updated, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.UpdateProblem, param: %+v", param)
 
-	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
+	problemRepo, err := rf.NewProblemRepository(ctx, workbook.GetProblemType())
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
@@ -257,7 +264,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo ap
 
 	audioID := app.AudioID(0)
 	if workbook.GetProperties()["audioEnabled"] == "true" {
-		audioIDtmp, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
+		audioIDtmp, err := p.findOrAddAudio(ctx, rf, extractedParam.Text)
 		if err != nil {
 			return 0, 0, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
 		}
@@ -269,21 +276,43 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, repo ap
 		audioID = audioIDtmp
 	}
 
-	if err := p.updateSingleProblem(ctx, operator, problemRepo, id, param, extractedParam, audioID); err != nil {
+	sentenceID := app.ProblemID(0)
+	sentenceProvider := workbook.GetProperties()["sentenceProvider"]
+	tatoebaSentenceNumberFromS := workbook.GetProperties()["tatoebaSentenceNumberFrom"]
+	tatoebaSentenceNumberToS := workbook.GetProperties()["tatoebaSentenceNumberTo"]
+	if sentenceProvider == "tatoeba" {
+		tatoebaSentenceNumberFrom, err := strconv.Atoi(tatoebaSentenceNumberFromS)
+		if err != nil {
+			return 0, 0, xerrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberFromS, err)
+		}
+		tatoebaSentenceNumberTo, err := strconv.Atoi(tatoebaSentenceNumberToS)
+		if err != nil {
+			return 0, 0, xerrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberToS, err)
+		}
+
+		sentenceIDtmp, err := p.findOrAddSentenceFromTatoeba(ctx, rf, operator, tatoebaSentenceNumberFrom, tatoebaSentenceNumberTo)
+		if err != nil {
+			return 0, 0, xerrors.Errorf("failed to findOrAddSentenceFromTatoeba. err: %w", err)
+		}
+		sentenceID = sentenceIDtmp
+	}
+
+	if err := p.updateSingleProblem(ctx, operator, problemRepo, id, param, extractedParam, audioID, sentenceID); err != nil {
 		return 0, 0, xerrors.Errorf("failed to updateSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
 	return 1, 1, nil
 }
 
-func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter, extractedParam *englishWordProblemUpdateParemeter, audioID app.AudioID) error {
+func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, operator app.Student, problemRepo app.ProblemRepository, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter, extractedParam *englishWordProblemUpdateParemeter, audioID app.AudioID, sentenceID app.ProblemID) error {
 	logger := log.FromContext(ctx)
 	logger.Infof("updateSingleProblem, text: %s, audio ID: %d", extractedParam.Text, audioID)
 
 	properties := map[string]string{
-		"text":       extractedParam.Text,
-		"translated": extractedParam.Translated,
-		"audioId":    strconv.Itoa(int(audioID)),
+		EnglishWordProblemUpdatePropertyText:        extractedParam.Text,
+		EnglishWordProblemUpdatePropertyTranslated:  extractedParam.Translated,
+		EnglishWordProblemUpdatePropertyAudioID:     strconv.Itoa(int(audioID)),
+		EnglishWordProblemUpdatePropertySentenceID1: strconv.Itoa(int(sentenceID)),
 	}
 	paramToUpdate, err := app.NewProblemUpdateParameter(param.GetNumber(), properties)
 	if err != nil {
@@ -297,8 +326,8 @@ func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, o
 	return nil
 }
 
-func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, repo app.RepositoryFactory, operator app.Student, id app.ProblemSelectParameter2) error {
-	problemRepo, err := repo.NewProblemRepository(ctx, EnglishWordProblemType)
+func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, rf app.RepositoryFactory, operator app.Student, id app.ProblemSelectParameter2) error {
+	problemRepo, err := rf.NewProblemRepository(ctx, EnglishWordProblemType)
 	if err != nil {
 		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
@@ -314,8 +343,8 @@ func (p *englishWordProblemProcessor) CreateCSVReader(ctx context.Context, workb
 	return p.newProblemAddParameterCSVReader(workbookID, reader), nil
 }
 
-func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, repo app.RepositoryFactory, text string) (app.AudioID, error) {
-	audioRepo, err := repo.NewAudioRepository(ctx)
+func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, rf app.RepositoryFactory, text string) (app.AudioID, error) {
+	audioRepo, err := rf.NewAudioRepository(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -372,4 +401,59 @@ func (p *englishWordProblemProcessor) GetUnitForUpdateQuota() app.QuotaUnit {
 
 func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
 	return quotaUpdateLimit
+}
+
+func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.Context, rf app.RepositoryFactory, operator app.Student, tatoebaSentenceNumberFrom, tatoebaSentenceNumberTo int) (app.ProblemID, error) {
+	systemSpaceID := app.GetSystemSpaceID()
+	workbookRepo, err := rf.NewWorkbookRepository(ctx)
+	if err != nil {
+		return 0, err
+	}
+	tatoebaWorkbook, err := workbookRepo.FindWorkbookByName(ctx, operator, systemSpaceID, "tatoeba")
+	if err != nil {
+		return 0, err
+	}
+
+	tatoebaSentenceFrom, err := p.tatoebaSentenceRepository.FindTatoebaSentenceBySentenceNumber(ctx, tatoebaSentenceNumberFrom)
+	if err != nil {
+		return 0, err
+	}
+
+	tatoebaSentenceTo, err := p.tatoebaSentenceRepository.FindTatoebaSentenceBySentenceNumber(ctx, tatoebaSentenceNumberTo)
+	if err != nil {
+		return 0, err
+	}
+
+	sentenceProblemRepo, err := rf.NewProblemRepository(ctx, EnglishSentenceProblemType)
+	if err != nil {
+		return 0, err
+	}
+	condition := map[string]interface{}{
+		"workbookId": tatoebaWorkbook.GetID(),
+		"text":       tatoebaSentenceFrom.GetText(),
+		"translated": tatoebaSentenceTo.GetText(),
+	}
+	problems, err := sentenceProblemRepo.FindProblemsByCustomCondition(ctx, operator, condition)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(problems) != 0 {
+		return app.ProblemID(problems[0].GetID()), nil
+	}
+	properties := map[string]string{
+		"lang":       app.Lang2JA.String(),
+		"text":       tatoebaSentenceFrom.GetText(),
+		"translated": tatoebaSentenceTo.GetText(),
+	}
+	param, err := app.NewProblemAddParameter(app.WorkbookID(tatoebaWorkbook.GetID()), 1, properties)
+	if err != nil {
+		return 0, err
+	}
+	id, err := sentenceProblemRepo.AddProblem(ctx, operator, param)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
 }

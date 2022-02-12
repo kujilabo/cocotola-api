@@ -248,6 +248,9 @@ func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, o
 
 	return ids, nil
 }
+func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator app.Student, condition interface{}) ([]app.Problem, error) {
+	return nil, errors.New("not implement")
+}
 
 func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
