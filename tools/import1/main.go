@@ -257,8 +257,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	userD.InitSystemAdmin(userRf)
-	systemAdmin := userD.SystemAdminInstance()
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+		return userG.NewRepositoryFactory(db)
+	}
+	userD.InitSystemAdmin(userRfFunc)
+	systemAdmin := userD.NewSystemAdmin(userRf)
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
 	if err != nil {
 		panic(err)
@@ -295,9 +298,6 @@ func main() {
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}
 
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
-		return userG.NewRepositoryFactory(db)
-	}
 	rfFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
 		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
 	}

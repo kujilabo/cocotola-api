@@ -68,7 +68,8 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 
 func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, domain.Owner) {
 	bg := context.Background()
-	sysAd := domain.SystemAdminInstance()
+	sysAd, err := domain.NewSystemAdminFromDB(db)
+	assert.NoError(t, err)
 
 	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
 	assert.NoError(t, err)

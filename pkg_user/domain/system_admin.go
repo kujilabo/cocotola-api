@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -15,9 +16,9 @@ const SystemAdminID = 1
 var rfFunc func(db *gorm.DB) (RepositoryFactory, error)
 
 func InitSystemAdmin(rfFuncArg func(db *gorm.DB) (RepositoryFactory, error)) {
-	// systemAdminInstance = &systemAdmin{
-	// 	rf: rf,
-	// }
+	if rfFuncArg == nil {
+		panic(errors.New("invalid argment"))
+	}
 	rfFunc = rfFuncArg
 }
 

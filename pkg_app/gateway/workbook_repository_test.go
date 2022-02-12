@@ -10,13 +10,17 @@ import (
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+		return userG.NewRepositoryFactory(db)
+	}
 
-	userD.InitSystemAdmin(nil)
+	userD.InitSystemAdmin(userRfFunc)
 	for driverName, db := range dbList() {
 		logrus.Println(driverName)
 		sqlDB, err := db.DB()
@@ -157,7 +161,11 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userD.InitSystemAdmin(nil)
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+		return userG.NewRepositoryFactory(db)
+	}
+
+	userD.InitSystemAdmin(userRfFunc)
 	for driverName, db := range dbList() {
 		logrus.Println(driverName)
 		sqlDB, err := db.DB()
