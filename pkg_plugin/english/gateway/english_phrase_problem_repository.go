@@ -134,7 +134,7 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
 	}
 
-	if count > math.MaxInt {
+	if count > math.MaxInt32 {
 		return nil, errors.New("overflow")
 	}
 
@@ -167,7 +167,7 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
 	}
 
-	if count > math.MaxInt {
+	if count > math.MaxInt32 {
 		return nil, errors.New("overflow")
 	}
 

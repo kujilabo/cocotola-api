@@ -162,7 +162,7 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 		count += c
 	}
 
-	if count > math.MaxInt {
+	if count > math.MaxInt32 {
 		return nil, errors.New("overflow")
 	}
 

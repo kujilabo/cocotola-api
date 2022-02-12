@@ -206,7 +206,7 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 
 	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
 
-	if count > math.MaxInt {
+	if count > math.MaxInt32 {
 		return nil, errors.New("overflow")
 	}
 
@@ -244,7 +244,7 @@ func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, oper
 
 	logger.Debugf("englishWordProblemRepository.FindProblems, problems: %d, count: %d", len(problems), count)
 
-	if count > math.MaxInt {
+	if count > math.MaxInt32 {
 		return nil, errors.New("overflow")
 	}
 
