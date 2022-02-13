@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
@@ -75,7 +76,11 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()

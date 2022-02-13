@@ -13,7 +13,11 @@ type SpaceRepository interface {
 
 	FindPersonalSpace(ctx context.Context, operator AppUser) (Space, error)
 
+	FindSystemSpace(ctx context.Context, operator AppUser) (Space, error)
+
 	AddDefaultSpace(ctx context.Context, operator SystemOwner) (uint, error)
 
 	AddPersonalSpace(ctx context.Context, operator SystemOwner, appUser AppUser) (SpaceID, error)
+
+	AddSystemSpace(ctx context.Context, operator SystemOwner) (SpaceID, error)
 }

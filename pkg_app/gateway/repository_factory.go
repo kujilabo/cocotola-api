@@ -39,16 +39,6 @@ func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, u
 }
 
 func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.WorkbookRepository, error) {
-	// problemTypeRepo, err := f.NewProblemTypeRepository(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// logger := log.FromContext(ctx)
-	// logger.Infof("problem types: %+v", problemTypes)
 	userRf, err := f.userRfFunc(f.db)
 	if err != nil {
 		return nil, err

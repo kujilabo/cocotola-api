@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
@@ -17,13 +18,19 @@ func TestGetOrganization(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
-	sysAd := domain.SystemAdminInstance()
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
 	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("LOGIN_ID", "USERNAME", "")
 	assert.NoError(t, err)
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
+		sysAd, err := domain.NewSystemAdminFromDB(db)
+		assert.NoError(t, err)
+
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
 		assert.NoError(t, err)
@@ -64,13 +71,20 @@ func TestFindOrganizationByName(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
-	sysAd := domain.SystemAdminInstance()
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
+
 	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("LOGIN_ID", "USERNAME", "")
 	assert.NoError(t, err)
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
+		sysAd, err := domain.NewSystemAdminFromDB(db)
+		assert.NoError(t, err)
+
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
 		assert.NoError(t, err)
@@ -106,13 +120,20 @@ func TestAddOrganization(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
-	sysAd := domain.SystemAdminInstance()
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
+
 	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("LOGIN_ID", "USERNAME", "")
 	assert.NoError(t, err)
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
+		sysAd, err := domain.NewSystemAdminFromDB(db)
+		assert.NoError(t, err)
+
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
 		assert.NoError(t, err)

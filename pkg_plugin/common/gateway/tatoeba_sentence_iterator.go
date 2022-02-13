@@ -16,7 +16,7 @@ import (
 
 const (
 	bufSize         = 4096
-	textLimitLength = 200
+	textLimitLength = 100
 )
 
 type tatoebaSentenceAddParameterReader struct {

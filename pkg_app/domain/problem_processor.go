@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"io"
+	// pluginCommon "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
 type Added int

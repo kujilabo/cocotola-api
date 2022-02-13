@@ -282,6 +282,21 @@ func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Con
 		Results:    results,
 	}, nil
 }
+
+func (r *tatoebaSentenceRepository) FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (domain.TatoebaSentence, error) {
+	entity := &tatoebaSentenceEntity{}
+	if result := r.db.Where("sentence_number = ?", r.db.Statement.TableExpr.Vars...).Find(&entity); result.Error != nil {
+		return nil, result.Error
+	}
+
+	sentence, err := entity.toModel()
+	if err != nil {
+		return nil, err
+	}
+
+	return sentence, nil
+}
+
 func (r *tatoebaSentenceRepository) Add(ctx context.Context, param domain.TatoebaSentenceAddParameter) error {
 	entity := tatoebaSentenceEntity{
 		SentenceNumber: param.GetSentenceNumber(),

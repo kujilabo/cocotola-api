@@ -27,11 +27,11 @@ func dbList() map[string]*gorm.DB {
 
 	dbList["mysql"] = m
 
-	s, err := openSQLiteForTest()
-	if err != nil {
-		panic(err)
-	}
-	dbList["sqlite3"] = s
+	// s, err := openSQLiteForTest()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// dbList["sqlite3"] = s
 
 	return dbList
 }
@@ -69,7 +69,8 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, userD.SystemOwner, userD.Owner) {
 	log.Println("testInitOrganization")
 	bg := context.Background()
-	sysAd := userD.SystemAdminInstance()
+	sysAd, err := userD.NewSystemAdminFromDB(db)
+	assert.NoError(t, err)
 
 	// delete all organizations
 	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")

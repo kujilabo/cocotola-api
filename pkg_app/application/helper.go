@@ -8,8 +8,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func findStudent(ctx context.Context, pf domain.ProcessorFactory, repo domain.RepositoryFactory, userRepo user.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (domain.Student, error) {
-	systemAdmin := user.SystemAdminInstance()
+func findStudent(ctx context.Context, pf domain.ProcessorFactory, rf domain.RepositoryFactory, userRf user.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (domain.Student, error) {
+	systemAdmin := user.NewSystemAdmin(userRf)
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationID(ctx, organizationID)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to FindSystemOwnerByOrganizationID. err: %w", err)
@@ -20,5 +20,5 @@ func findStudent(ctx context.Context, pf domain.ProcessorFactory, repo domain.Re
 		return nil, err
 	}
 
-	return domain.NewStudent(pf, repo, userRepo, appUser)
+	return domain.NewStudent(pf, rf, userRf, appUser)
 }

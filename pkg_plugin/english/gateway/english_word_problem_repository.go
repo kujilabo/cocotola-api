@@ -141,23 +141,30 @@ type englishWordProblemUpdateParemeter struct {
 }
 
 func toEnglishWordProblemUpdateParameter(param app.ProblemUpdateParameter) (*englishWordProblemUpdateParemeter, error) {
-	if _, ok := param.GetProperties()["audioId"]; !ok {
+	if _, ok := param.GetProperties()[domain.EnglishWordProblemUpdatePropertyAudioID]; !ok {
 		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
-	if _, ok := param.GetProperties()["text"]; !ok {
+	text, err := param.GetStringProperty(domain.EnglishWordProblemUpdatePropertyText)
+	if err != nil {
 		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
-	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
+	audioID, err := param.GetIntProperty(domain.EnglishWordProblemUpdatePropertyAudioID)
+	if err != nil {
+		return nil, err
+	}
+
+	sentenceID, err := param.GetIntProperty(domain.EnglishWordProblemUpdatePropertySentenceID1)
 	if err != nil {
 		return nil, err
 	}
 
 	m := &englishWordProblemUpdateParemeter{
-		AudioID:    uint(audioID),
-		Text:       param.GetProperties()["text"],
-		Translated: param.GetProperties()["translated"],
+		AudioID:     uint(audioID),
+		Text:        text,
+		Translated:  param.GetProperties()[domain.EnglishWordProblemUpdatePropertyTranslated],
+		SentenceID1: uint(sentenceID),
 	}
 	return m, lib.Validator.Struct(m)
 }
@@ -324,6 +331,10 @@ func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, opera
 	return ids, nil
 }
 
+func (r *englishWordProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator app.Student, condition interface{}) ([]app.Problem, error) {
+	return nil, errors.New("not implement")
+}
+
 func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 
@@ -376,6 +387,7 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 		PastTense:         problemParam.PastTense,
 		PastParticiple:    problemParam.PastParticiple,
 		Translated:        problemParam.Translated,
+		SentenceID1:       problemParam.SentenceID1,
 	}
 
 	logger.Infof("englishWordProblemRepository.UpdateProblem. text: %s", problemParam.Text)

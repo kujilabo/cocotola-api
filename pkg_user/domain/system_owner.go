@@ -18,7 +18,11 @@ type SystemOwner interface {
 
 	FindAppUserByLoginID(ctx context.Context, loginID string) (AppUser, error)
 
+	FindSystemSpace(ctx context.Context) (Space, error)
+
 	AddAppUser(ctx context.Context, param AppUserAddParameter) (AppUserID, error)
+
+	AddSystemSpace(ctx context.Context) (SpaceID, error)
 }
 
 type systemOwner struct {
@@ -45,6 +49,10 @@ func (s *systemOwner) FindAppUserByID(ctx context.Context, id AppUserID) (AppUse
 
 func (s *systemOwner) FindAppUserByLoginID(ctx context.Context, loginID string) (AppUser, error) {
 	return s.rf.NewAppUserRepository().FindAppUserByLoginID(ctx, s, loginID)
+}
+
+func (s *systemOwner) FindSystemSpace(ctx context.Context) (Space, error) {
+	return s.rf.NewSpaceRepository().FindSystemSpace(ctx, s)
 }
 
 func (s *systemOwner) AddAppUser(ctx context.Context, param AppUserAddParameter) (AppUserID, error) {
@@ -106,4 +114,15 @@ func (s *systemOwner) AddAppUser(ctx context.Context, param AppUserAddParameter)
 	// }
 
 	return appUserID, nil
+}
+
+func (s *systemOwner) AddSystemSpace(ctx context.Context) (SpaceID, error) {
+	logger := log.FromContext(ctx)
+	logger.Infof("AddSystemSpace")
+
+	spaceID, err := s.rf.NewSpaceRepository().AddSystemSpace(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+	return spaceID, nil
 }

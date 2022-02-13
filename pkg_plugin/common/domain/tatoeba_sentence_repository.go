@@ -108,5 +108,13 @@ type TatoebaSentenceSearchResult struct {
 type TatoebaSentenceRepository interface {
 	FindTatoebaSentences(ctx context.Context, param TatoebaSentenceSearchCondition) (*TatoebaSentenceSearchResult, error)
 
+	FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (TatoebaSentence, error)
+
 	Add(ctx context.Context, param TatoebaSentenceAddParameter) error
+}
+
+type TatoebaSentenceRepositoryReadOnly interface {
+	FindTatoebaSentences(ctx context.Context, param TatoebaSentenceSearchCondition) (*TatoebaSentenceSearchResult, error)
+
+	FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (TatoebaSentence, error)
 }

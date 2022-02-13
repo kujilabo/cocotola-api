@@ -18,4 +18,6 @@ create table `english_sentence_problem` (
 ,foreign key(`updated_by`) references `app_user`(`id`) on delete cascade
 ,foreign key(`organization_id`) references `organization`(`id`) on delete cascade
 ,foreign key(`workbook_id`) references `workbook`(`id`) on delete cascade
+,index(`text`)
+,index(`translated`)
 );

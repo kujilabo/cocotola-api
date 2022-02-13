@@ -10,6 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
@@ -19,7 +20,11 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
@@ -73,7 +78,11 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	domain.InitSystemAdmin(nil)
+	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+		return gateway.NewRepositoryFactory(db)
+	}
+
+	domain.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
