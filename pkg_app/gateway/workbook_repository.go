@@ -174,9 +174,9 @@ func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) [
 	return []user.RBACRole{domain.NewWorkbookWriter(workbookID), domain.NewWorkbookReader(workbookID)}
 }
 
-func (r *workbookRepository) getAllWorkbookPrivileges() []user.RBACAction {
-	return []user.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
-}
+// func (r *workbookRepository) getAllWorkbookPrivileges() []user.RBACAction {
+// 	return []user.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
+// }
 
 func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user.RBACUser, workbookObject user.RBACObject, privs []user.RBACAction) (user.Privileges, error) {
 	actions := make([]user.RBACAction, 0)
@@ -192,23 +192,24 @@ func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user
 	return user.NewPrivileges(actions), nil
 }
 
-func (r *workbookRepository) canReadWorkbook(operator user.AppUser, workbookID domain.WorkbookID) error {
-	objectColumnName := "name"
-	object := domain.WorkbookObjectPrefix + strconv.Itoa(int(uint(workbookID)))
-	subject := "user_" + strconv.Itoa(int(operator.GetID()))
-	casbinQuery, err := casbinquery.FindObject(r.db, r.driverName, object, objectColumnName, subject, "read")
-	if err != nil {
-		return err
-	}
-	var name string
-	if result := casbinQuery.First(&name); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return domain.ErrWorkbookPermissionDenied
-		}
-		return result.Error
-	}
-	return nil
-}
+// func (r *workbookRepository) canReadWorkbook(operator user.AppUser, workbookID domain.WorkbookID) error {
+// 	objectColumnName := "name"
+// 	object := domain.WorkbookObjectPrefix + strconv.Itoa(int(uint(workbookID)))
+// 	subject := "user_" + strconv.Itoa(int(operator.GetID()))
+// 	casbinQuery, err := casbinquery.FindObject(r.db, r.driverName, object, objectColumnName, subject, "read")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	var name string
+// 	if result := casbinQuery.First(&name); result.Error != nil {
+// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+// 			return domain.ErrWorkbookPermissionDenied
+// 		}
+// 		return result.Error
+// 	}
+// 	return nil
+// }
+
 func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID) (domain.Workbook, error) {
 	workbook := workbookEntity{}
 	if result := r.db.Where("id = ?", uint(workbookID)).First(&workbook); result.Error != nil {
@@ -218,9 +219,9 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 		return nil, result.Error
 	}
 
-	if err := r.canReadWorkbook(operator, workbookID); err != nil {
-		return nil, err
-	}
+	// if err := r.canReadWorkbook(operator, workbookID); err != nil {
+	// 	return nil, err
+	// }
 
 	rbacRepo := r.userRepo.NewRBACRepository()
 	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
@@ -235,6 +236,9 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+	}
+	if !priv.HasPrivilege(domain.PrivilegeRead) {
+		return nil, domain.ErrWorkbookPermissionDenied
 	}
 
 	// defaultSpace, err := operator.GetDefaultSpace(ctx)
@@ -257,9 +261,9 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 		return nil, result.Error
 	}
 
-	if err := r.canReadWorkbook(operator, domain.WorkbookID(workbook.ID)); err != nil {
-		return nil, err
-	}
+	// if err := r.canReadWorkbook(operator, domain.WorkbookID(workbook.ID)); err != nil {
+	// 	return nil, err
+	// }
 
 	rbacRepo := r.userRepo.NewRBACRepository()
 	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
@@ -274,6 +278,9 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+	}
+	if !priv.HasPrivilege(domain.PrivilegeRead) {
+		return nil, domain.ErrWorkbookPermissionDenied
 	}
 
 	logger := log.FromContext(ctx)
