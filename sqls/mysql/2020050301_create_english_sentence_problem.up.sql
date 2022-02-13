@@ -12,6 +12,7 @@ create table `english_sentence_problem` (
 ,`text` varchar(100) character set ascii not null
 ,`lang` varchar(2) character set ascii
 ,`translated` varchar(100)
+,`note` json
 ,primary key(`id`)
 ,unique(`organization_id`, `workbook_id`, `text`)
 ,foreign key(`created_by`) references `app_user`(`id`) on delete cascade

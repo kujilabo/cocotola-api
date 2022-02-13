@@ -264,7 +264,7 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 
 		parameter, err := converter.ToProblemUpdateParameter(&param)
 		if err != nil {
-			return err
+			return xerrors.Errorf("failed to ToProblemUpdateParameter. param: %+v, err: %w", parameter, err)
 		}
 
 		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, id, parameter); err != nil {
@@ -395,6 +395,7 @@ func (h *problemHandler) errorHandle(c *gin.Context, err error) bool {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}
-	logger.Errorf("problemHandler error:%v", err)
+	logger.Errorf("problemHandler error: %+v", err)
+	// fmt.Printf("%+v\n", err)
 	return false
 }

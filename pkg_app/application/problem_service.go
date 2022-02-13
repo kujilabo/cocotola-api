@@ -36,11 +36,11 @@ type ProblemService interface {
 type problemService struct {
 	db         *gorm.DB
 	pf         domain.ProcessorFactory
-	rfFunc     func(db *gorm.DB) (domain.RepositoryFactory, error)
-	userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)
+	rfFunc     domain.RepositoryFactoryFunc
+	userRfFunc user.RepositoryFactoryFunc
 }
 
-func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error), userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)) ProblemService {
+func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) ProblemService {
 	return &problemService{
 		db:         db,
 		pf:         pf,
@@ -262,11 +262,11 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 }
 
 func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
-	repo, err := s.rfFunc(tx)
+	repo, err := s.rfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err
 	}
-	userRepo, err := s.userRfFunc(tx)
+	userRepo, err := s.userRfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err
 	}

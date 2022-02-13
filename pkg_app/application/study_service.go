@@ -20,11 +20,11 @@ type StudyService interface {
 type studyService struct {
 	db         *gorm.DB
 	pf         domain.ProcessorFactory
-	rfFunc     func(db *gorm.DB) (domain.RepositoryFactory, error)
-	userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)
+	rfFunc     domain.RepositoryFactoryFunc
+	userRfFunc user.RepositoryFactoryFunc
 }
 
-func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error), userRfFunc func(db *gorm.DB) (user.RepositoryFactory, error)) StudyService {
+func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) StudyService {
 	return &studyService{
 		db:         db,
 		pf:         pf,
@@ -36,11 +36,11 @@ func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc func(db *go
 func (s *studyService) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error) {
 	var results []domain.ProblemWithLevel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rfFunc, err := s.rfFunc(tx)
+		rfFunc, err := s.rfFunc(ctx, tx)
 		if err != nil {
 			return xerrors.Errorf("failed to rfFunc. err: %w", err)
 		}
-		userRepo, err := s.userRfFunc(tx)
+		userRepo, err := s.userRfFunc(ctx, tx)
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
@@ -67,11 +67,11 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 
 func (s *studyService) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rf, err := s.rfFunc(tx)
+		rf, err := s.rfFunc(ctx, tx)
 		if err != nil {
 			return xerrors.Errorf("failed to rfFunc. err: %w", err)
 		}
-		userRepo, err := s.userRfFunc(tx)
+		userRepo, err := s.userRfFunc(ctx, tx)
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}

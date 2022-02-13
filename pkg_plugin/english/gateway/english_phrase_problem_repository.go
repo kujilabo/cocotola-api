@@ -38,7 +38,7 @@ func (e *englishPhraseProblemEntity) TableName() string {
 	return "english_phrase_problem"
 }
 
-func (e *englishPhraseProblemEntity) toProblem() (domain.EnglishPhraseProblem, error) {
+func (e *englishPhraseProblemEntity) toProblem(rf app.AudioRepositoryFactory) (domain.EnglishPhraseProblem, error) {
 	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (e *englishPhraseProblemEntity) toProblem() (domain.EnglishPhraseProblem, e
 		properties[k] = v
 	}
 
-	problem, err := app.NewProblem(model, e.Number, domain.EnglishPhraseProblemType, properties)
+	problem, err := app.NewProblem(rf, model, e.Number, domain.EnglishPhraseProblemType, properties)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +99,14 @@ func toNewEnglishPhraseProblemParam(param app.ProblemAddParameter) (*newEnglishP
 
 type englishPhraseProblemRepository struct {
 	db          *gorm.DB
+	rf          app.AudioRepositoryFactory
 	problemType string
 }
 
-func NewEnglishPhraseProblemRepository(db *gorm.DB, problemType string) (app.ProblemRepository, error) {
+func NewEnglishPhraseProblemRepository(db *gorm.DB, rf app.AudioRepositoryFactory, problemType string) (app.ProblemRepository, error) {
 	return &englishPhraseProblemRepository{
 		db:          db,
+		rf:          rf,
 		problemType: problemType,
 	}, nil
 }
@@ -114,7 +116,10 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishPhraseProblemEntity
 
-	where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(param.GetWorkbookID()))
+	where := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(param.GetWorkbookID()))
+
 	if result := where.Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
@@ -122,7 +127,7 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
@@ -146,7 +151,9 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 	var problemEntities []englishPhraseProblemEntity
 
 	where := func() *gorm.DB {
-		return r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+		return r.db.
+			Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(workbookID))
 	}
 	if result := where().Order("workbook_id, number, created_at").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
@@ -155,7 +162,7 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
@@ -182,16 +189,18 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 		ids = append(ids, uint(id))
 	}
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(param.GetWorkbookID()))
-	db = db.Where("id in ?", ids)
+	db := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(param.GetWorkbookID())).
+		Where("id in ?", ids)
+
 	if result := db.Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, err
 		}
@@ -204,9 +213,11 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
 	var problemEntity englishPhraseProblemEntity
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+	db := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
 		Where("workbook_id = ?", uint(id.GetWorkbookID())).
 		Where("id = ?", uint(id.GetProblemID()))
+
 	if result := db.First(&problemEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, app.ErrProblemNotFound
@@ -214,7 +225,7 @@ func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, op
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem()
+	return problemEntity.toProblem(r.rf)
 }
 
 func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, operator app.Student, workbookID app.WorkbookID) ([]app.ProblemID, error) {
@@ -226,7 +237,10 @@ func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, ope
 		offset := (pageNo - 1) * pageSize
 		var problemEntities []englishPhraseProblemEntity
 
-		where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+		where := r.db.
+			Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(workbookID))
+
 		if result := where.Order("workbook_id, number, created_at").
 			Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 			return nil, result.Error
@@ -286,7 +300,14 @@ func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, oper
 	logger := log.FromContext(ctx)
 
 	logger.Infof("englishPhraseProblemRepository.RemoveProblem. text: %d", id.GetProblemID())
-	result := r.db.Where("id = ? and version = ?", uint(id.GetProblemID()), id.GetVersion()).Delete(&englishPhraseProblemEntity{})
+
+	result := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID())).
+		Where("version = ?", id.GetVersion()).
+		Delete(&englishPhraseProblemEntity{})
+
 	if result.Error != nil {
 		return result.Error
 	} else if result.RowsAffected == 0 {

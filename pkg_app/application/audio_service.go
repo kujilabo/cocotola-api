@@ -3,51 +3,72 @@ package application
 import (
 	"context"
 
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
-
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
 type AudioService interface {
-	FindAudioByID(ctx context.Context, audioID domain.AudioID) (domain.Audio, error)
+	FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.Audio, error)
 }
 
 type audioService struct {
-	db     *gorm.DB
-	rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error)
+	db         *gorm.DB
+	pf         domain.ProcessorFactory
+	rfFunc     domain.RepositoryFactoryFunc
+	userRfFunc user.RepositoryFactoryFunc
 }
 
-func NewAudioService(db *gorm.DB, rfFunc func(db *gorm.DB) (domain.RepositoryFactory, error)) AudioService {
+func NewAudioService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) AudioService {
 	return &audioService{
-		db:     db,
-		rfFunc: rfFunc,
+		db:         db,
+		pf:         pf,
+		rfFunc:     rfFunc,
+		userRfFunc: userRfFunc,
 	}
 }
 
-func (s *audioService) FindAudioByID(ctx context.Context, audioID domain.AudioID) (domain.Audio, error) {
-	logger := log.FromContext(ctx)
-	logger.Infof("audioID: %d", audioID)
-	var audio domain.Audio
+func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.Audio, error) {
+	var result domain.Audio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rf, err := s.rfFunc(tx)
-		if err != nil {
-			return xerrors.Errorf("failed to rf. err: %w", err)
-		}
-		audioRepo, err := rf.NewAudioRepository(ctx)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
-		model, err := audioRepo.FindAudioByAudioID(ctx, audioID)
+		problem, err := workbook.FindProblemByID(ctx, student, problemID)
 		if err != nil {
 			return err
 		}
-
-		audio = model
+		tmpResult, err := problem.FindAudioByID(ctx, audioID)
+		if err != nil {
+			return err
+		}
+		result = tmpResult
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	return audio, nil
+
+	return result, nil
+}
+
+func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
+	repo, err := s.rfFunc(ctx, tx)
+	if err != nil {
+		return nil, nil, err
+	}
+	userRepo, err := s.userRfFunc(ctx, tx)
+	if err != nil {
+		return nil, nil, err
+	}
+	student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+	}
+	workbook, err := student.FindWorkbookByID(ctx, workbookID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return student, workbook, nil
 }

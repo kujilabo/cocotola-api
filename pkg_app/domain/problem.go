@@ -14,17 +14,21 @@ type Problem interface {
 	GetNumber() int
 	GetProblemType() string
 	GetProperties(ctx context.Context) map[string]interface{}
+
+	FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error)
 }
 
 type problem struct {
+	rf AudioRepositoryFactory
 	user.Model
 	Number      int                    `validate:"required"`
 	ProblemType string                 `validate:"required"`
 	Properties  map[string]interface{} `validate:"required"`
 }
 
-func NewProblem(model user.Model, number int, problemType string, properties map[string]interface{}) (Problem, error) {
+func NewProblem(rf AudioRepositoryFactory, model user.Model, number int, problemType string, properties map[string]interface{}) (Problem, error) {
 	m := &problem{
+		rf:          rf,
 		Model:       model,
 		Number:      number,
 		ProblemType: problemType,
@@ -44,6 +48,14 @@ func (m *problem) GetProblemType() string {
 
 func (m *problem) GetProperties(ctx context.Context) map[string]interface{} {
 	return m.Properties
+}
+
+func (m *problem) FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error) {
+	audioRepo, err := m.rf.NewAudioRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return audioRepo.FindAudioByAudioID(ctx, audioID)
 }
 
 type ProblemWithResults interface {

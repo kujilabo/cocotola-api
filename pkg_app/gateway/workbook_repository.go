@@ -80,17 +80,17 @@ type workbookRepository struct {
 	driverName   string
 	db           *gorm.DB
 	rf           domain.RepositoryFactory
-	userRepo     user.RepositoryFactory
+	userRf       user.RepositoryFactory
 	pf           domain.ProcessorFactory
 	problemTypes []domain.ProblemType
 }
 
-func NewWorkbookRepository(ctx context.Context, driverName string, rf domain.RepositoryFactory, userRepo user.RepositoryFactory, pf domain.ProcessorFactory, db *gorm.DB, problemTypes []domain.ProblemType) domain.WorkbookRepository {
+func NewWorkbookRepository(ctx context.Context, driverName string, rf domain.RepositoryFactory, userRf user.RepositoryFactory, pf domain.ProcessorFactory, db *gorm.DB, problemTypes []domain.ProblemType) domain.WorkbookRepository {
 	return &workbookRepository{
 		driverName:   driverName,
 		db:           db,
 		rf:           rf,
-		userRepo:     userRepo,
+		userRf:       userRf,
 		pf:           pf,
 		problemTypes: problemTypes,
 	}
@@ -174,9 +174,9 @@ func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) [
 	return []user.RBACRole{domain.NewWorkbookWriter(workbookID), domain.NewWorkbookReader(workbookID)}
 }
 
-// func (r *workbookRepository) getAllWorkbookPrivileges() []user.RBACAction {
-// 	return []user.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
-// }
+func (r *workbookRepository) getAllWorkbookPrivileges() []user.RBACAction {
+	return []user.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
+}
 
 func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user.RBACUser, workbookObject user.RBACObject, privs []user.RBACAction) (user.Privileges, error) {
 	actions := make([]user.RBACAction, 0)
@@ -212,39 +212,23 @@ func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user
 
 func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID) (domain.Workbook, error) {
 	workbook := workbookEntity{}
-	if result := r.db.Where("id = ?", uint(workbookID)).First(&workbook); result.Error != nil {
+	if result := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("id = ?", uint(workbookID)).
+		First(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrWorkbookNotFound
 		}
 		return nil, result.Error
 	}
 
-	// if err := r.canReadWorkbook(operator, workbookID); err != nil {
-	// 	return nil, err
-	// }
-
-	rbacRepo := r.userRepo.NewRBACRepository()
-	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
-	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
-	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
-	if err != nil {
-		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
-	}
-	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
-	privs := []user.RBACAction{domain.PrivilegeRead} //TODO
-
-	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
+	priv, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbook.ID))
 	if err != nil {
 		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
 	}
 	if !priv.HasPrivilege(domain.PrivilegeRead) {
 		return nil, domain.ErrWorkbookPermissionDenied
 	}
-
-	// defaultSpace, err := operator.GetDefaultSpace(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	logger := log.FromContext(ctx)
 	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())
@@ -254,39 +238,48 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 
 func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, name string) (domain.Workbook, error) {
 	workbook := workbookEntity{}
-	if result := r.db.Where("space_id = ?", uint(spaceID)).Where("name = ?", name).First(&workbook); result.Error != nil {
+	if result := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("space_id = ?", uint(spaceID)).
+		Where("name = ?", name).
+		First(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrWorkbookNotFound
 		}
 		return nil, result.Error
 	}
 
-	// if err := r.canReadWorkbook(operator, domain.WorkbookID(workbook.ID)); err != nil {
-	// 	return nil, err
-	// }
-
-	rbacRepo := r.userRepo.NewRBACRepository()
-	workbookRoles := r.getAllWorkbookRoles(domain.WorkbookID(workbook.ID))
-	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
-	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
-	if err != nil {
-		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
-	}
-	workbookObject := domain.NewWorkbookObject(domain.WorkbookID(workbook.ID))
-	privs := []user.RBACAction{domain.PrivilegeRead} //TODO
-
-	priv, err := r.checkPrivileges(e, userObject, workbookObject, privs)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
-	}
-	if !priv.HasPrivilege(domain.PrivilegeRead) {
-		return nil, domain.ErrWorkbookPermissionDenied
+	var priv user.Privileges
+	if spaceID == domain.GetSystemSpaceID() {
+		priv = user.NewPrivileges([]user.RBACAction{domain.PrivilegeRead})
+	} else {
+		privTmp, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbook.ID))
+		if err != nil {
+			return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+		}
+		if !priv.HasPrivilege(domain.PrivilegeRead) {
+			return nil, domain.ErrWorkbookPermissionDenied
+		}
+		priv = privTmp
 	}
 
 	logger := log.FromContext(ctx)
 	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())
 
 	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
+}
+
+func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.AppUser, workbookID domain.WorkbookID) (user.Privileges, error) {
+	rbacRepo := r.userRf.NewRBACRepository()
+	workbookRoles := r.getAllWorkbookRoles(workbookID)
+	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
+	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
+	if err != nil {
+		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
+	}
+	workbookObject := domain.NewWorkbookObject(workbookID)
+	privs := r.getAllWorkbookPrivileges()
+	return r.checkPrivileges(e, userObject, workbookObject, privs)
 }
 
 func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
@@ -316,12 +309,12 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 
 	workbookID := domain.WorkbookID(workbook.ID)
 
-	rbacRepo := r.userRepo.NewRBACRepository()
+	rbacRepo := r.userRf.NewRBACRepository()
 	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
 	workbookObject := domain.NewWorkbookObject(workbookID)
 	workbookWriter := domain.NewWorkbookWriter(workbookID)
 
-	// wrokbookWriter role can read, update, remove
+	// the workbookWriter role can read, update, remove
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeRead); err != nil {
 		return 0, err
 	}
@@ -332,7 +325,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 		return 0, err
 	}
 
-	// user is assigned workbookWriter role
+	// user is assigned the workbookWriter role
 	if err := rbacRepo.AddNamedGroupingPolicy(userObject, workbookWriter); err != nil {
 		return 0, err
 	}

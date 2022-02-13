@@ -25,10 +25,10 @@ type TatoebaService interface {
 
 type tatoebaService struct {
 	db *gorm.DB
-	rf func(db *gorm.DB) (domain.RepositoryFactory, error)
+	rf domain.RepositoryFactoryFunc
 }
 
-func NewTatoebaService(db *gorm.DB, rf func(db *gorm.DB) (domain.RepositoryFactory, error)) TatoebaService {
+func NewTatoebaService(db *gorm.DB, rf domain.RepositoryFactoryFunc) TatoebaService {
 	return &tatoebaService{
 		db: db,
 		rf: rf,
@@ -38,7 +38,7 @@ func NewTatoebaService(db *gorm.DB, rf func(db *gorm.DB) (domain.RepositoryFacto
 func (s *tatoebaService) FindSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
 	var result *domain.TatoebaSentenceSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rf, err := s.rf(tx)
+		rf, err := s.rf(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (s *tatoebaService) ImportSentences(ctx context.Context, iterator domain.Ta
 	var loop = true
 	for loop {
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
-			rf, err := s.rf(tx)
+			rf, err := s.rf(ctx, tx)
 			if err != nil {
 				return err
 			}
@@ -122,7 +122,7 @@ func (s *tatoebaService) ImportLinks(ctx context.Context, iterator domain.Tatoeb
 	var loop = true
 	for loop {
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
-			rf, err := s.rf(tx)
+			rf, err := s.rf(ctx, tx)
 			if err != nil {
 				return err
 			}

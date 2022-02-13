@@ -2,9 +2,9 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
-	"strconv"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -32,20 +32,21 @@ type englishSentenceProblemEntity struct {
 	Text           string
 	Lang           string
 	Translated     string
+	Note           string
 }
 
 func (e *englishSentenceProblemEntity) TableName() string {
 	return "english_sentence_problem"
 }
 
-func (e *englishSentenceProblemEntity) toProblem() (domain.EnglishSentenceProblem, error) {
+func (e *englishSentenceProblemEntity) toProblem(rf app.AudioRepositoryFactory) (domain.EnglishSentenceProblem, error) {
 	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
 
 	properties := make(map[string]interface{})
-	problem, err := app.NewProblem(model, e.Number, domain.EnglishSentenceProblemType, properties)
+	problem, err := app.NewProblem(rf, model, e.Number, domain.EnglishSentenceProblemType, properties)
 	if err != nil {
 		return nil, err
 	}
@@ -58,48 +59,75 @@ func (e *englishSentenceProblemEntity) toProblem() (domain.EnglishSentenceProble
 	return domain.NewEnglishSentenceProblem(problem, app.AudioID(e.AudioID), "", e.Text, lang, e.Translated)
 }
 
-type newEnglishSentenceProblemParam struct {
-	AudioID    uint   `validate:"required"`
+type englishSentenceProblemAddParameter struct {
+	AudioID    uint
 	Text       string `validate:"required"`
 	Lang       string `validate:"required"`
 	Translated string
+	Note       string
 }
 
-func toNewEnglishSentenceProblemParam(param app.ProblemAddParameter) (*newEnglishSentenceProblemParam, error) {
-	if _, ok := param.GetProperties()["audioId"]; !ok {
-		return nil, xerrors.Errorf("audioId is not defined. err: %w", lib.ErrInvalidArgument)
+func toEnglishSentenceProblemAddParameter(param app.ProblemAddParameter) (*englishSentenceProblemAddParameter, error) {
+	for _, key := range []string{
+		domain.EnglishSentenceProblemAddParemeterAudioID,
+		domain.EnglishSentenceProblemAddParemeterLang,
+		domain.EnglishSentenceProblemAddParemeterText} {
+
+		if _, ok := param.GetProperties()[key]; !ok {
+			return nil, xerrors.Errorf("%s is not defined. err: %w", key, lib.ErrInvalidArgument)
+		}
 	}
 
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
-	}
+	var note string
+	if provider, ok := param.GetProperties()[domain.EnglishSentenceProblemAddParemeterProvider]; ok {
+		if provider == "tatoeba" {
+			noteMap := map[string]string{}
 
-	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
-	}
+			for _, key := range []string{
+				domain.EnglishSentenceProblemAddParemeterTatoebaSentenceNumber1,
+				domain.EnglishSentenceProblemAddParemeterTatoebaSentenceNumber2,
+				domain.EnglishSentenceProblemAddParemeterTatoebaAuthor1,
+				domain.EnglishSentenceProblemAddParemeterTatoebaAuthor2} {
 
-	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
-	if err != nil {
-		return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
-	}
+				if _, ok := param.GetProperties()[key]; !ok {
+					return nil, xerrors.Errorf("%s is not defined. err: %w", key, lib.ErrInvalidArgument)
+				}
 
-	m := &newEnglishSentenceProblemParam{
-		AudioID:    uint(audioID),
-		Lang:       param.GetProperties()["lang"],
-		Text:       param.GetProperties()["text"],
-		Translated: param.GetProperties()["translated"],
+				noteMap[key] = param.GetProperties()[key]
+			}
+
+			nodeBytes, err := json.Marshal(noteMap)
+			if err != nil {
+				return nil, err
+			}
+			note = string(nodeBytes)
+		}
+	}
+	// audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
+	// if err != nil {
+	// 	return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
+	// }
+
+	m := &englishSentenceProblemAddParameter{
+		// AudioID:    uint(audioID),
+		Lang:       param.GetProperties()[domain.EnglishSentenceProblemAddParemeterLang],
+		Text:       param.GetProperties()[domain.EnglishSentenceProblemAddParemeterText],
+		Translated: param.GetProperties()[domain.EnglishSentenceProblemAddParemeterTranslated],
+		Note:       note,
 	}
 	return m, lib.Validator.Struct(m)
 }
 
 type englishSentenceProblemRepository struct {
 	db          *gorm.DB
+	rf          app.AudioRepositoryFactory
 	problemType string
 }
 
-func NewEnglishSentenceProblemRepository(db *gorm.DB, problemType string) (app.ProblemRepository, error) {
+func NewEnglishSentenceProblemRepository(db *gorm.DB, rf app.AudioRepositoryFactory, problemType string) (app.ProblemRepository, error) {
 	return &englishSentenceProblemRepository{
 		db:          db,
+		rf:          rf,
 		problemType: problemType,
 	}, nil
 }
@@ -119,7 +147,7 @@ func (r *englishSentenceProblemRepository) FindProblems(ctx context.Context, ope
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +184,7 @@ func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, 
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
@@ -185,16 +213,17 @@ func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.
 		ids = append(ids, uint(id))
 	}
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(param.GetWorkbookID()))
-	db = db.Where("id in ?", ids)
+	db := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(param.GetWorkbookID())).
+		Where("id in ?", ids)
 	if result := db.Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
 
 	problems := make([]app.Problem, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem()
+		p, err := e.toProblem(r.rf)
 		if err != nil {
 			return nil, err
 		}
@@ -207,9 +236,11 @@ func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.
 func (r *englishSentenceProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
 	var problemEntity englishSentenceProblemEntity
 
-	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID()))
-	db = db.Where("workbook_id = ?", uint(id.GetWorkbookID()))
-	db = db.Where("id = ?", uint(id.GetProblemID()))
+	db := r.db.
+		Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(id.GetWorkbookID())).
+		Where("id = ?", uint(id.GetProblemID()))
+
 	if result := db.First(&problemEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, app.ErrProblemNotFound
@@ -217,7 +248,7 @@ func (r *englishSentenceProblemRepository) FindProblemByID(ctx context.Context, 
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem()
+	return problemEntity.toProblem(r.rf)
 }
 
 func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, operator app.Student, workbookID app.WorkbookID) ([]app.ProblemID, error) {
@@ -229,7 +260,10 @@ func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, o
 		offset := (pageNo - 1) * pageSize
 		var problemEntities []englishSentenceProblemEntity
 
-		where := r.db.Where("organization_id = ? and workbook_id = ?", uint(operator.GetOrganizationID()), uint(workbookID))
+		where := r.db.
+			Where("organization_id = ?", uint(operator.GetOrganizationID())).
+			Where("workbook_id = ?", uint(workbookID))
+
 		if result := where.Order("workbook_id, number, created_at").
 			Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 			return nil, result.Error
@@ -249,13 +283,48 @@ func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, o
 	return ids, nil
 }
 func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator app.Student, condition interface{}) ([]app.Problem, error) {
-	return nil, errors.New("not implement")
+	condition1, ok := condition.(map[string]interface{})
+	if !ok {
+		return nil, lib.ErrInvalidArgument
+	}
+	conditionWorkbookID, ok := condition1["workbookId"].(uint)
+	if !ok {
+		return nil, xerrors.Errorf("workbookId is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+	conditionText, ok := condition1["text"].(string)
+	if !ok {
+		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+	conditionTranslated, ok := condition1["translated"].(string)
+	if !ok {
+		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+	}
+
+	var problemEntity englishSentenceProblemEntity
+
+	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
+		Where("workbook_id = ?", uint(conditionWorkbookID)).
+		Where("text = ?", conditionText).
+		Where("translated = ?", conditionTranslated)
+
+	if result := db.First(&problemEntity); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return []app.Problem{}, nil
+		}
+		return nil, result.Error
+	}
+
+	problem, err := problemEntity.toProblem(r.rf)
+	if err != nil {
+		return nil, err
+	}
+	return []app.Problem{problem}, nil
 }
 
 func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 
-	problemParam, err := toNewEnglishSentenceProblemParam(param)
+	problemParam, err := toEnglishSentenceProblemAddParameter(param)
 	if err != nil {
 		return 0, err
 	}
@@ -270,6 +339,7 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 		Text:           problemParam.Text,
 		Lang:           problemParam.Lang,
 		Translated:     problemParam.Translated,
+		Note:           problemParam.Note,
 	}
 
 	logger.Infof("englishSentenceProblemRepository.AddProblem. text: %s", problemParam.Text)

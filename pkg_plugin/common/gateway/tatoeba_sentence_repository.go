@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
@@ -18,10 +19,6 @@ import (
 const (
 	shuffleBufferRate = 10
 )
-
-type tatoebaSentenceRepository struct {
-	db *gorm.DB
-}
 
 type tatoebaSentenceEntity struct {
 	SentenceNumber int
@@ -87,10 +84,17 @@ func (e *tatoebaSentenceEntity) TableName() string {
 	return "tatoeba_sentence"
 }
 
-func NewTatoebaSentenceRepository(db *gorm.DB) domain.TatoebaSentenceRepository {
+type tatoebaSentenceRepository struct {
+	db *gorm.DB
+}
+
+func NewTatoebaSentenceRepository(db *gorm.DB) (domain.TatoebaSentenceRepository, error) {
+	if db == nil {
+		return nil, libD.ErrInvalidArgument
+	}
 	return &tatoebaSentenceRepository{
 		db: db,
-	}
+	}, nil
 }
 
 // func (r *tatoebaSentenceRepository) FindTatoebaSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
@@ -284,8 +288,9 @@ func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Con
 }
 
 func (r *tatoebaSentenceRepository) FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (domain.TatoebaSentence, error) {
-	entity := &tatoebaSentenceEntity{}
-	if result := r.db.Where("sentence_number = ?", r.db.Statement.TableExpr.Vars...).Find(&entity); result.Error != nil {
+	entity := tatoebaSentenceEntity{}
+	if result := r.db.Where("sentence_number = ?", sentenceNumber).
+		Find(&entity); result.Error != nil {
 		return nil, result.Error
 	}
 
