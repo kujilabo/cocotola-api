@@ -303,7 +303,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 	var problemEntity englishSentenceProblemEntity
 
 	db := r.db.Where("organization_id = ?", uint(operator.GetOrganizationID())).
-		Where("workbook_id = ?", uint(conditionWorkbookID)).
+		Where("workbook_id = ?", conditionWorkbookID).
 		Where("text = ?", conditionText).
 		Where("translated = ?", conditionTranslated)
 
