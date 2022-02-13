@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -314,12 +313,12 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 
 		// user1 cannot read user2's workbooks(WB21, WB22)
 		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook21.GetID())); err != nil {
-			assert.True(t, errors.Is(err, domain.ErrWorkbookPermissionDenied))
+			assert.True(t, errors.Is(err, appD.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}
 		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook22.GetID())); err != nil {
-			assert.True(t, errors.Is(err, domain.ErrWorkbookPermissionDenied))
+			assert.True(t, errors.Is(err, appD.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}
