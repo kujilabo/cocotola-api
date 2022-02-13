@@ -27,11 +27,11 @@ func dbList() map[string]*gorm.DB {
 
 	dbList["mysql"] = m
 
-	s, err := openSQLiteForTest()
-	if err != nil {
-		panic(err)
-	}
-	dbList["sqlite3"] = s
+	// s, err := openSQLiteForTest()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// dbList["sqlite3"] = s
 
 	return dbList
 }

@@ -18,6 +18,8 @@ func NewWorkbookObject(workbookID WorkbookID) user.RBACObject {
 	return user.RBACObject(fmt.Sprintf("workbook_%d", uint(workbookID)))
 }
 
+var WorkbookObjectPrefix = "workbook_"
+
 var PrivilegeRead = user.RBACAction("read")
 var PrivilegeUpdate = user.RBACAction("update")
 var PrivilegeRemove = user.RBACAction("remove")

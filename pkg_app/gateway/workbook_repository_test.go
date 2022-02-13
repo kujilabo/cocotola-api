@@ -2,8 +2,10 @@ package gateway_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -156,7 +158,23 @@ func testNewWorkbookAddParameter(t *testing.T, name string) appD.WorkbookAddPara
 	assert.NoError(t, err)
 	return p
 }
-
+func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userD.Owner, loginID, username string) userD.AppUser {
+	appUserRepo := userG.NewAppUserRepository(nil, db)
+	userID1, err := appUserRepo.AddAppUser(ctx, owner, testNewAppUserAddParameter(t, loginID, username))
+	assert.NoError(t, err)
+	user1, err := appUserRepo.FindAppUserByID(ctx, owner, userID1)
+	assert.NoError(t, err)
+	assert.Equal(t, loginID, user1.GetLoginID())
+	return user1
+}
+func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo appD.WorkbookRepository, student appD.Student, spaceID userD.SpaceID, workbookName string) appD.Workbook {
+	workbookID11, err := workbookRepo.AddWorkbook(ctx, student, spaceID, testNewWorkbookAddParameter(t, workbookName))
+	assert.NoError(t, err)
+	assert.Greater(t, int(workbookID11), 0)
+	workbook, err := workbookRepo.FindWorkbookByID(ctx, student, workbookID11)
+	assert.NoError(t, err)
+	return workbook
+}
 func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
@@ -174,22 +192,13 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		userRepo, err := userG.NewRepositoryFactory(db)
 		assert.NoError(t, err)
 		_, sysOwner, owner := testInitOrganization(t, db)
-		appUserRepo := userG.NewAppUserRepository(nil, db)
 
 		rbacRepo := userG.NewRBACRepository(db)
 		err = rbacRepo.Init()
 		assert.NoError(t, err)
 
-		userID1, err := appUserRepo.AddAppUser(bg, owner, testNewAppUserAddParameter(t, "LOGIN_ID_1", "USERNAME_1"))
-		assert.NoError(t, err)
-		user1, err := appUserRepo.FindAppUserByID(bg, owner, userID1)
-		assert.NoError(t, err)
-		assert.Equal(t, "LOGIN_ID_1", user1.GetLoginID())
-		userID2, err := appUserRepo.AddAppUser(bg, owner, testNewAppUserAddParameter(t, "LOGIN_ID_2", "USERNAME_2"))
-		assert.NoError(t, err)
-		user2, err := appUserRepo.FindAppUserByID(bg, owner, userID2)
-		assert.NoError(t, err)
-		assert.Equal(t, "LOGIN_ID_2", user2.GetLoginID())
+		user1 := testNewAppUser(t, bg, db, owner, "LOGIN_ID_1", "USERNAME_1")
+		testNewAppUser(t, bg, db, owner, "LOGIN_ID_2", "USERNAME_2")
 
 		englishWord := testNewProblemType(t, "english_word_problem")
 		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
@@ -199,15 +208,9 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		student1 := testNewStudent(t, user1)
 		spaceID1, err := spaceRepo.AddPersonalSpace(bg, sysOwner, user1)
 		assert.NoError(t, err)
-		workbookID11, err := workbookRepo.AddWorkbook(bg, student1, spaceID1, testNewWorkbookAddParameter(t, "WB11"))
-		if err != nil {
-			panic(err)
-		}
-		assert.NoError(t, err)
-		assert.Greater(t, int(workbookID11), 0)
-		workbookID12, err := workbookRepo.AddWorkbook(bg, student1, spaceID1, testNewWorkbookAddParameter(t, "WB12"))
-		assert.NoError(t, err)
-		assert.Greater(t, int(workbookID12), 0)
+
+		workbook11 := testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB11")
+		testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB12")
 
 		type args struct {
 			operator appD.Student
@@ -231,7 +234,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 					param:    "WB11",
 				},
 				want: want{
-					workbookID:   workbookID11,
+					workbookID:   appD.WorkbookID(workbook11.GetID()),
 					workbookName: "WB11",
 					audioEnabled: "false",
 				},
@@ -252,6 +255,75 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 				}
 			})
 		}
+	}
+
+}
+
+func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+	bg := context.Background()
+
+	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+		return userG.NewRepositoryFactory(db)
+	}
+
+	userD.InitSystemAdmin(userRfFunc)
+	for driverName, db := range dbList() {
+		logrus.Println(driverName)
+		sqlDB, err := db.DB()
+		assert.NoError(t, err)
+		defer sqlDB.Close()
+		userRepo, err := userG.NewRepositoryFactory(db)
+		assert.NoError(t, err)
+		_, sysOwner, owner := testInitOrganization(t, db)
+
+		rbacRepo := userG.NewRBACRepository(db)
+		err = rbacRepo.Init()
+		assert.NoError(t, err)
+
+		user1 := testNewAppUser(t, bg, db, owner, "LOGIN_ID_1", "USERNAME_1")
+		user2 := testNewAppUser(t, bg, db, owner, "LOGIN_ID_2", "USERNAME_2")
+
+		englishWord := testNewProblemType(t, "english_word_problem")
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		spaceRepo := userG.NewSpaceRepository(db)
+
+		// user1 has two workbooks(WB11, WB12)
+		student1 := testNewStudent(t, user1)
+		spaceID1, err := spaceRepo.AddPersonalSpace(bg, sysOwner, user1)
+		assert.NoError(t, err)
+
+		workbook11 := testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB11")
+		workbook12 := testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB12")
+
+		// user2 has two workbooks(WB11, WB12)
+		student2 := testNewStudent(t, user2)
+		spaceID2, err := spaceRepo.AddPersonalSpace(bg, sysOwner, user2)
+		assert.NoError(t, err)
+
+		workbook21 := testNewWorkbook(t, bg, db, workbookRepo, student2, spaceID2, "WB21")
+		workbook22 := testNewWorkbook(t, bg, db, workbookRepo, student2, spaceID2, "WB22")
+
+		// user1 can read user1's workbooks(WB11, WB12)
+		workbook11Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook11.GetID()))
+		assert.NoError(t, err)
+		assert.Equal(t, workbook11Tmp.GetID(), workbook11.GetID())
+		workbook12Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook12.GetID()))
+		assert.NoError(t, err)
+		assert.Equal(t, workbook12Tmp.GetID(), workbook12.GetID())
+
+		// user1 cannot read user2's workbooks(WB21, WB22)
+		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook21.GetID())); err != nil {
+			assert.True(t, errors.Is(err, domain.ErrWorkbookPermissionDenied))
+		} else {
+			assert.Fail(t, "err is nil")
+		}
+		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook22.GetID())); err != nil {
+			assert.True(t, errors.Is(err, domain.ErrWorkbookPermissionDenied))
+		} else {
+			assert.Fail(t, "err is nil")
+		}
+
 	}
 
 }
