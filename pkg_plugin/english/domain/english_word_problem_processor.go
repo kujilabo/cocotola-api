@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -413,9 +412,9 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	tatoebaWorkbook, err := workbookRepo.FindWorkbookByName(ctx, operator, systemSpaceID, domain.TatoebaWorkbookName)
+	tatoebaWorkbook, err := workbookRepo.FindWorkbookByName(ctx, operator, systemSpaceID, app.TatoebaWorkbookName)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to FindWorkbookByName. name: %s, err: %w", domain.TatoebaWorkbookName, err)
+		return 0, xerrors.Errorf("failed to FindWorkbookByName. name: %s, err: %w", app.TatoebaWorkbookName, err)
 	}
 
 	tatoebaSentenceFrom, err := p.tatoebaSentenceRepository.FindTatoebaSentenceBySentenceNumber(ctx, tatoebaSentenceNumberFrom)
