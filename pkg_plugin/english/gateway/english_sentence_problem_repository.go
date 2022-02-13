@@ -56,7 +56,7 @@ func (e *englishSentenceProblemEntity) toProblem(rf app.AudioRepositoryFactory) 
 		return nil, err
 	}
 
-	return domain.NewEnglishSentenceProblem(problem, app.AudioID(e.AudioID), "", e.Text, lang, e.Translated)
+	return domain.NewEnglishSentenceProblem(problem, app.AudioID(e.AudioID), "", e.Text, lang, e.Translated, e.Note)
 }
 
 type englishSentenceProblemAddParameter struct {
