@@ -18,7 +18,7 @@ func TestGetOrganization(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
@@ -28,7 +28,7 @@ func TestGetOrganization(t *testing.T) {
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
-		sysAd, err := domain.NewSystemAdminFromDB(db)
+		sysAd, err := domain.NewSystemAdminFromDB(bg, db)
 		assert.NoError(t, err)
 
 		log.Printf("%d", i)
@@ -71,7 +71,7 @@ func TestFindOrganizationByName(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
@@ -82,7 +82,7 @@ func TestFindOrganizationByName(t *testing.T) {
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
-		sysAd, err := domain.NewSystemAdminFromDB(db)
+		sysAd, err := domain.NewSystemAdminFromDB(bg, db)
 		assert.NoError(t, err)
 
 		log.Printf("%d", i)
@@ -120,7 +120,7 @@ func TestAddOrganization(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
@@ -131,7 +131,7 @@ func TestAddOrganization(t *testing.T) {
 	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	for i, db := range dbList() {
-		sysAd, err := domain.NewSystemAdminFromDB(db)
+		sysAd, err := domain.NewSystemAdminFromDB(bg, db)
 		assert.NoError(t, err)
 
 		log.Printf("%d", i)

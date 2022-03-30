@@ -356,7 +356,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
@@ -431,7 +431,7 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 	logger := log.FromContext(ctx)
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		systemAdmin, err := userD.NewSystemAdminFromDB(tx)
+		systemAdmin, err := userD.NewSystemAdminFromDB(ctx, tx)
 		if err != nil {
 			return err
 		}

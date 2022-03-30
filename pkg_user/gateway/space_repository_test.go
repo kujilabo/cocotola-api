@@ -20,7 +20,7 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
@@ -78,7 +78,7 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 

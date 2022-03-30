@@ -13,9 +13,9 @@ import (
 const SystemAdminID = 1
 
 // var systemAdminInstance SystemAdmin
-var rfFunc func(db *gorm.DB) (RepositoryFactory, error)
+var rfFunc func(ctx context.Context, db *gorm.DB) (RepositoryFactory, error)
 
-func InitSystemAdmin(rfFuncArg func(db *gorm.DB) (RepositoryFactory, error)) {
+func InitSystemAdmin(rfFuncArg func(ctx context.Context, db *gorm.DB) (RepositoryFactory, error)) {
 	if rfFuncArg == nil {
 		panic(errors.New("invalid argment"))
 	}
@@ -47,8 +47,8 @@ func NewSystemAdmin(rf RepositoryFactory) SystemAdmin {
 		rf: rf,
 	}
 }
-func NewSystemAdminFromDB(db *gorm.DB) (SystemAdmin, error) {
-	rf, err := rfFunc(db)
+func NewSystemAdminFromDB(ctx context.Context, db *gorm.DB) (SystemAdmin, error) {
+	rf, err := rfFunc(ctx, db)
 	if err != nil {
 		return nil, err
 	}
