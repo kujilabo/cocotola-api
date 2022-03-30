@@ -257,7 +257,7 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 		if err != nil {
 			return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
 		}
-		if !priv.HasPrivilege(domain.PrivilegeRead) {
+		if !privTmp.HasPrivilege(domain.PrivilegeRead) {
 			return nil, domain.ErrWorkbookPermissionDenied
 		}
 		priv = privTmp
