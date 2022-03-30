@@ -29,7 +29,7 @@ func NewGuestAuthService(authTokenManager domain.AuthTokenManager) GuestAuthServ
 func (s *guestAuthService) RetrieveGuestToken(ctx context.Context, organizationName string) (*domain.TokenSet, error) {
 	var tokenSet *domain.TokenSet
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		systemAdmin, err := user.NewSystemAdminFromDB(tx)
+		systemAdmin, err := user.NewSystemAdminFromDB(ctx, tx)
 		if err != nil {
 			return err
 		}

@@ -69,7 +69,7 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, userD.SystemOwner, userD.Owner) {
 	log.Println("testInitOrganization")
 	bg := context.Background()
-	sysAd, err := userD.NewSystemAdminFromDB(db)
+	sysAd, err := userD.NewSystemAdminFromDB(bg, db)
 	assert.NoError(t, err)
 
 	// delete all organizations

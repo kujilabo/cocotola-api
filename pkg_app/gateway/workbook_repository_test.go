@@ -17,7 +17,7 @@ import (
 func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
@@ -178,7 +178,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
@@ -262,7 +262,7 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
