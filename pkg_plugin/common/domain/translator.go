@@ -78,7 +78,7 @@ func (t *translator) customDictionaryLookup(ctx context.Context, text string, fr
 		return nil, err
 	}
 	if !customContained {
-		return nil, ErrTranslationNotFound
+		return nil, nil
 	}
 
 	customResults, err := customRepo.FindByText(ctx, toLang, text)
@@ -123,13 +123,14 @@ func (t *translator) azureDictionaryLookup(ctx context.Context, fromLang, toLang
 }
 
 func (t *translator) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]Translation, error) {
+	logger := log.FromContext(ctx)
 	// find translations from custom reopository
 	customResults, err := t.customDictionaryLookup(ctx, text, fromLang, toLang)
-	if err != nil && !errors.Is(err, ErrTranslationNotFound) {
-		return nil, err
+	if err == nil && len(customResults) != 0 {
+		return customResults, nil
 	}
-	if !errors.Is(err, ErrTranslationNotFound) {
-		return customResults, err
+	if err != nil {
+		return nil, err
 	}
 
 	// find translations from azure
@@ -137,6 +138,13 @@ func (t *translator) DictionaryLookup(ctx context.Context, fromLang, toLang app.
 	if err != nil {
 		return nil, err
 	}
+
+	if len(azureResults) == 0 {
+		logger.Infof("Translation not found. text: %s", text)
+		return nil, nil
+	}
+	logger.Infof("azureResults: %v", azureResults)
+
 	azureResultMap, err := t.selectMaxConfidenceTranslations(ctx, azureResults)
 	if err != nil {
 		return nil, err
@@ -149,6 +157,7 @@ func (t *translator) DictionaryLookup(ctx context.Context, fromLang, toLang app.
 		}
 		results = append(results, result)
 	}
+	logger.Infof("results: %v", results)
 	return results, nil
 }
 

@@ -373,9 +373,9 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if cfg.Debug.Wait {
-		router.Use(middleware.NewWaitMiddleware())
-	}
+	// if cfg.Debug.Wait {
+	// 	router.Use(middleware.NewWaitMiddleware())
+	// }
 
 	return cfg, db, sqlDB, router, nil
 }

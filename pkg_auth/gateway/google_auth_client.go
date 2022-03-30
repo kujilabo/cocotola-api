@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
@@ -61,7 +61,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBytes, err := ioutil.ReadAll(resp.Body)
+		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}

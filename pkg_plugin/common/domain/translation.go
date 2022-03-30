@@ -23,7 +23,7 @@ type Translation interface {
 
 type translation struct {
 	ID         TranslationID `validate:"gte=0"`
-	Version    int           `validate:"required,gte=1"`
+	Version    int           `validate:"gte=0"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	Text       string `validate:"required"`

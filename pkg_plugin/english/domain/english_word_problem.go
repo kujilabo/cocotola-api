@@ -8,6 +8,58 @@ import (
 
 const EnglishWordProblemType = "english_word"
 
+type EnglishWordProblemSentence interface {
+	GetProvider() string
+	GetAudioID() app.AudioID
+	GetText() string
+	GetTranslated() string
+	GetNote() string
+	GetLang2() app.Lang2
+}
+
+type englishWordProblemSentence struct {
+	Provider   string
+	AudioID    app.AudioID
+	Text       string
+	Lang       app.Lang2
+	Translated string
+	Note       string
+}
+
+func NewEnglishWordProblemSentence(audioID app.AudioID, text string, lang app.Lang2, translated, note string) (EnglishWordProblemSentence, error) {
+	return &englishWordProblemSentence{
+		AudioID:    audioID,
+		Text:       text,
+		Lang:       lang,
+		Translated: translated,
+		Note:       note,
+	}, nil
+}
+
+func (m *englishWordProblemSentence) GetProvider() string {
+	return m.Provider
+}
+
+func (m *englishWordProblemSentence) GetAudioID() app.AudioID {
+	return m.AudioID
+}
+
+func (m *englishWordProblemSentence) GetText() string {
+	return m.Text
+}
+
+func (m *englishWordProblemSentence) GetTranslated() string {
+	return m.Translated
+}
+
+func (m *englishWordProblemSentence) GetNote() string {
+	return m.Note
+}
+
+func (m *englishWordProblemSentence) GetLang2() app.Lang2 {
+	return m.Lang
+}
+
 type EnglishWordProblem interface {
 	app.Problem
 	GetAudioID() app.AudioID
@@ -21,7 +73,7 @@ type EnglishWordProblem interface {
 	GetLang2() app.Lang2
 	GetTranslated() string
 	GetPhrases() []EnglishPhraseProblem
-	GetSentences() []EnglishSentenceProblem
+	GetSentences() []EnglishWordProblemSentence
 }
 
 type englishWordProblem struct {
@@ -37,10 +89,10 @@ type englishWordProblem struct {
 	Lang              app.Lang2
 	Translated        string
 	Phrases           []EnglishPhraseProblem
-	Sentences         []EnglishSentenceProblem
+	Sentences         []EnglishWordProblemSentence
 }
 
-func NewEnglishWordProblem(problem app.Problem, audioID app.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang app.Lang2, translated string, phrases []EnglishPhraseProblem, sentences []EnglishSentenceProblem) (EnglishWordProblem, error) {
+func NewEnglishWordProblem(problem app.Problem, audioID app.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang app.Lang2, translated string, phrases []EnglishPhraseProblem, sentences []EnglishWordProblemSentence) (EnglishWordProblem, error) {
 	return &englishWordProblem{
 		Problem:           problem,
 		AudioID:           audioID,
@@ -102,7 +154,7 @@ func (m *englishWordProblem) GetPhrases() []EnglishPhraseProblem {
 	return m.Phrases
 }
 
-func (m *englishWordProblem) GetSentences() []EnglishSentenceProblem {
+func (m *englishWordProblem) GetSentences() []EnglishWordProblemSentence {
 	return m.Sentences
 }
 
@@ -111,6 +163,16 @@ func (m *englishWordProblem) GetProperties(cxt context.Context) map[string]inter
 
 	// v, _ := json.Marshal(m.sentences[0])
 	// fmt.Printf("m.sentences: %v\n", string(v))
+	sentences := make([]map[string]interface{}, 0)
+	for _, s := range m.Sentences {
+		sentence := map[string]interface{}{
+			"text":       s.GetText(),
+			"translated": s.GetTranslated(),
+			"lang":       s.GetLang2().String(),
+			"note":       s.GetNote(),
+		}
+		sentences = append(sentences, sentence)
+	}
 
 	return map[string]interface{}{
 		"text":       m.Text,
@@ -118,7 +180,7 @@ func (m *englishWordProblem) GetProperties(cxt context.Context) map[string]inter
 		"lang":       m.Lang.String(),
 		"translated": m.Translated,
 		"audioId":    m.AudioID,
-		"sentences":  m.Sentences,
+		"sentences":  sentences,
 	}
 }
 

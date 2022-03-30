@@ -388,14 +388,33 @@ func (h *problemHandler) toProblemSelectParameter2(c *gin.Context) (domain.Probl
 func (h *problemHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
+
+	var pluginError = &domain.PluginError{}
 	if errors.Is(err, domain.ErrProblemAlreadyExists) {
 		c.JSON(http.StatusConflict, gin.H{"message": "Problem already exists"})
 		return true
 	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
+	} else if errors.Is(err, domain.ErrProblemNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		return true
+	} else if errors.As(err, &pluginError) {
+		h := gin.H{
+			"code":     pluginError.ErrorCode,
+			"message":  err.Error(),
+			"messages": pluginError.ErrorMessages,
+		}
+		switch strings.ToLower(pluginError.ErrorType) {
+		case "client":
+			c.JSON(http.StatusBadRequest, h)
+		case "server":
+			c.JSON(http.StatusInternalServerError, h)
+		default:
+			c.JSON(http.StatusInternalServerError, h)
+		}
+		return true
 	}
 	logger.Errorf("problemHandler error: %+v", err)
-	// fmt.Printf("%+v\n", err)
 	return false
 }
