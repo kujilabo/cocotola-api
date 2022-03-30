@@ -61,7 +61,7 @@ func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
-	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
+	problemRepo, err := repo.NewProblemRepository(ctx, EnglishPhraseProblemType)
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}

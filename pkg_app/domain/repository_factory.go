@@ -19,3 +19,7 @@ type RepositoryFactory interface {
 
 	NewUserQuotaRepository(ctx context.Context) (UserQuotaRepository, error)
 }
+
+type AudioRepositoryFactory interface {
+	NewAudioRepository(ctx context.Context) (AudioRepository, error)
+}

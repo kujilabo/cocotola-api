@@ -49,7 +49,7 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 	var tokenSet *domain.TokenSet
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		systemAdmin, err := user.NewSystemAdminFromDB(tx)
+		systemAdmin, err := user.NewSystemAdminFromDB(ctx, tx)
 		if err != nil {
 			return err
 		}

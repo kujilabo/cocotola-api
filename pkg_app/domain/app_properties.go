@@ -1,9 +1,13 @@
 package domain
 
 import (
+	"context"
+
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"gorm.io/gorm"
 )
+
+type RepositoryFactoryFunc func(ctx context.Context, db *gorm.DB) (RepositoryFactory, error)
 
 var (
 	appPropertiesSystemSpaceID     = user.SpaceID(0)
@@ -12,8 +16,8 @@ var (
 	SystemStudentLoginID           = "system-student"
 	TatoebaWorkbookName            = "tatoeba"
 	OrganizationName               = "cocotola"
-	UserRfFunc                     func(db *gorm.DB) (user.RepositoryFactory, error)
-	RfFunc                         func(db *gorm.DB) (RepositoryFactory, error)
+	UserRfFunc                     user.RepositoryFactoryFunc
+	RfFunc                         RepositoryFactoryFunc
 )
 
 func InitAppProperties(systemSpaceID user.SpaceID, systemStudentID user.AppUserID, tatoebaWorkbookID WorkbookID) {

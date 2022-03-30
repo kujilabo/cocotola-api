@@ -10,6 +10,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
+	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
@@ -35,6 +36,16 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 	logger.Info("FindAudioByID")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
+		problemID, err := ginhelper.GetUint(c, "problemID")
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
 		id := c.Param("audioID")
 		audioID, err := strconv.Atoi(id)
 		if err != nil {
@@ -42,7 +53,7 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.audioService.FindAudioByID(ctx, domain.AudioID(uint(audioID)))
+		result, err := h.audioService.FindAudioByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), domain.AudioID(uint(audioID)))
 		if err != nil {
 			return err
 		}
@@ -55,7 +66,6 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 		c.JSON(http.StatusOK, response)
 		return nil
 	}, h.errorHandle)
-
 }
 
 func (h *audioHandler) errorHandle(c *gin.Context, err error) bool {

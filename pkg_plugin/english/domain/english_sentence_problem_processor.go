@@ -14,9 +14,40 @@ import (
 )
 
 type englishSentenceProblemAddParemeter struct {
-	Lang       app.Lang2 `validate:"required"`
-	Text       string    `validate:"required"`
-	Translated string
+	Lang                   app.Lang2 `validate:"required"`
+	Text                   string    `validate:"required"`
+	Translated             string
+	Provider               string
+	TatoebaSentenceNumber1 int
+	TatoebaSentenceNumber2 int
+	TatoebaAuthor1         string
+	TatoebaAuthor2         string
+}
+
+var (
+	EnglishSentenceProblemAddParemeterAudioID                = "audioId"
+	EnglishSentenceProblemAddParemeterLang                   = "lang"
+	EnglishSentenceProblemAddParemeterText                   = "text"
+	EnglishSentenceProblemAddParemeterTranslated             = "translated"
+	EnglishSentenceProblemAddParemeterProvider               = "provider"
+	EnglishSentenceProblemAddParemeterTatoebaSentenceNumber1 = "tatoebaSentenceNumber1"
+	EnglishSentenceProblemAddParemeterTatoebaSentenceNumber2 = "tatoebaSentenceNumber2"
+	EnglishSentenceProblemAddParemeterTatoebaAuthor1         = "tatoebaAuthor1"
+	EnglishSentenceProblemAddParemeterTatoebaAuthor2         = "tatoebaAuthor2"
+)
+
+func (p *englishSentenceProblemAddParemeter) toProperties(audioID app.AudioID) map[string]string {
+	return map[string]string{
+		EnglishSentenceProblemAddParemeterAudioID:                strconv.Itoa(int(uint(audioID))),
+		EnglishSentenceProblemAddParemeterLang:                   p.Lang.String(),
+		EnglishSentenceProblemAddParemeterText:                   p.Text,
+		EnglishSentenceProblemAddParemeterTranslated:             p.Translated,
+		EnglishSentenceProblemAddParemeterProvider:               p.Provider,
+		EnglishSentenceProblemAddParemeterTatoebaSentenceNumber1: strconv.Itoa(p.TatoebaSentenceNumber1),
+		EnglishSentenceProblemAddParemeterTatoebaSentenceNumber2: strconv.Itoa(p.TatoebaSentenceNumber2),
+		EnglishSentenceProblemAddParemeterTatoebaAuthor1:         p.TatoebaAuthor1,
+		EnglishSentenceProblemAddParemeterTatoebaAuthor2:         p.TatoebaAuthor2,
+	}
 }
 
 func toEnglishSentenceProblemAddParemeter(param app.ProblemAddParameter) (*englishSentenceProblemAddParemeter, error) {
@@ -69,7 +100,7 @@ func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo a
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
-	problemRepo, err := repo.NewProblemRepository(ctx, workbook.GetProblemType())
+	problemRepo, err := repo.NewProblemRepository(ctx, EnglishSentenceProblemType)
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
@@ -102,12 +133,7 @@ func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, 
 
 	logger.Infof("text: %s, audio ID: %d", extractedParam.Text, audioID)
 
-	properties := map[string]string{
-		"lang":       extractedParam.Lang.String(),
-		"text":       extractedParam.Text,
-		"translated": extractedParam.Translated,
-		"audioId":    strconv.Itoa(int(audioID)),
-	}
+	properties := extractedParam.toProperties(audioID)
 	newParam, err := app.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)

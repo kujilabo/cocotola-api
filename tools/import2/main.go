@@ -262,7 +262,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	userRfFunc := func(db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 	userD.InitSystemAdmin(userRfFunc)
@@ -283,6 +283,11 @@ func main() {
 		panic(err)
 	}
 
+	audioRf, err := appG.NewAudioRepositoryFactory(ctx, db)
+	if err != nil {
+		panic(err)
+	}
+
 	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, nil, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	problemAddProcessor := map[string]appD.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
@@ -295,12 +300,12 @@ func main() {
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
 	problemQuotaProcessor := map[string]appD.ProblemQuotaProcessor{}
-	englishWordProblemRepository := func(db *gorm.DB) (appD.ProblemRepository, error) {
-		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, pluginEnglishDomain.EnglishWordProblemType)
+	englishWordProblemRepository := func(ctx context.Context, db *gorm.DB) (appD.ProblemRepository, error) {
+		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, audioRf, pluginEnglishDomain.EnglishWordProblemType)
 	}
 
 	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
-	problemRepositories := map[string]func(*gorm.DB) (appD.ProblemRepository, error){
+	problemRepositories := map[string]func(context.Context, *gorm.DB) (appD.ProblemRepository, error){
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemRepository,
 	}
 
