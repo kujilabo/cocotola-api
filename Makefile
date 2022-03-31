@@ -1,6 +1,6 @@
 .PHONY: unit-test docker-up docker-down test-docker-up test-docker-down docker-clear
 
-unit-test: dependency
+unit-test:
 	@go test -v -short ./...
 
 docker-up:

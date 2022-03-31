@@ -2,6 +2,8 @@ package application
 
 import (
 	"context"
+	"errors"
+	"strconv"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -40,7 +42,22 @@ func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.Or
 		if err != nil {
 			return err
 		}
-		tmpResult, err := problem.FindAudioByID(ctx, audioID)
+		if strconv.Itoa(int(audioID)) != problem.GetProperties(ctx)["audioId"] {
+			return errors.New("invalid audio id")
+		}
+		// tmpResult, err := problem.FindAudioByID(ctx, audioID)
+		// if err != nil {
+		// 	return err
+		// }
+		rf, err := s.rfFunc(ctx, tx)
+		if err != nil {
+			return err
+		}
+		audioRepo, err := rf.NewAudioRepository(ctx)
+		if err != nil {
+			return err
+		}
+		tmpResult, err := audioRepo.FindAudioByAudioID(ctx, audioID)
 		if err != nil {
 			return err
 		}

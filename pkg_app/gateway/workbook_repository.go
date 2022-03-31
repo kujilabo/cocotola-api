@@ -316,18 +316,18 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 
 	// the workbookWriter role can read, update, remove
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeRead); err != nil {
-		return 0, err
+		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: read, err: %w", err)
 	}
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeUpdate); err != nil {
-		return 0, err
+		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: update, err: %w", err)
 	}
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeRemove); err != nil {
-		return 0, err
+		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: remove, err: %w", err)
 	}
 
 	// user is assigned the workbookWriter role
 	if err := rbacRepo.AddNamedGroupingPolicy(userObject, workbookWriter); err != nil {
-		return 0, err
+		return 0, xerrors.Errorf("Failed to AddNamedGroupingPolicy. err: %w", err)
 	}
 
 	// rbacRepo.NewEnforcerWithRolesAndUsers([]user.RBACRole{workbookWriter}, []user.RBACUser{userObject})

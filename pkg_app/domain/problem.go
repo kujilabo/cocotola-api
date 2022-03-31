@@ -15,7 +15,7 @@ type Problem interface {
 	GetProblemType() string
 	GetProperties(ctx context.Context) map[string]interface{}
 
-	FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error)
+	// FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error)
 }
 
 type problem struct {
@@ -50,13 +50,13 @@ func (m *problem) GetProperties(ctx context.Context) map[string]interface{} {
 	return m.Properties
 }
 
-func (m *problem) FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error) {
-	audioRepo, err := m.rf.NewAudioRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return audioRepo.FindAudioByAudioID(ctx, audioID)
-}
+// func (m *problem) FindAudioByID(ctx context.Context, audioID AudioID) (Audio, error) {
+// 	audioRepo, err := m.rf.NewAudioRepository(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return audioRepo.FindAudioByAudioID(ctx, audioID)
+// }
 
 type ProblemWithResults interface {
 	Problem

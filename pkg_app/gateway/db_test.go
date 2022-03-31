@@ -73,7 +73,8 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, user
 	assert.NoError(t, err)
 
 	// delete all organizations
-	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")
+	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from workbook")
+	result = db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")
 	assert.NoError(t, result.Error)
 	result = db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from app_user")
 	assert.NoError(t, result.Error)
