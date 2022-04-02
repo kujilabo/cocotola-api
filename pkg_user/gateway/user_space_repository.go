@@ -9,11 +9,12 @@ import (
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type userSpaceRepository struct {
 	db *gorm.DB
-	rf domain.RepositoryFactory
+	rf service.RepositoryFactory
 }
 
 type userSpaceEntity struct {
@@ -30,14 +31,14 @@ func (e *userSpaceEntity) TableName() string {
 	return "user_space"
 }
 
-func NewUserSpaceRepository(rf domain.RepositoryFactory, db *gorm.DB) domain.UserSpaceRepository {
+func NewUserSpaceRepository(rf service.RepositoryFactory, db *gorm.DB) service.UserSpaceRepository {
 	return &userSpaceRepository{
 		db: db,
 		rf: rf,
 	}
 }
 
-func (r *userSpaceRepository) Add(ctx context.Context, operator domain.AppUser, spaceID domain.SpaceID) error {
+func (r *userSpaceRepository) Add(ctx context.Context, operator domain.AppUserModel, spaceID domain.SpaceID) error {
 	if result := r.db.Create(&userSpaceEntity{
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
@@ -45,13 +46,13 @@ func (r *userSpaceRepository) Add(ctx context.Context, operator domain.AppUser, 
 		AppUserID:      operator.GetID(),
 		SpaceID:        uint(spaceID),
 	}); result.Error != nil {
-		return libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
+		return libG.ConvertDuplicatedError(result.Error, service.ErrAppUserAlreadyExists)
 	}
 
 	return nil
 }
 
-func (r *userSpaceRepository) Remove(ctx context.Context, operator domain.AppUser, spaceID uint) error {
+func (r *userSpaceRepository) Remove(ctx context.Context, operator domain.AppUserModel, spaceID uint) error {
 	if result := r.db.Where(userSpaceEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
 		AppUserID:      operator.GetID(),
@@ -62,7 +63,7 @@ func (r *userSpaceRepository) Remove(ctx context.Context, operator domain.AppUse
 	return nil
 }
 
-func (r *userSpaceRepository) IsBelongedTo(ctx context.Context, operator domain.AppUser, spaceID uint) (bool, error) {
+func (r *userSpaceRepository) IsBelongedTo(ctx context.Context, operator domain.AppUserModel, spaceID uint) (bool, error) {
 	entity := userSpaceEntity{}
 	if result := r.db.Where(userSpaceEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),

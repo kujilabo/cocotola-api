@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 )
 
 type problemTypeEntity struct {
@@ -25,7 +26,7 @@ type problemTypeRepository struct {
 	db *gorm.DB
 }
 
-func NewProblemTypeRepository(db *gorm.DB) (domain.ProblemTypeRepository, error) {
+func NewProblemTypeRepository(db *gorm.DB) (service.ProblemTypeRepository, error) {
 	return &problemTypeRepository{
 		db: db,
 	}, nil

@@ -10,7 +10,7 @@ import (
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	"golang.org/x/xerrors"
 )
 
@@ -39,7 +39,7 @@ type tatoebaSentenceAddParameterReader struct {
 // 	return n + len(s2) - len(s1), nil
 // }
 
-func NewTatoebaSentenceAddParameterReader(reader io.Reader) domain.TatoebaSentenceAddParameterIterator {
+func NewTatoebaSentenceAddParameterReader(reader io.Reader) service.TatoebaSentenceAddParameterIterator {
 	bufReader := bufio.NewReaderSize(reader, bufSize)
 	// wrappedReader:=
 
@@ -54,7 +54,7 @@ func NewTatoebaSentenceAddParameterReader(reader io.Reader) domain.TatoebaSenten
 	}
 }
 
-func (r *tatoebaSentenceAddParameterReader) Next(ctx context.Context) (domain.TatoebaSentenceAddParameter, error) {
+func (r *tatoebaSentenceAddParameterReader) Next(ctx context.Context) (service.TatoebaSentenceAddParameter, error) {
 	logger := log.FromContext(ctx)
 
 	b, _, err := r.reader.ReadLine()
@@ -118,7 +118,7 @@ func (r *tatoebaSentenceAddParameterReader) Next(ctx context.Context) (domain.Ta
 		updatedAt = timeTmp
 	}
 
-	param, err := domain.NewTatoebaSentenceAddParameter(sentenceNumber, lang, text, author, updatedAt)
+	param, err := service.NewTatoebaSentenceAddParameter(sentenceNumber, lang, text, author, updatedAt)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewTatoebaSentenceAddParameter. rowNumber: %d, values: %v, err: %w", r.num, line, err)
 	}

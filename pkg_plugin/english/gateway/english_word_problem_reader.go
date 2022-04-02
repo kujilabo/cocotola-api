@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	common "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"golang.org/x/xerrors"
 )
@@ -25,7 +26,7 @@ type engliushWordProblemAddParameterCSVReader struct {
 	num    int
 }
 
-func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) app.ProblemAddParameterIterator {
+func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator {
 	return &engliushWordProblemAddParameterCSVReader{
 		workbookID: workbookID,
 		// problemType: problemType,
@@ -34,7 +35,7 @@ func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, reade
 	}
 }
 
-func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParameter, error) {
+func (r *engliushWordProblemAddParameterCSVReader) Next() (appS.ProblemAddParameter, error) {
 	var line []string
 	line, err := r.reader.Read()
 	if errors.Is(err, io.EOF) {
@@ -70,7 +71,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (app.ProblemAddParamet
 		"translated": translated,
 		"pos":        strconv.Itoa(int(pos)),
 	}
-	param, err := app.NewProblemAddParameter(r.workbookID, r.num, properties)
+	param, err := appS.NewProblemAddParameter(r.workbookID, r.num, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}

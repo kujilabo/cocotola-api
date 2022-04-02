@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
+	"github.com/kujilabo/cocotola-api/pkg_auth/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
@@ -30,7 +30,7 @@ type authTokenManager struct {
 	refreshTimeout time.Duration
 }
 
-func NewAuthTokenManager(signingKey []byte, signingMethod jwt.SigningMethod, tokenTimeout, refreshTimeout time.Duration) domain.AuthTokenManager {
+func NewAuthTokenManager(signingKey []byte, signingMethod jwt.SigningMethod, tokenTimeout, refreshTimeout time.Duration) service.AuthTokenManager {
 	return &authTokenManager{
 		signingKey:     signingKey,
 		signingMethod:  signingMethod,
@@ -39,7 +39,7 @@ func NewAuthTokenManager(signingKey []byte, signingMethod jwt.SigningMethod, tok
 	}
 }
 
-func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser user.AppUser, organization user.Organization) (*domain.TokenSet, error) {
+func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser user.AppUserModel, organization user.OrganizationModel) (*service.TokenSet, error) {
 	accessToken, err := m.createJWT(ctx, appUser, organization, m.tokenTimeout, "access")
 	if err != nil {
 		return nil, err
@@ -50,13 +50,13 @@ func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser user.AppU
 		return nil, err
 	}
 
-	return &domain.TokenSet{
+	return &service.TokenSet{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
-func (m *authTokenManager) createJWT(ctx context.Context, appUser user.AppUser, organization user.Organization, duration time.Duration, tokenType string) (string, error) {
+func (m *authTokenManager) createJWT(ctx context.Context, appUser user.AppUserModel, organization user.OrganizationModel, duration time.Duration, tokenType string) (string, error) {
 	logger := log.FromContext(ctx)
 	now := time.Now()
 	claims := AppUserClaims{
@@ -88,16 +88,16 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 	currentToken, err := jwt.ParseWithClaims(tokenString, &AppUserClaims{}, keyFunc)
 	if err != nil {
 		logger.WithError(err).Infof("%v", err)
-		return "", domain.NewUnauthorizedError(fmt.Sprintf("failed to ParseWithClaims. err: %v", err))
+		return "", service.NewUnauthorizedError(fmt.Sprintf("failed to ParseWithClaims. err: %v", err))
 	}
 
 	currentClaims, ok := currentToken.Claims.(*AppUserClaims)
 	if !ok || !currentToken.Valid {
-		return "", domain.NewUnauthorizedError("Invalid token. err: %v")
+		return "", service.NewUnauthorizedError("Invalid token. err: %v")
 	}
 
 	if currentClaims.TokenType != "refresh" {
-		return "", domain.NewUnauthorizedError("Invalid token type")
+		return "", service.NewUnauthorizedError("Invalid token type")
 	}
 
 	now := time.Now()
@@ -107,7 +107,7 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 		return "", err
 	}
 
-	appUser, err := user.NewAppUser(nil, userModel, user.OrganizationID(currentClaims.OrganizationID), currentClaims.LoginID, currentClaims.Username, []string{currentClaims.Role}, map[string]string{})
+	appUser, err := user.NewAppUserModel(userModel, user.OrganizationID(currentClaims.OrganizationID), currentClaims.LoginID, currentClaims.Username, []string{currentClaims.Role}, map[string]string{})
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +117,7 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 		return "", err
 	}
 
-	organization, err := user.NewOrganization(orgModel, currentClaims.OrganizationName)
+	organization, err := user.NewOrganizationModel(orgModel, currentClaims.OrganizationName)
 	if err != nil {
 		return "", err
 	}

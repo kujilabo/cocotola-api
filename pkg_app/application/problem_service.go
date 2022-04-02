@@ -9,38 +9,40 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type ProblemService interface {
-	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (domain.ProblemSearchResult, error)
+	FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param service.ProblemSearchCondition) (service.ProblemSearchResult, error)
 
-	FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.ProblemSearchResult, error)
+	FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.ProblemSearchResult, error)
 
-	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (domain.ProblemSearchResult, error)
+	FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param service.ProblemIDsCondition) (service.ProblemSearchResult, error)
 
-	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter1) (domain.Problem, error)
+	FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter1) (domain.ProblemModel, error)
 
 	FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
 
-	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error)
+	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) (domain.ProblemID, error)
 
-	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error
+	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error
 
-	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2) error
+	RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter2) error
 
-	ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error
+	ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (service.ProblemAddParameterIterator, error)) error
 }
 
 type problemService struct {
 	db         *gorm.DB
-	pf         domain.ProcessorFactory
-	rfFunc     domain.RepositoryFactoryFunc
-	userRfFunc user.RepositoryFactoryFunc
+	pf         service.ProcessorFactory
+	rfFunc     service.RepositoryFactoryFunc
+	userRfFunc userS.RepositoryFactoryFunc
 }
 
-func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) ProblemService {
+func NewProblemService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) ProblemService {
 	return &problemService{
 		db:         db,
 		pf:         pf,
@@ -49,8 +51,8 @@ func NewProblemService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.Re
 	}
 }
 
-func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemSearchCondition) (domain.ProblemSearchResult, error) {
-	var result domain.ProblemSearchResult
+func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param service.ProblemSearchCondition) (service.ProblemSearchResult, error) {
+	var result service.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -68,8 +70,8 @@ func (s *problemService) FindProblemsByWorkbookID(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.ProblemSearchResult, error) {
-	var result domain.ProblemSearchResult
+func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.ProblemSearchResult, error) {
+	var result service.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -87,8 +89,8 @@ func (s *problemService) FindAllProblemsByWorkbookID(ctx context.Context, organi
 	return result, nil
 }
 
-func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param domain.ProblemIDsCondition) (domain.ProblemSearchResult, error) {
-	var result domain.ProblemSearchResult
+func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, param service.ProblemIDsCondition) (service.ProblemSearchResult, error) {
+	var result service.ProblemSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -106,14 +108,14 @@ func (s *problemService) FindProblemsByProblemIDs(ctx context.Context, organizat
 	return result, nil
 }
 
-func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter1) (domain.Problem, error) {
-	var result domain.Problem
+func (s *problemService) FindProblemByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter1) (domain.ProblemModel, error) {
+	var result domain.ProblemModel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
+		studentService, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		tmpResult, err := workbook.FindProblemByID(ctx, student, id.GetProblemID())
+		tmpResult, err := workbook.FindProblemByID(ctx, studentService, id.GetProblemID())
 		if err != nil {
 			return err
 		}
@@ -144,15 +146,15 @@ func (s *problemService) FindProblemIDs(ctx context.Context, organizationID user
 	return result, nil
 }
 
-func (s *problemService) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param domain.ProblemAddParameter) (domain.ProblemID, error) {
+func (s *problemService) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) (domain.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	var result domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
+		studentService, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		tmpResult, err := s.addProblem(ctx, student, workbook, param)
+		tmpResult, err := s.addProblem(ctx, studentService, workbook, param)
 		if err != nil {
 			return xerrors.Errorf("failed to AddProblem. err: %w", err)
 		}
@@ -165,7 +167,7 @@ func (s *problemService) AddProblem(ctx context.Context, organizationID user.Org
 	return result, nil
 }
 
-func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error {
+func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
@@ -181,7 +183,7 @@ func (s *problemService) UpdateProblem(ctx context.Context, organizationID user.
 	return nil
 }
 
-func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id domain.ProblemSelectParameter2) error {
+func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("ProblemService.RemoveProblem")
 
@@ -205,7 +207,7 @@ func (s *problemService) RemoveProblem(ctx context.Context, organizationID user.
 	return nil
 }
 
-func (s *problemService) ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (domain.ProblemAddParameterIterator, error)) error {
+func (s *problemService) ImportProblems(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, newIterator func(workbookID domain.WorkbookID, problemType string) (service.ProblemAddParameterIterator, error)) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("ProblemService.ImportProblems")
 
@@ -243,7 +245,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 			}
 
 			id, err := s.addProblem(ctx, student, workbook, param)
-			if errors.Is(err, domain.ErrProblemAlreadyExists) {
+			if errors.Is(err, service.ErrProblemAlreadyExists) {
 				logger.Infof("Problem already exists. param: %+v", param)
 				return nil
 			}
@@ -261,7 +263,7 @@ func (s *problemService) ImportProblems(ctx context.Context, organizationID user
 	return nil
 }
 
-func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
+func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
 	repo, err := s.rfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err
@@ -281,7 +283,7 @@ func (s *problemService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB
 	return student, workbook, nil
 }
 
-func (s *problemService) addProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, param domain.ProblemAddParameter) (domain.ProblemID, error) {
+func (s *problemService) addProblem(ctx context.Context, student service.Student, workbook service.Workbook, param service.ProblemAddParameter) (domain.ProblemID, error) {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
 		return 0, err
@@ -302,7 +304,7 @@ func (s *problemService) addProblem(ctx context.Context, student domain.Student,
 	return id, nil
 }
 
-func (s *problemService) updateProblem(ctx context.Context, student domain.Student, workbook domain.Workbook, id domain.ProblemSelectParameter2, param domain.ProblemUpdateParameter) error {
+func (s *problemService) updateProblem(ctx context.Context, student service.Student, workbook service.Workbook, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
 		return err

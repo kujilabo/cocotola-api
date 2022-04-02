@@ -14,10 +14,12 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/gateway/casbinquery"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 	// casbinquery "github.com/pecolynx/casbin-query"
 )
 
@@ -58,7 +60,7 @@ func stringMapToJSON(m map[string]string) (string, error) {
 	return string(b), nil
 }
 
-func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.ProcessorFactory, operator user.AppUser, problemType string, privs user.Privileges) (domain.Workbook, error) {
+func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf service.ProcessorFactory, operator user.AppUserModel, problemType string, privs user.Privileges) (domain.WorkbookModel, error) {
 	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
@@ -69,7 +71,8 @@ func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.Proce
 		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
-	workbook, err := domain.NewWorkbook(rf, pf, model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText, properties)
+	workbook, err := domain.NewWorkbookModel( //rf, pf,
+		model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
@@ -79,13 +82,13 @@ func (e *workbookEntity) toWorkbook(rf domain.RepositoryFactory, pf domain.Proce
 type workbookRepository struct {
 	driverName   string
 	db           *gorm.DB
-	rf           domain.RepositoryFactory
-	userRf       user.RepositoryFactory
-	pf           domain.ProcessorFactory
+	rf           service.RepositoryFactory
+	userRf       userS.RepositoryFactory
+	pf           service.ProcessorFactory
 	problemTypes []domain.ProblemType
 }
 
-func NewWorkbookRepository(ctx context.Context, driverName string, rf domain.RepositoryFactory, userRf user.RepositoryFactory, pf domain.ProcessorFactory, db *gorm.DB, problemTypes []domain.ProblemType) domain.WorkbookRepository {
+func NewWorkbookRepository(ctx context.Context, driverName string, rf service.RepositoryFactory, userRf userS.RepositoryFactory, pf service.ProcessorFactory, db *gorm.DB, problemTypes []domain.ProblemType) service.WorkbookRepository {
 	return &workbookRepository{
 		driverName:   driverName,
 		db:           db,
@@ -114,7 +117,7 @@ func (r *workbookRepository) toProblemTypeID(problemType string) uint {
 	return 0
 }
 
-func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.Student, param domain.WorkbookSearchCondition) (domain.WorkbookSearchResult, error) {
+func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.StudentModel, param service.WorkbookSearchCondition) (service.WorkbookSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbookRepository.FindWorkbooks %v", operator)
 	if param == nil {
@@ -138,10 +141,10 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 		return nil, result.Error
 	}
 
-	results := make([]domain.Workbook, len(workbooks))
+	results := make([]domain.WorkbookModel, len(workbooks))
 	priv := user.NewPrivileges([]user.RBACAction{domain.PrivilegeRead})
 	for i, e := range workbooks {
-		w, err := e.toWorkbook(r.rf, r.pf, operator, r.toProblemType(e.ProblemTypeID), priv)
+		w, err := e.toWorkbookModel(r.rf, r.pf, operator, r.toProblemType(e.ProblemTypeID), priv)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toWorkbook. err: %w", err)
 		}
@@ -167,7 +170,7 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 		return nil, errors.New("overflow")
 	}
 
-	return domain.NewWorkbookSearchResult(int(count), results)
+	return service.NewWorkbookSearchResult(int(count), results)
 }
 
 func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) []user.RBACRole {
@@ -210,66 +213,74 @@ func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user
 // 	return nil
 // }
 
-func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID) (domain.Workbook, error) {
-	workbook := workbookEntity{}
+func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (service.Workbook, error) {
+	workbookEntity := workbookEntity{}
 	if result := r.db.
 		Where("organization_id = ?", uint(operator.GetOrganizationID())).
 		Where("id = ?", uint(workbookID)).
-		First(&workbook); result.Error != nil {
+		First(&workbookEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrWorkbookNotFound
+			return nil, service.ErrWorkbookNotFound
 		}
 		return nil, result.Error
 	}
 
-	priv, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbook.ID))
+	priv, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbookEntity.ID))
 	if err != nil {
 		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
 	}
 	if !priv.HasPrivilege(domain.PrivilegeRead) {
-		return nil, domain.ErrWorkbookPermissionDenied
+		return nil, service.ErrWorkbookPermissionDenied
 	}
 
 	logger := log.FromContext(ctx)
-	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())
+	logger.Infof("ownerId: %d, operatorId: %d", workbookEntity.OwnerID, operator.GetID())
 
-	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
+	workbookModel, err := workbookEntity.toWorkbookModel(r.rf, r.pf, operator, r.toProblemType(workbookEntity.ProblemTypeID), priv)
+	if err != nil {
+		return nil, err
+	}
+	return service.NewWorkbook(r.rf, r.pf, workbookModel)
 }
 
-func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, name string) (domain.Workbook, error) {
-	workbook := workbookEntity{}
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, name string) (service.Workbook, error) {
+	workbookEntity := workbookEntity{}
 	if result := r.db.
 		Where("organization_id = ?", uint(operator.GetOrganizationID())).
 		Where("space_id = ?", uint(spaceID)).
 		Where("name = ?", name).
-		First(&workbook); result.Error != nil {
+		First(&workbookEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrWorkbookNotFound
+			return nil, service.ErrWorkbookNotFound
 		}
 		return nil, result.Error
 	}
 
 	var priv user.Privileges
-	if spaceID == domain.GetSystemSpaceID() {
+	if spaceID == service.GetSystemSpaceID() {
 		priv = user.NewPrivileges([]user.RBACAction{domain.PrivilegeRead})
 	} else {
-		privTmp, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbook.ID))
+		privTmp, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbookEntity.ID))
 		if err != nil {
 			return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
 		}
 		if !privTmp.HasPrivilege(domain.PrivilegeRead) {
-			return nil, domain.ErrWorkbookPermissionDenied
+			return nil, service.ErrWorkbookPermissionDenied
 		}
 		priv = privTmp
 	}
 
 	logger := log.FromContext(ctx)
-	logger.Infof("ownerId: %d, operatorId: %d", workbook.OwnerID, operator.GetID())
+	logger.Infof("ownerId: %d, operatorId: %d", workbookEntity.OwnerID, operator.GetID())
 
-	return workbook.toWorkbook(r.rf, r.pf, operator, r.toProblemType(workbook.ProblemTypeID), priv)
+	workbookModel, err := workbookEntity.toWorkbookModel(r.rf, r.pf, operator, r.toProblemType(workbookEntity.ProblemTypeID), priv)
+	if err != nil {
+		return nil, err
+	}
+	return service.NewWorkbook(r.rf, r.pf, workbookModel)
 }
 
-func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.AppUser, workbookID domain.WorkbookID) (user.Privileges, error) {
+func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.AppUserModel, workbookID domain.WorkbookID) (user.Privileges, error) {
 	rbacRepo := r.userRf.NewRBACRepository()
 	workbookRoles := r.getAllWorkbookRoles(workbookID)
 	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
@@ -282,7 +293,7 @@ func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.Ap
 	return r.checkPrivileges(e, userObject, workbookObject, privs)
 }
 
-func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUser, spaceID user.SpaceID, param domain.WorkbookAddParameter) (domain.WorkbookID, error) {
+func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param service.WorkbookAddParameter) (domain.WorkbookID, error) {
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
 		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
@@ -304,7 +315,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 		Properties:     propertiesJSON,
 	}
 	if result := r.db.Create(&workbook); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrWorkbookAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrWorkbookAlreadyExists)
 	}
 
 	workbookID := domain.WorkbookID(workbook.ID)
@@ -335,11 +346,11 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 	return workbookID, nil
 }
 
-func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain.Student, id domain.WorkbookID, version int) error {
+func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int) error {
 	workbook := workbookEntity{}
 	if result := r.db.Where("organization_id = ? and id = ? and version = ?", operator.GetOrganizationID(), id, version).Delete(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return domain.ErrWorkbookNotFound
+			return service.ErrWorkbookNotFound
 		}
 
 		return result.Error
@@ -348,7 +359,7 @@ func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain
 	return nil
 }
 
-func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.Student, id domain.WorkbookID, version int, param domain.WorkbookUpdateParameter) error {
+func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int, param service.WorkbookUpdateParameter) error {
 	if result := r.db.Model(&workbookEntity{}).
 		Where("organization_id = ? and id = ? and version = ?",
 			uint(operator.GetOrganizationID()), uint(id), version).
@@ -357,7 +368,7 @@ func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain
 			"question_text": param.GetQuestionText(),
 			"version":       gorm.Expr("version + 1"),
 		}); result.Error != nil {
-		return libG.ConvertDuplicatedError(result.Error, domain.ErrWorkbookAlreadyExists)
+		return libG.ConvertDuplicatedError(result.Error, service.ErrWorkbookAlreadyExists)
 	}
 
 	return nil

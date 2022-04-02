@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 	"golang.org/x/xerrors"
 )
 
-func findStudent(ctx context.Context, pf domain.ProcessorFactory, rf domain.RepositoryFactory, userRf user.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (domain.Student, error) {
-	systemAdmin := user.NewSystemAdmin(userRf)
+func findStudent(ctx context.Context, pf service.ProcessorFactory, rf service.RepositoryFactory, userRf userS.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (service.Student, error) {
+	systemAdmin := userS.NewSystemAdmin(userRf)
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationID(ctx, organizationID)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to FindSystemOwnerByOrganizationID. err: %w", err)
@@ -20,5 +22,10 @@ func findStudent(ctx context.Context, pf domain.ProcessorFactory, rf domain.Repo
 		return nil, err
 	}
 
-	return domain.NewStudent(pf, rf, userRf, appUser)
+	studentModel, err := domain.NewStudentModel(appUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return service.NewStudent(pf, rf, userRf, studentModel)
 }

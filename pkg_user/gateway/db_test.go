@@ -13,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -66,14 +67,14 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 	}
 }
 
-func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, domain.Owner) {
+func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, service.Owner) {
 	bg := context.Background()
-	sysAd, err := domain.NewSystemAdminFromDB(bg, db)
+	sysAd, err := service.NewSystemAdminFromDB(bg, db)
 	assert.NoError(t, err)
 
-	firstOwnerAddParam, err := domain.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
+	firstOwnerAddParam, err := service.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
 	assert.NoError(t, err)
-	orgAddParam, err := domain.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
+	orgAddParam, err := service.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 
 	// delete all organizations
@@ -116,8 +117,8 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (domain.OrganizationID, dom
 	return orgID, firstOwner
 }
 
-func testNewAppUserAddParameter(t *testing.T, loginID, username string) domain.AppUserAddParameter {
-	p, err := domain.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
+func testNewAppUserAddParameter(t *testing.T, loginID, username string) service.AppUserAddParameter {
+	p, err := service.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
 	assert.NoError(t, err)
 	return p
 }

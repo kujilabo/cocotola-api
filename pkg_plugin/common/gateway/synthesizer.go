@@ -9,7 +9,7 @@ import (
 	"time"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	"golang.org/x/xerrors"
 )
 
@@ -22,7 +22,7 @@ type synthesizeResponse struct {
 	AudioContent string `json:"audioContent"`
 }
 
-func NewSynthesizer(key string, timeout time.Duration) domain.Synthesizer {
+func NewSynthesizer(key string, timeout time.Duration) service.Synthesizer {
 	return &synthesizer{
 		client: &http.Client{
 			Timeout: timeout,

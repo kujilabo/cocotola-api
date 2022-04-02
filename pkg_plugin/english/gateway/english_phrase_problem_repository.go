@@ -11,10 +11,12 @@ import (
 	"gorm.io/gorm"
 
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -38,7 +40,7 @@ func (e *englishPhraseProblemEntity) TableName() string {
 	return "english_phrase_problem"
 }
 
-func (e *englishPhraseProblemEntity) toProblem(rf app.AudioRepositoryFactory) (domain.EnglishPhraseProblem, error) {
+func (e *englishPhraseProblemEntity) toProblem(rf appS.AudioRepositoryFactory) (service.EnglishPhraseProblem, error) {
 	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
@@ -49,7 +51,12 @@ func (e *englishPhraseProblemEntity) toProblem(rf app.AudioRepositoryFactory) (d
 		properties[k] = v
 	}
 
-	problem, err := app.NewProblem(rf, model, e.Number, domain.EnglishPhraseProblemType, properties)
+	problemModel, err := app.NewProblemModel(model, e.Number, domain.EnglishPhraseProblemType, properties)
+	if err != nil {
+		return nil, err
+	}
+
+	problem, err := appS.NewProblem(rf, problemModel)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +66,12 @@ func (e *englishPhraseProblemEntity) toProblem(rf app.AudioRepositoryFactory) (d
 		return nil, err
 	}
 
-	return domain.NewEnglishPhraseProblem(problem, app.AudioID(e.AudioID), e.Text, lang, e.Translated)
+	englishPhraseProblemModel, err := domain.NewEnglishPhraseProblemModel(problemModel, app.AudioID(e.AudioID), e.Text, lang, e.Translated)
+	if err != nil {
+		return nil, err
+	}
+
+	return service.NewEnglishPhraseProblem(englishPhraseProblemModel, problem)
 }
 
 func fromEnglishPhraseProblemProperties(properties map[string]string) (string, string, string) {
@@ -81,7 +93,7 @@ type newEnglishPhraseProblemParam struct {
 	Translated string
 }
 
-func toNewEnglishPhraseProblemParam(param app.ProblemAddParameter) (*newEnglishPhraseProblemParam, error) {
+func toNewEnglishPhraseProblemParam(param appS.ProblemAddParameter) (*newEnglishPhraseProblemParam, error) {
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	if err != nil {
 		return nil, err
@@ -99,11 +111,11 @@ func toNewEnglishPhraseProblemParam(param app.ProblemAddParameter) (*newEnglishP
 
 type englishPhraseProblemRepository struct {
 	db          *gorm.DB
-	rf          app.AudioRepositoryFactory
+	rf          appS.AudioRepositoryFactory
 	problemType string
 }
 
-func NewEnglishPhraseProblemRepository(db *gorm.DB, rf app.AudioRepositoryFactory, problemType string) (app.ProblemRepository, error) {
+func NewEnglishPhraseProblemRepository(db *gorm.DB, rf appS.AudioRepositoryFactory, problemType string) (appS.ProblemRepository, error) {
 	return &englishPhraseProblemRepository{
 		db:          db,
 		rf:          rf,
@@ -111,7 +123,7 @@ func NewEnglishPhraseProblemRepository(db *gorm.DB, rf app.AudioRepositoryFactor
 	}, nil
 }
 
-func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, operator app.Student, param app.ProblemSearchCondition) (app.ProblemSearchResult, error) {
+func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, operator app.StudentModel, param appS.ProblemSearchCondition) (appS.ProblemSearchResult, error) {
 	limit := param.GetPageSize()
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishPhraseProblemEntity
@@ -125,7 +137,7 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
 	}
 
-	problems := make([]app.Problem, len(problemEntities))
+	problems := make([]app.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.rf)
 		if err != nil {
@@ -143,10 +155,10 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 		return nil, errors.New("overflow")
 	}
 
-	return app.NewProblemSearchResult(int(count), problems)
+	return appS.NewProblemSearchResult(int(count), problems)
 }
 
-func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, operator app.Student, workbookID app.WorkbookID) (app.ProblemSearchResult, error) {
+func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, operator app.StudentModel, workbookID app.WorkbookID) (appS.ProblemSearchResult, error) {
 	limit := 1000
 	var problemEntities []englishPhraseProblemEntity
 
@@ -160,7 +172,7 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
 	}
 
-	problems := make([]app.Problem, len(problemEntities))
+	problems := make([]app.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.rf)
 		if err != nil {
@@ -178,10 +190,10 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 		return nil, errors.New("overflow")
 	}
 
-	return app.NewProblemSearchResult(int(count), problems)
+	return appS.NewProblemSearchResult(int(count), problems)
 }
 
-func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.Student, param app.ProblemIDsCondition) (app.ProblemSearchResult, error) {
+func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator app.StudentModel, param appS.ProblemIDsCondition) (appS.ProblemSearchResult, error) {
 	var problemEntities []englishPhraseProblemEntity
 
 	ids := make([]uint, 0)
@@ -198,7 +210,7 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 		return nil, result.Error
 	}
 
-	problems := make([]app.Problem, len(problemEntities))
+	problems := make([]app.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.rf)
 		if err != nil {
@@ -207,10 +219,10 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 		problems[i] = p
 	}
 
-	return app.NewProblemSearchResult(0, problems)
+	return appS.NewProblemSearchResult(0, problems)
 }
 
-func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator app.Student, id app.ProblemSelectParameter1) (app.Problem, error) {
+func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator app.StudentModel, id appS.ProblemSelectParameter1) (appS.Problem, error) {
 	var problemEntity englishPhraseProblemEntity
 
 	db := r.db.
@@ -220,7 +232,7 @@ func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, op
 
 	if result := db.First(&problemEntity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, app.ErrProblemNotFound
+			return nil, appS.ErrProblemNotFound
 		}
 		return nil, result.Error
 	}
@@ -228,7 +240,7 @@ func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, op
 	return problemEntity.toProblem(r.rf)
 }
 
-func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, operator app.Student, workbookID app.WorkbookID) ([]app.ProblemID, error) {
+func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, operator app.StudentModel, workbookID app.WorkbookID) ([]app.ProblemID, error) {
 	pageNo := 1
 	pageSize := 1000
 	ids := make([]app.ProblemID, 0)
@@ -260,11 +272,11 @@ func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, ope
 	return ids, nil
 }
 
-func (r *englishPhraseProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator app.Student, condition interface{}) ([]app.Problem, error) {
+func (r *englishPhraseProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator app.StudentModel, condition interface{}) ([]app.ProblemModel, error) {
 	return nil, errors.New("not implement")
 }
 
-func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operator app.Student, param app.ProblemAddParameter) (app.ProblemID, error) {
+func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operator app.StudentModel, param appS.ProblemAddParameter) (app.ProblemID, error) {
 	logger := log.FromContext(ctx)
 
 	problemParam, err := toNewEnglishPhraseProblemParam(param)
@@ -286,17 +298,17 @@ func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operato
 
 	logger.Infof("englishPhraseProblemRepository.AddProblem. lang: %s, text: %s", problemParam.Lang, problemParam.Text)
 	if result := r.db.Create(&englishPhraseProblem); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, app.ErrProblemAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, appS.ErrProblemAlreadyExists)
 	}
 
 	return app.ProblemID(englishPhraseProblem.ID), nil
 }
 
-func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2, param app.ProblemUpdateParameter) error {
+func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, operator app.StudentModel, id appS.ProblemSelectParameter2, param appS.ProblemUpdateParameter) error {
 	return errors.New("not implemented")
 }
 
-func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator app.Student, id app.ProblemSelectParameter2) error {
+func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator app.StudentModel, id appS.ProblemSelectParameter2) error {
 	logger := log.FromContext(ctx)
 
 	logger.Infof("englishPhraseProblemRepository.RemoveProblem. text: %d", id.GetProblemID())
@@ -311,9 +323,9 @@ func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, oper
 	if result.Error != nil {
 		return result.Error
 	} else if result.RowsAffected == 0 {
-		return app.ErrProblemNotFound
+		return appS.ErrProblemNotFound
 	} else if result.RowsAffected != 1 {
-		return app.ErrProblemOtherError
+		return appS.ErrProblemOtherError
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	"gorm.io/gorm"
 )
 
@@ -16,27 +16,27 @@ const (
 )
 
 type TatoebaService interface {
-	FindSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error)
+	FindSentences(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentenceSearchResult, error)
 
-	ImportSentences(ctx context.Context, iterator domain.TatoebaSentenceAddParameterIterator) error
+	ImportSentences(ctx context.Context, iterator service.TatoebaSentenceAddParameterIterator) error
 
-	ImportLinks(ctx context.Context, iterator domain.TatoebaLinkAddParameterIterator) error
+	ImportLinks(ctx context.Context, iterator service.TatoebaLinkAddParameterIterator) error
 }
 
 type tatoebaService struct {
 	db *gorm.DB
-	rf domain.RepositoryFactoryFunc
+	rf service.RepositoryFactoryFunc
 }
 
-func NewTatoebaService(db *gorm.DB, rf domain.RepositoryFactoryFunc) TatoebaService {
+func NewTatoebaService(db *gorm.DB, rf service.RepositoryFactoryFunc) TatoebaService {
 	return &tatoebaService{
 		db: db,
 		rf: rf,
 	}
 }
 
-func (s *tatoebaService) FindSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
-	var result *domain.TatoebaSentenceSearchResult
+func (s *tatoebaService) FindSentences(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentenceSearchResult, error) {
+	var result *service.TatoebaSentenceSearchResult
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		rf, err := s.rf(ctx, tx)
 		if err != nil {
@@ -60,7 +60,7 @@ func (s *tatoebaService) FindSentences(ctx context.Context, param domain.Tatoeba
 	return result, nil
 }
 
-func (s *tatoebaService) ImportSentences(ctx context.Context, iterator domain.TatoebaSentenceAddParameterIterator) error {
+func (s *tatoebaService) ImportSentences(ctx context.Context, iterator service.TatoebaSentenceAddParameterIterator) error {
 	logger := log.FromContext(ctx)
 
 	var count = 0
@@ -115,7 +115,7 @@ func (s *tatoebaService) ImportSentences(ctx context.Context, iterator domain.Ta
 	return nil
 }
 
-func (s *tatoebaService) ImportLinks(ctx context.Context, iterator domain.TatoebaLinkAddParameterIterator) error {
+func (s *tatoebaService) ImportLinks(ctx context.Context, iterator service.TatoebaLinkAddParameterIterator) error {
 	logger := log.FromContext(ctx)
 
 	var count = 0

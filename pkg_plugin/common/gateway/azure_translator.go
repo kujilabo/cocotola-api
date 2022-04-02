@@ -10,6 +10,7 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
 type azureTranslationClient struct {
@@ -22,7 +23,7 @@ type AzureDisplayTranslation struct {
 	Confidence float64
 }
 
-func NewAzureTranslationClient(subscriptionKey string) domain.AzureTranslationClient {
+func NewAzureTranslationClient(subscriptionKey string) service.AzureTranslationClient {
 	client := translatortext.NewTranslatorClient("https://api.cognitive.microsofttranslator.com")
 	client.Authorizer = autorest.NewCognitiveServicesAuthorizer(subscriptionKey)
 	return &azureTranslationClient{
@@ -31,7 +32,7 @@ func NewAzureTranslationClient(subscriptionKey string) domain.AzureTranslationCl
 
 }
 
-func (c *azureTranslationClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]domain.AzureTranslation, error) {
+func (c *azureTranslationClient) DictionaryLookup(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]service.AzureTranslation, error) {
 	logger := log.FromContext(ctx)
 	result, err := c.client.DictionaryLookup(context.Background(), fromLang.String(), toLang.String(), []translatortext.DictionaryLookupTextInput{{Text: to.StringPtr(text)}}, "")
 	if err != nil {
@@ -41,7 +42,7 @@ func (c *azureTranslationClient) DictionaryLookup(ctx context.Context, text stri
 		return nil, nil
 	}
 
-	translations := make([]domain.AzureTranslation, 0)
+	translations := make([]service.AzureTranslation, 0)
 	for _, v := range *result.Value {
 		if v.Translations == nil {
 			continue
@@ -55,7 +56,7 @@ func (c *azureTranslationClient) DictionaryLookup(ctx context.Context, text stri
 			if pos == domain.PosOther {
 				logger.Warnf("PosOther. text: %s, pos: %s", text, *t.PosTag)
 			}
-			translations = append(translations, domain.AzureTranslation{
+			translations = append(translations, service.AzureTranslation{
 				Pos:        pos,
 				Target:     c.pointerToString(t.DisplayTarget),
 				Confidence: c.pointerToFloat64(t.Confidence),

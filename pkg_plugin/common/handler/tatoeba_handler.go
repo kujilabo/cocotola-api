@@ -8,9 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 	"golang.org/x/xerrors"
@@ -24,11 +24,11 @@ type TatoebaHandler interface {
 
 type tatoebaHandler struct {
 	tatoebaService                       application.TatoebaService
-	newTatoebaSentenceAddParameterReader func(reader io.Reader) domain.TatoebaSentenceAddParameterIterator
-	newTatoebaLinkAddParameterReader     func(reader io.Reader) domain.TatoebaLinkAddParameterIterator
+	newTatoebaSentenceAddParameterReader func(reader io.Reader) service.TatoebaSentenceAddParameterIterator
+	newTatoebaLinkAddParameterReader     func(reader io.Reader) service.TatoebaLinkAddParameterIterator
 }
 
-func NewTatoebaHandler(tatoebaService application.TatoebaService, newTatoebaSentenceAddParameterReader func(reader io.Reader) domain.TatoebaSentenceAddParameterIterator, newTatoebaLinkAddParameterReader func(reader io.Reader) domain.TatoebaLinkAddParameterIterator) TatoebaHandler {
+func NewTatoebaHandler(tatoebaService application.TatoebaService, newTatoebaSentenceAddParameterReader func(reader io.Reader) service.TatoebaSentenceAddParameterIterator, newTatoebaLinkAddParameterReader func(reader io.Reader) service.TatoebaLinkAddParameterIterator) TatoebaHandler {
 	return &tatoebaHandler{
 		tatoebaService:                       tatoebaService,
 		newTatoebaSentenceAddParameterReader: newTatoebaSentenceAddParameterReader,

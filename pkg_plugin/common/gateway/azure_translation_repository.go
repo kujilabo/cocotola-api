@@ -13,6 +13,7 @@ import (
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
 type azureTranslationRepository struct {
@@ -29,13 +30,13 @@ func (e *azureTranslationEntity) TableName() string {
 	return "azure_translation"
 }
 
-func NewAzureTranslationRepository(db *gorm.DB) domain.AzureTranslationRepository {
+func NewAzureTranslationRepository(db *gorm.DB) service.AzureTranslationRepository {
 	return &azureTranslationRepository{
 		db: db,
 	}
 }
 
-func (r *azureTranslationRepository) Add(ctx context.Context, lang app.Lang2, text string, result []domain.AzureTranslation) error {
+func (r *azureTranslationRepository) Add(ctx context.Context, lang app.Lang2, text string, result []service.AzureTranslation) error {
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
 		return err
@@ -48,13 +49,13 @@ func (r *azureTranslationRepository) Add(ctx context.Context, lang app.Lang2, te
 	}
 
 	if result := r.db.Create(&entity); result.Error != nil {
-		return libG.ConvertDuplicatedError(result.Error, domain.ErrAzureTranslationAlreadyExists)
+		return libG.ConvertDuplicatedError(result.Error, service.ErrAzureTranslationAlreadyExists)
 	}
 
 	return nil
 }
 
-func (r *azureTranslationRepository) Find(ctx context.Context, lang app.Lang2, text string) ([]domain.AzureTranslation, error) {
+func (r *azureTranslationRepository) Find(ctx context.Context, lang app.Lang2, text string) ([]service.AzureTranslation, error) {
 	entity := azureTranslationEntity{}
 
 	if result := r.db.Where(&azureTranslationEntity{
@@ -62,13 +63,13 @@ func (r *azureTranslationRepository) Find(ctx context.Context, lang app.Lang2, t
 		Lang: lang.String(),
 	}).First(&entity); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrTranslationNotFound
+			return nil, service.ErrTranslationNotFound
 		}
 
 		return nil, result.Error
 	}
 
-	result := make([]domain.AzureTranslation, 0)
+	result := make([]service.AzureTranslation, 0)
 	if err := json.Unmarshal([]byte(entity.Result), &result); err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (r *azureTranslationRepository) FindByTextAndPos(ctx context.Context, lang 
 
 		return t, nil
 	}
-	return nil, domain.ErrTranslationNotFound
+	return nil, service.ErrTranslationNotFound
 }
 
 func (r *azureTranslationRepository) FindByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
@@ -136,7 +137,7 @@ func (r *azureTranslationRepository) FindByFirstLetter(ctx context.Context, lang
 
 	results := make([]domain.Translation, 0)
 	for _, e := range entities {
-		result := make([]domain.AzureTranslation, 0)
+		result := make([]service.AzureTranslation, 0)
 		if err := json.Unmarshal([]byte(e.Result), &result); err != nil {
 			return nil, err
 		}

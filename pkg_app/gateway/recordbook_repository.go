@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
@@ -35,13 +36,13 @@ func (e *recordbookEntity) TableName() string {
 }
 
 type recordbookRepository struct {
-	rf           domain.RepositoryFactory
+	rf           service.RepositoryFactory
 	db           *gorm.DB
 	problemTypes []domain.ProblemType
 	studyTypes   []domain.StudyType
 }
 
-func NewRecordbookRepository(ctx context.Context, rf domain.RepositoryFactory, db *gorm.DB, problemTypes []domain.ProblemType) (domain.RecordbookRepository, error) {
+func NewRecordbookRepository(ctx context.Context, rf service.RepositoryFactory, db *gorm.DB, problemTypes []domain.ProblemType) (service.RecordbookRepository, error) {
 	studyTypeRepo, err := rf.NewStudyTypeRepository(ctx)
 	if err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func (r *recordbookRepository) toStudyTypeID(studyType string) uint {
 	return 0
 }
 
-func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
+func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
 	studyTypeID := r.toStudyTypeID(studyType)
 	if studyTypeID == 0 {
 		return nil, xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
@@ -112,7 +113,7 @@ func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator do
 	return results, nil
 }
 
-func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID, studyType string, problemType string, problemID domain.ProblemID, studyResult, memorized bool) error {
+func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string, problemType string, problemID domain.ProblemID, studyResult, memorized bool) error {
 
 	studyTypeID := r.toStudyTypeID(studyType)
 	if studyTypeID == 0 {
@@ -131,7 +132,7 @@ func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.St
 	return r.setResult(ctx, operator, workbookID, studyTypeID, problemTypeID, problemID, studyResult)
 }
 
-func (r *recordbookRepository) setResult(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID, studyTypeID uint, problemTypeID uint, problemID domain.ProblemID, studyResult bool) error {
+func (r *recordbookRepository) setResult(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyTypeID uint, problemTypeID uint, problemID domain.ProblemID, studyResult bool) error {
 	logger := log.FromContext(ctx)
 	var entity recordbookEntity
 	if result := r.db.Where("workbook_id = ?", uint(workbookID)).
@@ -200,7 +201,7 @@ func (r *recordbookRepository) setResult(ctx context.Context, operator domain.St
 	return nil
 }
 
-func (r *recordbookRepository) setMemorized(ctx context.Context, operator domain.Student, workbookID domain.WorkbookID, studyTypeID uint, problemTypeID uint, problemID domain.ProblemID) error {
+func (r *recordbookRepository) setMemorized(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyTypeID uint, problemTypeID uint, problemID domain.ProblemID) error {
 	logger := log.FromContext(ctx)
 
 	var entity recordbookEntity

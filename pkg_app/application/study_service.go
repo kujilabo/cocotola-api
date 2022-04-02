@@ -7,7 +7,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type StudyService interface {
@@ -19,12 +21,12 @@ type StudyService interface {
 
 type studyService struct {
 	db         *gorm.DB
-	pf         domain.ProcessorFactory
-	rfFunc     domain.RepositoryFactoryFunc
-	userRfFunc user.RepositoryFactoryFunc
+	pf         service.ProcessorFactory
+	rfFunc     service.RepositoryFactoryFunc
+	userRfFunc userS.RepositoryFactoryFunc
 }
 
-func NewStudyService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) StudyService {
+func NewStudyService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) StudyService {
 	return &studyService{
 		db:         db,
 		pf:         pf,

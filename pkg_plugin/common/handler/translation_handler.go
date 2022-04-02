@@ -13,6 +13,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
@@ -28,10 +29,10 @@ type TranslationHandler interface {
 }
 
 type translationHandler struct {
-	translator domain.Translator
+	translator service.Translator
 }
 
-func NewTranslationHandler(translator domain.Translator) TranslationHandler {
+func NewTranslationHandler(translator service.Translator) TranslationHandler {
 	return &translationHandler{translator: translator}
 }
 
@@ -222,7 +223,7 @@ func (h *translationHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 
-	if errors.Is(err, domain.ErrTranslationAlreadyExists) {
+	if errors.Is(err, service.ErrTranslationAlreadyExists) {
 		logger.Warnf("translationHandler. err: %v", err)
 		c.JSON(http.StatusConflict, gin.H{"message": "Translation already exists"})
 		return true

@@ -11,6 +11,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -110,10 +111,10 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 func (h *recordbookHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if errors.Is(err, domain.ErrProblemAlreadyExists) {
+	if errors.Is(err, service.ErrProblemAlreadyExists) {
 		c.JSON(http.StatusConflict, gin.H{"message": "Problem already exists"})
 		return true
-	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
+	} else if errors.Is(err, service.ErrWorkbookNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}

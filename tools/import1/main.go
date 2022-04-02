@@ -19,14 +19,16 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
-	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
+	pluginCommonS "github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
-	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	pluginEnglishS "github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 var defaultPageNo = 1
@@ -99,14 +101,14 @@ func checkFile(csvFilePath string) error {
 	return nil
 }
 
-func initWorkbook(ctx context.Context, operator appD.Student, workbookName string) (appD.Workbook, error) {
+func initWorkbook(ctx context.Context, operator appS.Student, workbookName string) (appS.Workbook, error) {
 	workbook, err := operator.FindWorkbookByName(ctx, workbookName)
 	if err != nil {
-		if !errors.Is(err, appD.ErrWorkbookNotFound) {
+		if !errors.Is(err, appS.ErrWorkbookNotFound) {
 			return nil, err
 		}
 
-		param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishPhraseProblemType, workbookName, "", map[string]string{
+		param, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishPhraseProblemType, workbookName, "", map[string]string{
 			"audioEnabled": "false",
 		})
 		if err != nil {
@@ -129,8 +131,8 @@ func initWorkbook(ctx context.Context, operator appD.Student, workbookName strin
 	return workbook, nil
 }
 
-func initProblems(ctx context.Context, operator appD.Student, workbook appD.Workbook) (map[string]bool, error) {
-	searchCondition, err := appD.NewProblemSearchCondition(appD.WorkbookID(workbook.GetID()), defaultPageNo, defaultPageSize, "")
+func initProblems(ctx context.Context, operator appS.Student, workbook appS.Workbook) (map[string]bool, error) {
+	searchCondition, err := appS.NewProblemSearchCondition(appD.WorkbookID(workbook.GetID()), defaultPageNo, defaultPageSize, "")
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewProblemSearchCondition. err: %w", err)
 	}
@@ -158,7 +160,7 @@ func initProblems(ctx context.Context, operator appD.Student, workbook appD.Work
 	return problemMap, nil
 }
 
-func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator appD.Student, repo appD.RepositoryFactory, processor appD.ProblemAddProcessor) error {
+func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator appS.Student, repo appS.RepositoryFactory, processor appS.ProblemAddProcessor) error {
 
 	fmt.Println("registerEnglishPhraseProblems")
 	csvFilePath := importDir() + "/flush_sentence.csv"
@@ -202,7 +204,7 @@ func registerEnglishPhraseProblemsFlushSentence(ctx context.Context, operator ap
 			"text":       line[0],
 			"translated": line[1],
 		}
-		param, err := appD.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, properties)
+		param, err := appS.NewProblemAddParameter(appD.WorkbookID(workbook.GetID()), i, properties)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
@@ -257,11 +259,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	userD.InitSystemAdmin(userRfFunc)
-	systemAdmin := userD.NewSystemAdmin(userRf)
+	userS.InitSystemAdmin(userRfFunc)
+	systemAdmin := userS.NewSystemAdmin(userRf)
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
 	if err != nil {
 		panic(err)
@@ -274,7 +276,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
+	translator, err := pluginCommonS.NewTranslatior(pluginRepo, azureTranslationClient)
 	if err != nil {
 		panic(err)
 	}
@@ -284,30 +286,30 @@ func main() {
 		panic(err)
 	}
 
-	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
-	problemAddProcessor := map[string]appD.ProblemAddProcessor{
+	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translator)
+	problemAddProcessor := map[string]appS.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
 	}
-	problemUpdateProcessor := map[string]appD.ProblemUpdateProcessor{}
-	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
+	problemUpdateProcessor := map[string]appS.ProblemUpdateProcessor{}
+	problemRemoveProcessor := map[string]appS.ProblemRemoveProcessor{
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemProcessor,
 	}
-	problemImportProcessor := map[string]appD.ProblemImportProcessor{}
-	problemQuotaProcessor := map[string]appD.ProblemQuotaProcessor{}
-	englishPhraseProblemRepository := func(ctx context.Context, db *gorm.DB) (appD.ProblemRepository, error) {
+	problemImportProcessor := map[string]appS.ProblemImportProcessor{}
+	problemQuotaProcessor := map[string]appS.ProblemQuotaProcessor{}
+	englishPhraseProblemRepository := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, audioRf, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
-	problemRepositories := map[string]func(context.Context, *gorm.DB) (appD.ProblemRepository, error){
+	pf := appS.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
+	problemRepositories := map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error){
 		pluginEnglishDomain.EnglishPhraseProblemType: englishPhraseProblemRepository,
 	}
 
-	rfFunc := func(db *gorm.DB) (appD.RepositoryFactory, error) {
+	rfFunc := func(db *gorm.DB) (appS.RepositoryFactory, error) {
 		return appG.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
 	}
 
-	repo, err := rfFunc(db)
+	rf, err := rfFunc(db)
 	if err != nil {
 		panic(err)
 	}
@@ -317,12 +319,17 @@ func main() {
 		panic(err)
 	}
 
-	student, err := appD.NewStudent(pf, repo, userRf, appUser)
+	studentModel, err := appD.NewStudentModel(appUser)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := registerEnglishPhraseProblemsFlushSentence(ctx, student, repo, englishPhraseProblemProcessor); err != nil {
+	student, err := appS.NewStudent(pf, rf, userRf, studentModel)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := registerEnglishPhraseProblemsFlushSentence(ctx, student, rf, englishPhraseProblemProcessor); err != nil {
 		panic(err)
 	}
 }

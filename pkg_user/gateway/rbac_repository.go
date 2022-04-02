@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 const conf = `[request_definition]
@@ -30,7 +31,7 @@ type rbacRepository struct {
 	db *gorm.DB
 }
 
-func NewRBACRepository(db *gorm.DB) domain.RBACRepository {
+func NewRBACRepository(db *gorm.DB) service.RBACRepository {
 	return &rbacRepository{
 		db: db,
 	}

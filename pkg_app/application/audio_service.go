@@ -5,24 +5,27 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
+
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type AudioService interface {
-	FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.Audio, error)
+	FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error)
 }
 
 type audioService struct {
 	db         *gorm.DB
-	pf         domain.ProcessorFactory
-	rfFunc     domain.RepositoryFactoryFunc
-	userRfFunc user.RepositoryFactoryFunc
+	pf         service.ProcessorFactory
+	rfFunc     service.RepositoryFactoryFunc
+	userRfFunc userS.RepositoryFactoryFunc
 }
 
-func NewAudioService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.RepositoryFactoryFunc, userRfFunc user.RepositoryFactoryFunc) AudioService {
+func NewAudioService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) AudioService {
 	return &audioService{
 		db:         db,
 		pf:         pf,
@@ -31,14 +34,14 @@ func NewAudioService(db *gorm.DB, pf domain.ProcessorFactory, rfFunc domain.Repo
 	}
 }
 
-func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.Audio, error) {
-	var result domain.Audio
+func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error) {
+	var result domain.AudioModel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
+		student, workbookService, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
-		problem, err := workbook.FindProblemByID(ctx, student, problemID)
+		problem, err := workbookService.FindProblemByID(ctx, student, problemID)
 		if err != nil {
 			return err
 		}
@@ -61,7 +64,7 @@ func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.Or
 		if err != nil {
 			return err
 		}
-		result = tmpResult
+		result = tmpResult.GetAudioModel()
 		return nil
 	}); err != nil {
 		return nil, err
@@ -70,7 +73,7 @@ func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.Or
 	return result, nil
 }
 
-func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (domain.Student, domain.Workbook, error) {
+func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
 	repo, err := s.rfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err
@@ -79,13 +82,13 @@ func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, 
 	if err != nil {
 		return nil, nil, err
 	}
-	student, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+	studentService, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
 	}
-	workbook, err := student.FindWorkbookByID(ctx, workbookID)
+	workbookService, err := studentService.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
 		return nil, nil, err
 	}
-	return student, workbook, nil
+	return studentService, workbookService, nil
 }

@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
 type tatoebaLinkAddParameterReader struct {
@@ -15,7 +15,7 @@ type tatoebaLinkAddParameterReader struct {
 	num    int
 }
 
-func NewTatoebaLinkAddParameterReader(reader io.Reader) domain.TatoebaLinkAddParameterIterator {
+func NewTatoebaLinkAddParameterReader(reader io.Reader) service.TatoebaLinkAddParameterIterator {
 	csvReader := csv.NewReader(reader)
 	csvReader.Comma = '\t'
 	csvReader.LazyQuotes = true
@@ -26,7 +26,7 @@ func NewTatoebaLinkAddParameterReader(reader io.Reader) domain.TatoebaLinkAddPar
 	}
 }
 
-func (r *tatoebaLinkAddParameterReader) Next(ctx context.Context) (domain.TatoebaLinkAddParameter, error) {
+func (r *tatoebaLinkAddParameterReader) Next(ctx context.Context) (service.TatoebaLinkAddParameter, error) {
 	var line []string
 	line, err := r.reader.Read()
 	if errors.Is(err, io.EOF) {
@@ -47,7 +47,7 @@ func (r *tatoebaLinkAddParameterReader) Next(ctx context.Context) (domain.Tatoeb
 		return nil, err
 	}
 
-	param, err := domain.NewTatoebaLinkAddParameter(from, to)
+	param, err := service.NewTatoebaLinkAddParameter(from, to)
 	if err != nil {
 		return nil, err
 	}

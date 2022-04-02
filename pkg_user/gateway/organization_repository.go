@@ -9,6 +9,7 @@ import (
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type organizationRepository struct {
@@ -29,29 +30,34 @@ func (e *organizationEntity) TableName() string {
 	return "organization"
 }
 
-func (e *organizationEntity) toModel() (domain.Organization, error) {
+func (e *organizationEntity) toModel() (service.Organization, error) {
 	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
 
-	return domain.NewOrganization(model, e.Name)
+	organizationModel, err := domain.NewOrganizationModel(model, e.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return service.NewOrganization(organizationModel)
 }
 
-func NewOrganizationRepository(db *gorm.DB) domain.OrganizationRepository {
+func NewOrganizationRepository(db *gorm.DB) service.OrganizationRepository {
 	return &organizationRepository{
 		db: db,
 	}
 }
 
-func (r *organizationRepository) GetOrganization(ctx context.Context, operator domain.AppUser) (domain.Organization, error) {
+func (r *organizationRepository) GetOrganization(ctx context.Context, operator domain.AppUserModel) (service.Organization, error) {
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
 		ID: uint(operator.GetOrganizationID()),
 	}).First(&organization); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrOrganizationNotFound
+			return nil, service.ErrOrganizationNotFound
 		}
 		return nil, result.Error
 	}
@@ -59,14 +65,14 @@ func (r *organizationRepository) GetOrganization(ctx context.Context, operator d
 	return organization.toModel()
 }
 
-func (r *organizationRepository) FindOrganizationByName(ctx context.Context, operator domain.SystemAdmin, name string) (domain.Organization, error) {
+func (r *organizationRepository) FindOrganizationByName(ctx context.Context, operator domain.SystemAdminModel, name string) (service.Organization, error) {
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
 		Name: name,
 	}).First(&organization); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrOrganizationNotFound
+			return nil, service.ErrOrganizationNotFound
 		}
 		return nil, result.Error
 	}
@@ -74,14 +80,14 @@ func (r *organizationRepository) FindOrganizationByName(ctx context.Context, ope
 	return organization.toModel()
 }
 
-func (r *organizationRepository) FindOrganizationByID(ctx context.Context, operator domain.SystemAdmin, id domain.OrganizationID) (domain.Organization, error) {
+func (r *organizationRepository) FindOrganizationByID(ctx context.Context, operator domain.SystemAdminModel, id domain.OrganizationID) (service.Organization, error) {
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
 		ID: uint(id),
 	}).First(&organization); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrOrganizationNotFound
+			return nil, service.ErrOrganizationNotFound
 		}
 		return nil, result.Error
 	}
@@ -89,7 +95,7 @@ func (r *organizationRepository) FindOrganizationByID(ctx context.Context, opera
 	return organization.toModel()
 }
 
-func (r *organizationRepository) AddOrganization(ctx context.Context, operator domain.SystemAdmin, param domain.OrganizationAddParameter) (domain.OrganizationID, error) {
+func (r *organizationRepository) AddOrganization(ctx context.Context, operator domain.SystemAdminModel, param service.OrganizationAddParameter) (domain.OrganizationID, error) {
 	organization := organizationEntity{
 		Version:   1,
 		CreatedBy: operator.GetID(),
@@ -98,7 +104,7 @@ func (r *organizationRepository) AddOrganization(ctx context.Context, operator d
 	}
 
 	if result := r.db.Create(&organization); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrOrganizationAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrOrganizationAlreadyExists)
 	}
 
 	return domain.OrganizationID(organization.ID), nil

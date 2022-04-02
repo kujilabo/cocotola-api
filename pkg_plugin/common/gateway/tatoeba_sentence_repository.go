@@ -13,7 +13,7 @@ import (
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
 const (
@@ -40,7 +40,7 @@ type tatoebaSentencePairEntity struct {
 	DstUpdatedAt      time.Time
 }
 
-func (e *tatoebaSentenceEntity) toModel() (domain.TatoebaSentence, error) {
+func (e *tatoebaSentenceEntity) toModel() (service.TatoebaSentence, error) {
 	lang, err := app.NewLang3(e.Lang)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewLang3. err: %w", err)
@@ -49,10 +49,10 @@ func (e *tatoebaSentenceEntity) toModel() (domain.TatoebaSentence, error) {
 	if author == "\\N" {
 		author = ""
 	}
-	return domain.NewTatoebaSentence(e.SentenceNumber, lang, e.Text, author, e.UpdatedAt)
+	return service.NewTatoebaSentence(e.SentenceNumber, lang, e.Text, author, e.UpdatedAt)
 }
 
-func (e *tatoebaSentencePairEntity) toModel() (domain.TatoebaSentencePair, error) {
+func (e *tatoebaSentencePairEntity) toModel() (service.TatoebaSentencePair, error) {
 	srcE := tatoebaSentenceEntity{
 		SentenceNumber: e.SrcSentenceNumber,
 		Lang:           e.SrcLang,
@@ -77,7 +77,7 @@ func (e *tatoebaSentencePairEntity) toModel() (domain.TatoebaSentencePair, error
 		return nil, err
 	}
 
-	return domain.NewTatoebaSentencePair(srcM, dstM)
+	return service.NewTatoebaSentencePair(srcM, dstM)
 }
 
 func (e *tatoebaSentenceEntity) TableName() string {
@@ -88,7 +88,7 @@ type tatoebaSentenceRepository struct {
 	db *gorm.DB
 }
 
-func NewTatoebaSentenceRepository(db *gorm.DB) (domain.TatoebaSentenceRepository, error) {
+func NewTatoebaSentenceRepository(db *gorm.DB) (service.TatoebaSentenceRepository, error) {
 	if db == nil {
 		return nil, libD.ErrInvalidArgument
 	}
@@ -146,14 +146,14 @@ func NewTatoebaSentenceRepository(db *gorm.DB) (domain.TatoebaSentenceRepository
 
 // where t1.lang='eng' and t3.lang='jpn';
 
-func (r *tatoebaSentenceRepository) FindTatoebaSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
+func (r *tatoebaSentenceRepository) FindTatoebaSentences(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentenceSearchResult, error) {
 	if param.IsRandom() {
 		return r.findTatoebaSentencesByRandom(ctx, param)
 	}
 	return r.findTatoebaSentences(ctx, param)
 }
 
-func (r *tatoebaSentenceRepository) findTatoebaSentences(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
+func (r *tatoebaSentenceRepository) findTatoebaSentences(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentenceSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("tatoebaSentenceRepository.FindTatoebaSentences")
 	limit := param.GetPageSize()
@@ -197,7 +197,7 @@ func (r *tatoebaSentenceRepository) findTatoebaSentences(ctx context.Context, pa
 		return nil, result.Error
 	}
 
-	results := make([]domain.TatoebaSentencePair, len(entities))
+	results := make([]service.TatoebaSentencePair, len(entities))
 	for i, e := range entities {
 		m, err := e.toModel()
 		if err != nil {
@@ -211,7 +211,7 @@ func (r *tatoebaSentenceRepository) findTatoebaSentences(ctx context.Context, pa
 	// 	return nil, result.Error
 	// }
 
-	return &domain.TatoebaSentenceSearchResult{
+	return &service.TatoebaSentenceSearchResult{
 		TotalCount: count,
 		Results:    results,
 	}, nil
@@ -224,7 +224,7 @@ func min(x, y int) int {
 	return y
 }
 
-func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Context, param domain.TatoebaSentenceSearchCondition) (*domain.TatoebaSentenceSearchResult, error) {
+func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentenceSearchResult, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("tatoebaSentenceRepository.FindTatoebaSentences")
 	limit := param.GetPageSize() * shuffleBufferRate
@@ -267,7 +267,7 @@ func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Con
 	logger.Infof("len(entities): %d", len(entities))
 
 	length := min(param.GetPageSize(), len(entities))
-	results := make([]domain.TatoebaSentencePair, length)
+	results := make([]service.TatoebaSentencePair, length)
 	for i := 0; i < length; i++ {
 		m, err := entities[i].toModel()
 		if err != nil {
@@ -281,13 +281,13 @@ func (r *tatoebaSentenceRepository) findTatoebaSentencesByRandom(ctx context.Con
 	// 	return nil, result.Error
 	// }
 
-	return &domain.TatoebaSentenceSearchResult{
+	return &service.TatoebaSentenceSearchResult{
 		TotalCount: count,
 		Results:    results,
 	}, nil
 }
 
-func (r *tatoebaSentenceRepository) FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (domain.TatoebaSentence, error) {
+func (r *tatoebaSentenceRepository) FindTatoebaSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (service.TatoebaSentence, error) {
 	entity := tatoebaSentenceEntity{}
 	if result := r.db.Where("sentence_number = ?", sentenceNumber).
 		Find(&entity); result.Error != nil {
@@ -302,7 +302,7 @@ func (r *tatoebaSentenceRepository) FindTatoebaSentenceBySentenceNumber(ctx cont
 	return sentence, nil
 }
 
-func (r *tatoebaSentenceRepository) Add(ctx context.Context, param domain.TatoebaSentenceAddParameter) error {
+func (r *tatoebaSentenceRepository) Add(ctx context.Context, param service.TatoebaSentenceAddParameter) error {
 	entity := tatoebaSentenceEntity{
 		SentenceNumber: param.GetSentenceNumber(),
 		Lang:           param.GetLang().String(),
@@ -312,7 +312,7 @@ func (r *tatoebaSentenceRepository) Add(ctx context.Context, param domain.Tatoeb
 	}
 
 	if result := r.db.Create(&entity); result.Error != nil {
-		err := libG.ConvertDuplicatedError(result.Error, domain.ErrTatoebaSentenceAlreadyExists)
+		err := libG.ConvertDuplicatedError(result.Error, service.ErrTatoebaSentenceAlreadyExists)
 		return xerrors.Errorf("failed to Add tatoebaSentence. err: %w", err)
 	}
 

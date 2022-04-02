@@ -30,6 +30,7 @@ import (
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	appH "github.com/kujilabo/cocotola-api/pkg_app/handler"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	authA "github.com/kujilabo/cocotola-api/pkg_auth/application"
 	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
 	authH "github.com/kujilabo/cocotola-api/pkg_auth/handler"
@@ -40,13 +41,15 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginApplication "github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
-	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginCommonHandler "github.com/kujilabo/cocotola-api/pkg_plugin/common/handler"
+	pluginCommonS "github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/pkg_plugin/english/gateway"
+	pluginEnglishS "github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 func main() {
@@ -98,11 +101,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	pluginRfFunc := func(ctx context.Context, db *gorm.DB) (pluginCommonDomain.RepositoryFactory, error) {
+	pluginRfFunc := func(ctx context.Context, db *gorm.DB) (pluginCommonS.RepositoryFactory, error) {
 		return pluginCommonGateway.NewRepositoryFactory(ctx, db, cfg.DB.DriverName)
 	}
 
-	translator, err := pluginCommonDomain.NewTranslatior(pluginRepo, azureTranslationClient)
+	translator, err := pluginCommonS.NewTranslatior(pluginRepo, azureTranslationClient)
 	if err != nil {
 		panic(err)
 	}
@@ -112,14 +115,14 @@ func main() {
 		panic(err)
 	}
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-	appD.UserRfFunc = userRfFunc
+	appS.UserRfFunc = userRfFunc
 
 	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translator, tatoebaSentenceRepo)
 
-	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appD.ProblemAddParameterIterator, error) {
+	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error) {
 		processor, ok := problemImportProcessor[problemType]
 		if ok {
 			return processor.CreateCSVReader(ctx, workbookID, reader)
@@ -127,10 +130,10 @@ func main() {
 		return nil, xerrors.Errorf("processor not found. problemType: %s", problemType)
 	}
 
-	rfFunc := func(ctx context.Context, db *gorm.DB) (appD.RepositoryFactory, error) {
+	rfFunc := func(ctx context.Context, db *gorm.DB) (appS.RepositoryFactory, error) {
 		return appG.NewRepositoryFactory(ctx, db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
 	}
-	appD.RfFunc = rfFunc
+	appS.RfFunc = rfFunc
 
 	if err := initApp2(ctx, db, rfFunc, userRfFunc); err != nil {
 		panic(err)
@@ -143,7 +146,7 @@ func main() {
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
-	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUser) error {
+	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUserModel) error {
 		rf, err := rfFunc(ctx, db)
 		if err != nil {
 			return err
@@ -220,10 +223,10 @@ func main() {
 			pluginTranslation.POST("export", translationHandler.ExportTranslations)
 		}
 		{
-			newSentenceReader := func(reader io.Reader) pluginCommonDomain.TatoebaSentenceAddParameterIterator {
+			newSentenceReader := func(reader io.Reader) pluginCommonS.TatoebaSentenceAddParameterIterator {
 				return pluginCommonGateway.NewTatoebaSentenceAddParameterReader(reader)
 			}
-			newLinkReader := func(reader io.Reader) pluginCommonDomain.TatoebaLinkAddParameterIterator {
+			newLinkReader := func(reader io.Reader) pluginCommonS.TatoebaLinkAddParameterIterator {
 				return pluginCommonGateway.NewTatoebaLinkAddParameterReader(reader)
 			}
 			pluginTatoeba := plugin.Group("tatoeba")
@@ -271,33 +274,33 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initPf(synthesizer pluginCommonDomain.Synthesizer, translator pluginCommonDomain.Translator, tatoebaSentenceRepository pluginCommonDomain.TatoebaSentenceRepositoryReadOnly) (appD.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appD.ProblemRepository, error), map[string]appD.ProblemImportProcessor) {
+func initPf(synthesizer pluginCommonS.Synthesizer, translator pluginCommonS.Translator, tatoebaSentenceRepository pluginCommonS.TatoebaSentenceRepositoryReadOnly) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
-	englishWordProblemProcessor := pluginEnglishDomain.NewEnglishWordProblemProcessor(synthesizer, translator, tatoebaSentenceRepository, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
-	englishPhraseProblemProcessor := pluginEnglishDomain.NewEnglishPhraseProblemProcessor(synthesizer, translator)
-	englishSentenceProblemProcessor := pluginEnglishDomain.NewEnglishSentenceProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
+	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translator, tatoebaSentenceRepository, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translator)
+	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
 
-	problemAddProcessor := map[string]appD.ProblemAddProcessor{
+	problemAddProcessor := map[string]appS.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
 		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
-	problemUpdateProcessor := map[string]appD.ProblemUpdateProcessor{
+	problemUpdateProcessor := map[string]appS.ProblemUpdateProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
-	problemRemoveProcessor := map[string]appD.ProblemRemoveProcessor{
+	problemRemoveProcessor := map[string]appS.ProblemRemoveProcessor{
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemProcessor,
 		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
-	problemImportProcessor := map[string]appD.ProblemImportProcessor{
+	problemImportProcessor := map[string]appS.ProblemImportProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
-	problemQuotaProcessor := map[string]appD.ProblemQuotaProcessor{
+	problemQuotaProcessor := map[string]appS.ProblemQuotaProcessor{
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
 
-	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appD.ProblemRepository, error) {
+	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		fmt.Println("-------Word")
 		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
 		if err != nil {
@@ -305,14 +308,14 @@ func initPf(synthesizer pluginCommonDomain.Synthesizer, translator pluginCommonD
 		}
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, rf, pluginEnglishDomain.EnglishWordProblemType)
 	}
-	englishPhraseProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appD.ProblemRepository, error) {
+	englishPhraseProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
 		if err != nil {
 			return nil, err
 		}
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, rf, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
-	englishSentenceProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appD.ProblemRepository, error) {
+	englishSentenceProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		fmt.Println("-------Sentence")
 		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
 		if err != nil {
@@ -321,9 +324,9 @@ func initPf(synthesizer pluginCommonDomain.Synthesizer, translator pluginCommonD
 		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, rf, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 
-	pf := appD.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
+	pf := appS.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
 
-	problemRepositories := map[string]func(context.Context, *gorm.DB) (appD.ProblemRepository, error){
+	problemRepositories := map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error){
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemRepositoryFunc,
 		pluginEnglishDomain.EnglishPhraseProblemType:   englishPhraseProblemRepositoryFunc,
 		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemRepositoryFunc,
@@ -356,11 +359,11 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
-	userD.InitSystemAdmin(userRfFunc)
+	userS.InitSystemAdmin(userRfFunc)
 
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
@@ -431,23 +434,23 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 	logger := log.FromContext(ctx)
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		systemAdmin, err := userD.NewSystemAdminFromDB(ctx, tx)
+		systemAdmin, err := userS.NewSystemAdminFromDB(ctx, tx)
 		if err != nil {
 			return err
 		}
 
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
-			if !errors.Is(err, userD.ErrOrganizationNotFound) {
+			if !errors.Is(err, userS.ErrOrganizationNotFound) {
 				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
-			firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("cocotola-owner", "Owner(cocotola)", password)
+			firstOwnerAddParam, err := userS.NewFirstOwnerAddParameter("cocotola-owner", "Owner(cocotola)", password)
 			if err != nil {
 				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
-			organizationAddParameter, err := userD.NewOrganizationAddParameter("cocotola", firstOwnerAddParam)
+			organizationAddParameter, err := userS.NewOrganizationAddParameter("cocotola", firstOwnerAddParam)
 			if err != nil {
 				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
@@ -468,7 +471,7 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 	return nil
 }
 
-func initApp2(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryFunc, userRfFunc userD.RepositoryFactoryFunc) error {
+func initApp2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 	if err := initApp2_1(ctx, db, rfFunc, userRfFunc); err != nil {
 		return err
 	}
@@ -484,7 +487,7 @@ func initApp2(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryFun
 	return nil
 }
 
-func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryFunc, userRfFunc userD.RepositoryFactoryFunc) error {
+func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 	var propertiesSystemStudentID userD.AppUserID
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -493,20 +496,20 @@ func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 			return err
 		}
 
-		systemAdmin := userD.NewSystemAdmin(userRf)
+		systemAdmin := userS.NewSystemAdmin(userRf)
 
 		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
 		if err != nil {
 			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
-		systemStudent, err := systemOwner.FindAppUserByLoginID(ctx, appD.SystemStudentLoginID)
+		systemStudent, err := systemOwner.FindAppUserByLoginID(ctx, appS.SystemStudentLoginID)
 		if err != nil {
-			if !errors.Is(err, userD.ErrAppUserNotFound) {
+			if !errors.Is(err, userS.ErrAppUserNotFound) {
 				return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 			}
 
-			param, err := userD.NewAppUserAddParameter(appD.SystemStudentLoginID, "SystemStudent(cocotola)", []string{}, map[string]string{})
+			param, err := userS.NewAppUserAddParameter(appS.SystemStudentLoginID, "SystemStudent(cocotola)", []string{}, map[string]string{})
 			if err != nil {
 				return xerrors.Errorf("failed to NewAppUserAddParameter. err: %w", err)
 			}
@@ -525,12 +528,12 @@ func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 		return err
 	}
 
-	appD.SetSystemStudentID(propertiesSystemStudentID)
+	appS.SetSystemStudentID(propertiesSystemStudentID)
 
 	return nil
 }
 
-func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryFunc, userRfFunc userD.RepositoryFactoryFunc) error {
+func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 
 	var propertiesSystemSpaceID userD.SpaceID
 
@@ -540,16 +543,16 @@ func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 			return err
 		}
 
-		systemAdmin := userD.NewSystemAdmin(userRf)
+		systemAdmin := userS.NewSystemAdmin(userRf)
 
-		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appD.OrganizationName)
+		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appS.OrganizationName)
 		if err != nil {
 			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
 		systemSpace, err := systemOwner.FindSystemSpace(ctx)
 		if err != nil {
-			if !errors.Is(err, userD.ErrSpaceNotFound) {
+			if !errors.Is(err, userS.ErrSpaceNotFound) {
 				return xerrors.Errorf("failed to FindSystemSpace. err: %w", err)
 			}
 
@@ -568,12 +571,12 @@ func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 		return err
 	}
 
-	appD.SetSystemSpaceID(propertiesSystemSpaceID)
+	appS.SetSystemSpaceID(propertiesSystemSpaceID)
 
 	return nil
 }
 
-func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryFunc, userRfFunc userD.RepositoryFactoryFunc) error {
+func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 
 	var propertiesTatoebaWorkbookID appD.WorkbookID
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -582,14 +585,14 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 			return err
 		}
 
-		systemAdmin := userD.NewSystemAdmin(userRf)
+		systemAdmin := userS.NewSystemAdmin(userRf)
 
-		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appD.OrganizationName)
+		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appS.OrganizationName)
 		if err != nil {
 			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
-		systemStudentAppUser, err := systemOwner.FindAppUserByLoginID(ctx, appD.SystemStudentLoginID)
+		systemStudentAppUser, err := systemOwner.FindAppUserByLoginID(ctx, appS.SystemStudentLoginID)
 		if err != nil {
 			return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 		}
@@ -599,18 +602,18 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 			return err
 		}
 
-		systemStudent, err := appD.NewSystemStudent(rf, systemStudentAppUser)
+		systemStudent, err := appS.NewSystemStudent(rf, systemStudentAppUser)
 		if err != nil {
 			return err
 		}
 
-		tatoebaWorkbook, err := systemStudent.FindWorkbookFromSystemSpace(ctx, appD.TatoebaWorkbookName)
+		tatoebaWorkbook, err := systemStudent.FindWorkbookFromSystemSpace(ctx, appS.TatoebaWorkbookName)
 		if err != nil {
-			if !errors.Is(err, appD.ErrWorkbookNotFound) {
+			if !errors.Is(err, appS.ErrWorkbookNotFound) {
 				return err
 			}
 
-			paramToAddWorkbook, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishSentenceProblemType, appD.TatoebaWorkbookName, "", map[string]string{})
+			paramToAddWorkbook, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishSentenceProblemType, appS.TatoebaWorkbookName, "", map[string]string{})
 			if err != nil {
 				return err
 			}
@@ -630,17 +633,17 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appD.RepositoryFactoryF
 		return err
 	}
 
-	appD.SetTatoebaWorkbookID(propertiesTatoebaWorkbookID)
+	appS.SetTatoebaWorkbookID(propertiesTatoebaWorkbookID)
 
 	return nil
 }
 
-func callback(ctx context.Context, testUserEmail string, pf appD.ProcessorFactory, repo appD.RepositoryFactory, userRepo userD.RepositoryFactory, organizationName string, appUser userD.AppUser) error {
+func callback(ctx context.Context, testUserEmail string, pf appS.ProcessorFactory, repo appS.RepositoryFactory, userRepo userS.RepositoryFactory, organizationName string, appUser userD.AppUserModel) error {
 	logger := log.FromContext(ctx)
 	logger.Infof("callback. loginID: %s", appUser.GetLoginID())
 
 	if appUser.GetLoginID() == testUserEmail {
-		student, err := appD.NewStudent(pf, repo, userRepo, appUser)
+		student, err := appS.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
 			return xerrors.Errorf("failed to NewStudent. err: %w", err)
 		}

@@ -7,27 +7,28 @@ import (
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
+	"github.com/kujilabo/cocotola-api/pkg_auth/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type GoogleAuthService interface {
-	RetrieveAccessToken(ctx context.Context, code string) (*domain.GoogleAuthResponse, error)
+	RetrieveAccessToken(ctx context.Context, code string) (*service.GoogleAuthResponse, error)
 
-	RetrieveUserInfo(ctx context.Context, GoogleAuthResponse *domain.GoogleAuthResponse) (*domain.GoogleUserInfo, error)
+	RetrieveUserInfo(ctx context.Context, GoogleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error)
 
-	RegisterStudent(ctx context.Context, googleUserInfo *domain.GoogleUserInfo, googleAuthResponse *domain.GoogleAuthResponse, organizationName string) (*domain.TokenSet, error)
+	RegisterStudent(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error)
 }
 
 type googleAuthService struct {
 	db                      *gorm.DB
-	googleAuthClient        domain.GoogleAuthClient
-	authTokenManager        domain.AuthTokenManager
-	registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error
+	googleAuthClient        service.GoogleAuthClient
+	authTokenManager        service.AuthTokenManager
+	registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUserModel) error
 }
 
-func NewGoogleAuthService(db *gorm.DB, googleAuthClient domain.GoogleAuthClient, authTokenManager domain.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUser) error) GoogleAuthService {
+func NewGoogleAuthService(db *gorm.DB, googleAuthClient service.GoogleAuthClient, authTokenManager service.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUserModel) error) GoogleAuthService {
 	return &googleAuthService{
 		db:                      db,
 		googleAuthClient:        googleAuthClient,
@@ -36,20 +37,20 @@ func NewGoogleAuthService(db *gorm.DB, googleAuthClient domain.GoogleAuthClient,
 	}
 }
 
-func (s *googleAuthService) RetrieveAccessToken(ctx context.Context, code string) (*domain.GoogleAuthResponse, error) {
+func (s *googleAuthService) RetrieveAccessToken(ctx context.Context, code string) (*service.GoogleAuthResponse, error) {
 	return s.googleAuthClient.RetrieveAccessToken(ctx, code)
 }
 
-func (s *googleAuthService) RetrieveUserInfo(ctx context.Context, googleAuthResponse *domain.GoogleAuthResponse) (*domain.GoogleUserInfo, error) {
+func (s *googleAuthService) RetrieveUserInfo(ctx context.Context, googleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error) {
 	return s.googleAuthClient.RetrieveUserInfo(ctx, googleAuthResponse)
 }
 
-func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo *domain.GoogleUserInfo, googleAuthResponse *domain.GoogleAuthResponse, organizationName string) (*domain.TokenSet, error) {
+func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error) {
 	logger := log.FromContext(ctx)
-	var tokenSet *domain.TokenSet
+	var tokenSet *service.TokenSet
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		systemAdmin, err := user.NewSystemAdminFromDB(ctx, tx)
+		systemAdmin, err := userS.NewSystemAdminFromDB(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -79,13 +80,13 @@ func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo 
 			return nil
 		}
 
-		if !errors.Is(err, user.ErrAppUserNotFound) {
+		if !errors.Is(err, userS.ErrAppUserNotFound) {
 			logger.Infof("Unsupported %v", err)
 			return err
 		}
 
 		logger.Infof("Add student. %+v", appUser)
-		parameter, err := user.NewAppUserAddParameter(
+		parameter, err := userS.NewAppUserAddParameter(
 			googleUserInfo.Email,
 			googleUserInfo.Name,
 			[]string{""},

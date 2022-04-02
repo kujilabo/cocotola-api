@@ -2,6 +2,11 @@ package domain
 
 import "fmt"
 
+type RBACUser string
+type RBACRole string
+type RBACObject string
+type RBACAction string
+
 func NewSpaceWriterRole(spaceID SpaceID) RBACRole {
 	return RBACRole(fmt.Sprintf("space_%d_writer", uint(spaceID)))
 }
