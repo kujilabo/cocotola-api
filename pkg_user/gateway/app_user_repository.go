@@ -265,7 +265,7 @@ func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.Owne
 		hashedPassword = hashed
 	}
 
-	appUser := appUserEntity{
+	appUserEntity := appUserEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
@@ -275,7 +275,7 @@ func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.Owne
 		HashedPassword: hashedPassword,
 		Role:           UserRole,
 	}
-	return r.addAppUser(ctx, &appUser)
+	return r.addAppUser(ctx, &appUserEntity)
 }
 
 func (r *appUserRepository) AddSystemOwner(ctx context.Context, operator domain.SystemAdminModel, organizationID domain.OrganizationID) (domain.AppUserID, error) {
@@ -297,7 +297,7 @@ func (r *appUserRepository) AddFirstOwner(ctx context.Context, operator domain.S
 		return 0, err
 	}
 
-	appUser := appUserEntity{
+	appUserEntity := appUserEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
@@ -307,5 +307,5 @@ func (r *appUserRepository) AddFirstOwner(ctx context.Context, operator domain.S
 		HashedPassword: hashedPassword,
 		Role:           OwnerRole,
 	}
-	return r.addAppUser(ctx, &appUser)
+	return r.addAppUser(ctx, &appUserEntity)
 }

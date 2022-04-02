@@ -18,7 +18,7 @@ type GoogleAuthService interface {
 
 	RetrieveUserInfo(ctx context.Context, GoogleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error)
 
-	RegisterStudent(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error)
+	RegisterAppUser(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error)
 }
 
 type googleAuthService struct {
@@ -45,7 +45,7 @@ func (s *googleAuthService) RetrieveUserInfo(ctx context.Context, googleAuthResp
 	return s.googleAuthClient.RetrieveUserInfo(ctx, googleAuthResponse)
 }
 
-func (s *googleAuthService) RegisterStudent(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error) {
+func (s *googleAuthService) RegisterAppUser(ctx context.Context, googleUserInfo *service.GoogleUserInfo, googleAuthResponse *service.GoogleAuthResponse, organizationName string) (*service.TokenSet, error) {
 	logger := log.FromContext(ctx)
 	var tokenSet *service.TokenSet
 

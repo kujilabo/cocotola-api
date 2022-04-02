@@ -5,16 +5,16 @@ import (
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
-type Guest interface {
+type GuestModel interface {
 	user.AppUserModel
 }
 
-type guest struct {
+type guestModel struct {
 	user.AppUserModel
 }
 
-func NewGuest(appUser user.AppUserModel) (Guest, error) {
-	m := &guest{
+func NewGuestModel(appUser user.AppUserModel) (GuestModel, error) {
+	m := &guestModel{
 		AppUserModel: appUser,
 	}
 
