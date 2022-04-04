@@ -48,14 +48,14 @@ type EnglishPhraseProblemProcessor interface {
 }
 
 type englishPhraseProblemProcessor struct {
-	synthesizer pluginS.Synthesizer
-	translator  pluginS.Translator
+	synthesizer       pluginS.Synthesizer
+	translationClient pluginS.TranslationClient
 }
 
-func NewEnglishPhraseProblemProcessor(synthesizer pluginS.Synthesizer, translator pluginS.Translator) EnglishPhraseProblemProcessor {
+func NewEnglishPhraseProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient) EnglishPhraseProblemProcessor {
 	return &englishPhraseProblemProcessor{
-		synthesizer: synthesizer,
-		translator:  translator,
+		synthesizer:       synthesizer,
+		translationClient: translationClient,
 	}
 }
 

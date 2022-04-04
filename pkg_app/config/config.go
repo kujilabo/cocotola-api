@@ -49,8 +49,9 @@ type GoogleConfig struct {
 	SynthesizerTimeoutSec int    `yaml:"synthesizerTimeoutSec" validate:"gte=1"`
 }
 
-type AzureConfig struct {
-	SubscriptionKey string `yaml:"subscriptionKey" validate:"required"`
+type TranslationConfig struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	Timeout  int    `yaml:"timeoutSec" validate:"gte=1"`
 }
 
 type CORSConfig struct {
@@ -72,15 +73,15 @@ type DebugConfig struct {
 }
 
 type Config struct {
-	App      *AppConfig      `yaml:"app" validate:"required"`
-	DB       *DBConfig       `yaml:"db" validate:"required"`
-	Auth     *AuthConfig     `yaml:"auth" validate:"required"`
-	Google   *GoogleConfig   `yaml:"google" validate:"required"`
-	Azure    *AzureConfig    `yaml:"azure" validate:"required"`
-	CORS     *CORSConfig     `yaml:"cors" validate:"required"`
-	Shutdown *ShutdownConfig `yaml:"shutdown" validate:"required"`
-	Log      *LogConfig      `yaml:"log" validate:"required"`
-	Debug    *DebugConfig    `yaml:"debug"`
+	App         *AppConfig         `yaml:"app" validate:"required"`
+	DB          *DBConfig          `yaml:"db" validate:"required"`
+	Auth        *AuthConfig        `yaml:"auth" validate:"required"`
+	Google      *GoogleConfig      `yaml:"google" validate:"required"`
+	Translation *TranslationConfig `yaml:"translation" validate:"required"`
+	CORS        *CORSConfig        `yaml:"cors" validate:"required"`
+	Shutdown    *ShutdownConfig    `yaml:"shutdown" validate:"required"`
+	Log         *LogConfig         `yaml:"log" validate:"required"`
+	Debug       *DebugConfig       `yaml:"debug"`
 }
 
 func LoadConfig(env string) (*Config, error) {

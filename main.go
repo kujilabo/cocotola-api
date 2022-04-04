@@ -95,8 +95,6 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
 
-	azureTranslationClient := pluginCommonGateway.NewAzureTranslationClient(cfg.Azure.SubscriptionKey)
-
 	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
 	if err != nil {
 		panic(err)
@@ -105,7 +103,7 @@ func main() {
 		return pluginCommonGateway.NewRepositoryFactory(ctx, db, cfg.DB.DriverName)
 	}
 
-	translator, err := pluginCommonS.NewTranslatior(pluginRepo, azureTranslationClient)
+	translationClient, err := pluginCommonGateway.NewTranslationClient(cfg.Translation.Endpoint, time.Duration(cfg.Translation.Timeout)*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +118,7 @@ func main() {
 	}
 	appS.UserRfFunc = userRfFunc
 
-	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translator, tatoebaSentenceRepo)
+	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaSentenceRepo)
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error) {
 		processor, ok := problemImportProcessor[problemType]
@@ -213,10 +211,10 @@ func main() {
 		plugin.Use(authMiddleware)
 		{
 			pluginTranslation := plugin.Group("translation")
-			translationHandler := pluginCommonHandler.NewTranslationHandler(translator)
+			translationHandler := pluginCommonHandler.NewTranslationHandler(translationClient)
 			pluginTranslation.POST("find", translationHandler.FindTranslations)
 			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
-			pluginTranslation.GET("text/:text", translationHandler.FindTranslationByText)
+			pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
 			pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
 			pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
 			pluginTranslation.POST("", translationHandler.AddTranslation)
@@ -274,11 +272,11 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initPf(synthesizer pluginCommonS.Synthesizer, translator pluginCommonS.Translator, tatoebaSentenceRepository pluginCommonS.TatoebaSentenceRepositoryReadOnly) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
+func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommonS.TranslationClient, tatoebaSentenceRepository pluginCommonS.TatoebaSentenceRepositoryReadOnly) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
-	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translator, tatoebaSentenceRepository, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
-	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translator)
-	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizer, translator, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
+	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translationClient, tatoebaSentenceRepository, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translationClient)
+	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizer, translationClient, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
 
 	problemAddProcessor := map[string]appS.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,

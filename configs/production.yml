@@ -20,8 +20,11 @@ auth:
 google:
   synthesizerKey: $SYNTHESIZER_KEY
   synthesizerTimeoutSec: 10
-azure:
-  subscriptionKey: $SUBSCRIPTION_KEY
+translation:
+  endpoint: http://cocotola-translator-api
+  timeoutSec: 3
+    username: $AUTH_USERNAME
+    password: $AUTH_PASSWORD  
 cors:
   allowOrigins:
     - "https://www.cocotola.com"

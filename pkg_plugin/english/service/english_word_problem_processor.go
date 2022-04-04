@@ -109,15 +109,15 @@ type EnglishWordProblemProcessor interface {
 
 type englishWordProblemProcessor struct {
 	synthesizer                     pluginS.Synthesizer
-	translator                      pluginS.Translator
+	translationClient               pluginS.TranslationClient
 	tatoebaSentenceRepository       pluginS.TatoebaSentenceRepositoryReadOnly
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator
 }
 
-func NewEnglishWordProblemProcessor(synthesizer pluginS.Synthesizer, translator pluginS.Translator, tatoebaSentenceRepository pluginS.TatoebaSentenceRepositoryReadOnly, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
+func NewEnglishWordProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, tatoebaSentenceRepository pluginS.TatoebaSentenceRepositoryReadOnly, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
 	return &englishWordProblemProcessor{
 		synthesizer:                     synthesizer,
-		translator:                      translator,
+		translationClient:               translationClient,
 		tatoebaSentenceRepository:       tatoebaSentenceRepository,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
@@ -382,14 +382,14 @@ func (p *englishWordProblemProcessor) translateWithPos(ctx context.Context, text
 	logger := log.FromContext(ctx)
 	logger.Infof("translateWithPos. text: %s", text)
 
-	return p.translator.DictionaryLookupWithPos(ctx, fromLang, toLang, text, pos)
+	return p.translationClient.DictionaryLookupWithPos(ctx, fromLang, toLang, text, pos)
 }
 
 func (p *englishWordProblemProcessor) translate(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]plugin.Translation, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("translate. text: %s", text)
 
-	return p.translator.DictionaryLookup(ctx, fromLang, toLang, text)
+	return p.translationClient.DictionaryLookup(ctx, fromLang, toLang, text)
 }
 
 func (p *englishWordProblemProcessor) GetUnitForSizeQuota() appS.QuotaUnit {

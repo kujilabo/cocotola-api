@@ -86,14 +86,14 @@ type EnglishSentenceProblemProcessor interface {
 
 type englishSentenceProblemProcessor struct {
 	synthesizer                     pluginS.Synthesizer
-	translator                      pluginS.Translator
+	translationClient               pluginS.TranslationClient
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator
 }
 
-func NewEnglishSentenceProblemProcessor(synthesizer pluginS.Synthesizer, translator pluginS.Translator, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
+func NewEnglishSentenceProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
 	return &englishSentenceProblemProcessor{
 		synthesizer:                     synthesizer,
-		translator:                      translator,
+		translationClient:               translationClient,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
 }

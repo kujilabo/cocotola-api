@@ -9,10 +9,19 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 )
 
-// var ErrCustomTranslationNotFound = errors.New("azure translation not found")
-// var ErrCustomTranslationAlreadyExists = errors.New("azure translation already exists")
-
+var ErrTranslationNotFound = errors.New("translation not found")
 var ErrTranslationAlreadyExists = errors.New("custsomtranslation already exists")
+
+type TranslationClient interface {
+	DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error)
+	DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
+	FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error)
+	FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
+	FindTranslationsByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error)
+	AddTranslation(ctx context.Context, param TranslationAddParameter) error
+	UpdateTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param TranslationUpdateParameter) error
+	RemoveTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error
+}
 
 type TranslationAddParameter interface {
 	GetText() string
@@ -73,20 +82,4 @@ func NewTransaltionUpdateParameter(translated string) (TranslationUpdateParamete
 
 func (p *translationUpdateParameter) GetTranslated() string {
 	return p.Translated
-}
-
-type CustomTranslationRepository interface {
-	Add(ctx context.Context, param TranslationAddParameter) (domain.TranslationID, error)
-
-	Update(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param TranslationUpdateParameter) error
-
-	Remove(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error
-
-	FindByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error)
-
-	FindByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
-
-	FindByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error)
-
-	Contain(ctx context.Context, lang app.Lang2, text string) (bool, error)
 }
