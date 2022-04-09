@@ -99,7 +99,7 @@ func NewTatoebaClient(endpoint, username, password string, timeout time.Duration
 			Timeout: timeout,
 		},
 		importClient: http.Client{
-			Timeout: time.Minute * timeoutImportMin,
+			Timeout: time.Minute * time.Duration(timeoutImportMin),
 		},
 	}
 }
