@@ -20,9 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
-          go-version: '1.17'
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
           # golangci_lint_flags: "--enable-all --exclude-use-default=false"
