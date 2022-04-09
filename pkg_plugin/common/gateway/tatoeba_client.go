@@ -17,6 +17,8 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
+var timeoutImportMin = 30
+
 type tatoebaSentenceFindParameter struct {
 	PageNo   int    `json:"pageNo" binding:"required,gte=1"`
 	PageSize int    `json:"pageSize" binding:"required,gte=1"`
@@ -97,7 +99,7 @@ func NewTatoebaClient(endpoint, username, password string, timeout time.Duration
 			Timeout: timeout,
 		},
 		importClient: http.Client{
-			Timeout: time.Minute * 30,
+			Timeout: time.Minute * timeoutImportMin,
 		},
 	}
 }
