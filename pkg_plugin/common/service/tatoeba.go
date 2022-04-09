@@ -4,9 +4,7 @@ import (
 	"errors"
 	"time"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
@@ -14,7 +12,7 @@ var ErrTatoebaSentenceAlreadyExists = errors.New("tatoebaSentence already exists
 
 type TatoebaSentence interface {
 	GetSentenceNumber() int
-	GetLang() app.Lang3
+	GetLang() appD.Lang3
 	GetText() string
 	GetAuthor() string
 	GetUpdatedAt() time.Time
@@ -22,13 +20,13 @@ type TatoebaSentence interface {
 
 type tatoebaSentence struct {
 	SentenceNumber int
-	Lang           app.Lang3
+	Lang           appD.Lang3
 	Text           string
 	Author         string
 	UpdatedAt      time.Time
 }
 
-func NewTatoebaSentence(sentenceNumber int, lang app.Lang3, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
+func NewTatoebaSentence(sentenceNumber int, lang appD.Lang3, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
 	m := &tatoebaSentence{
 		SentenceNumber: sentenceNumber,
 		Lang:           lang,
@@ -44,7 +42,7 @@ func (m *tatoebaSentence) GetSentenceNumber() int {
 	return m.SentenceNumber
 }
 
-func (m *tatoebaSentence) GetLang() app.Lang3 {
+func (m *tatoebaSentence) GetLang() appD.Lang3 {
 	return m.Lang
 }
 
@@ -112,7 +110,7 @@ func NewTatoebaSentenceAddParameter(sentenceNumber int, lang appD.Lang3, text, a
 		UpdatedAt:      updatedAt,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *tatoebaSentenceAddParameter) GetSentenceNumber() int {
@@ -157,7 +155,7 @@ func NewTatoebaSentenceSearchCondition(pageNo, pageSize int, keyword string, ran
 		Random:   random,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (c *tatoebaSentenceSearchCondition) GetPageNo() int {
