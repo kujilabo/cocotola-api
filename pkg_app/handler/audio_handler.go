@@ -37,12 +37,12 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 	logger.Info("FindAudioByID")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		problemID, err := ginhelper.GetUint(c, "problemID")
+		problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil

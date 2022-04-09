@@ -28,6 +28,11 @@ translation:
   timeoutSec: 3
   username: user
   password: password
+tatoeba:
+  endpoint: http://localhost:8280
+  timeoutSec: 3
+  username: user
+  password: password
 cors:
   allowOrigins:
     - "*"

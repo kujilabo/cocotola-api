@@ -11,7 +11,7 @@ func ToTatoebaSentenceSearchCondition(ctx context.Context, param *entity.Tatoeba
 	return service.NewTatoebaSentenceSearchCondition(param.PageNo, param.PageSize, param.Keyword, param.Random)
 }
 
-func ToTatoebaSentenceResponse(ctx context.Context, result *service.TatoebaSentenceSearchResult) (*entity.TatoebaSentenceFindResponse, error) {
+func ToTatoebaSentenceResponse(ctx context.Context, result *service.TatoebaSentencePairSearchResult) (*entity.TatoebaSentenceFindResponse, error) {
 	entities := make([]entity.TatoebaSentencePair, len(result.Results))
 	for i, m := range result.Results {
 		src := entity.TatoebaSentence{

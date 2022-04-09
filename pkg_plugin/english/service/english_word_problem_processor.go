@@ -110,15 +110,15 @@ type EnglishWordProblemProcessor interface {
 type englishWordProblemProcessor struct {
 	synthesizer                     pluginS.Synthesizer
 	translationClient               pluginS.TranslationClient
-	tatoebaSentenceRepository       pluginS.TatoebaSentenceRepositoryReadOnly
+	tatoebaClient                   pluginS.TatoebaClient
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator
 }
 
-func NewEnglishWordProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, tatoebaSentenceRepository pluginS.TatoebaSentenceRepositoryReadOnly, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
+func NewEnglishWordProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, tatoebaClient pluginS.TatoebaClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
 	return &englishWordProblemProcessor{
 		synthesizer:                     synthesizer,
 		translationClient:               translationClient,
-		tatoebaSentenceRepository:       tatoebaSentenceRepository,
+		tatoebaClient:                   tatoebaClient,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
 }
@@ -420,13 +420,13 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 		return 0, xerrors.Errorf("failed to FindWorkbookByName. name: %s, err: %w", appS.TatoebaWorkbookName, err)
 	}
 
-	tatoebaSentenceFrom, err := p.tatoebaSentenceRepository.FindTatoebaSentenceBySentenceNumber(ctx, tatoebaSentenceNumberFrom)
+	tatoebaSentenceFrom, err := p.tatoebaClient.FindSentenceBySentenceNumber(ctx, tatoebaSentenceNumberFrom)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
 
 	}
 
-	tatoebaSentenceTo, err := p.tatoebaSentenceRepository.FindTatoebaSentenceBySentenceNumber(ctx, tatoebaSentenceNumberTo)
+	tatoebaSentenceTo, err := p.tatoebaClient.FindSentenceBySentenceNumber(ctx, tatoebaSentenceNumberTo)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
 	}

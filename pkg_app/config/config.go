@@ -52,6 +52,15 @@ type GoogleConfig struct {
 type TranslationConfig struct {
 	Endpoint string `yaml:"endpoint" validate:"required"`
 	Timeout  int    `yaml:"timeoutSec" validate:"gte=1"`
+	Username string `yaml:"username" validate:"required"`
+	Password string `yaml:"password" validate:"required"`
+}
+
+type TatoebaConfig struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	Timeout  int    `yaml:"timeoutSec" validate:"gte=1"`
+	Username string `yaml:"username" validate:"required"`
+	Password string `yaml:"password" validate:"required"`
 }
 
 type CORSConfig struct {
@@ -78,6 +87,7 @@ type Config struct {
 	Auth        *AuthConfig        `yaml:"auth" validate:"required"`
 	Google      *GoogleConfig      `yaml:"google" validate:"required"`
 	Translation *TranslationConfig `yaml:"translation" validate:"required"`
+	Tatoeba     *TatoebaConfig     `yaml:"tatoeba" validate:"required"`
 	CORS        *CORSConfig        `yaml:"cors" validate:"required"`
 	Shutdown    *ShutdownConfig    `yaml:"shutdown" validate:"required"`
 	Log         *LogConfig         `yaml:"log" validate:"required"`

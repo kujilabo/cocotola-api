@@ -40,7 +40,6 @@ import (
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	pluginApplication "github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
 	pluginCommonHandler "github.com/kujilabo/cocotola-api/pkg_plugin/common/handler"
 	pluginCommonS "github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
@@ -95,30 +94,15 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
 
-	pluginRepo, err := pluginCommonGateway.NewRepositoryFactory(context.Background(), db, cfg.DB.DriverName)
-	if err != nil {
-		panic(err)
-	}
-	pluginRfFunc := func(ctx context.Context, db *gorm.DB) (pluginCommonS.RepositoryFactory, error) {
-		return pluginCommonGateway.NewRepositoryFactory(ctx, db, cfg.DB.DriverName)
-	}
-
-	translationClient, err := pluginCommonGateway.NewTranslationClient(cfg.Translation.Endpoint, time.Duration(cfg.Translation.Timeout)*time.Second)
-	if err != nil {
-		panic(err)
-	}
-
-	tatoebaSentenceRepo, err := pluginRepo.NewTatoebaSentenceRepository(ctx)
-	if err != nil {
-		panic(err)
-	}
+	translationClient := pluginCommonGateway.NewTranslationClient(cfg.Translation.Endpoint, cfg.Translation.Username, cfg.Translation.Password, time.Duration(cfg.Translation.Timeout)*time.Second)
+	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.Timeout)*time.Second)
 
 	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 	appS.UserRfFunc = userRfFunc
 
-	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaSentenceRepo)
+	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaClient)
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error) {
 		processor, ok := problemImportProcessor[problemType]
@@ -221,16 +205,9 @@ func main() {
 			pluginTranslation.POST("export", translationHandler.ExportTranslations)
 		}
 		{
-			newSentenceReader := func(reader io.Reader) pluginCommonS.TatoebaSentenceAddParameterIterator {
-				return pluginCommonGateway.NewTatoebaSentenceAddParameterReader(reader)
-			}
-			newLinkReader := func(reader io.Reader) pluginCommonS.TatoebaLinkAddParameterIterator {
-				return pluginCommonGateway.NewTatoebaLinkAddParameterReader(reader)
-			}
 			pluginTatoeba := plugin.Group("tatoeba")
-			tatoebaService := pluginApplication.NewTatoebaService(db, pluginRfFunc)
-			tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaService, newSentenceReader, newLinkReader)
-			pluginTatoeba.POST("find", tatoebaHandler.FindSentences)
+			tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaClient)
+			pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
 			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
 			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
 
@@ -272,9 +249,9 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommonS.TranslationClient, tatoebaSentenceRepository pluginCommonS.TatoebaSentenceRepositoryReadOnly) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
+func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommonS.TranslationClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
-	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translationClient, tatoebaSentenceRepository, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translationClient, tatoebaClient, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translationClient)
 	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizer, translationClient, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
 

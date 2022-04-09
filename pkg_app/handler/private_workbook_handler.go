@@ -162,7 +162,7 @@ func (h *privateWorkbookHandler) UpdateWorkbook(c *gin.Context) {
 			logger.Warnf("failed to BindJSON. err: %v", err)
 			return nil
 		}
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -195,7 +195,7 @@ func (h *privateWorkbookHandler) RemoveWorkbook(c *gin.Context) {
 	logger.Info("RemoveWorkbook")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil

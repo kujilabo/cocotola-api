@@ -60,7 +60,7 @@ func (h *problemHandler) FindProblems(c *gin.Context) {
 	logger.Info("FindProblems")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -98,7 +98,7 @@ func (h *problemHandler) FindAllProblems(c *gin.Context) {
 	logger.Info("FindAllProblems")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -125,7 +125,7 @@ func (h *problemHandler) FindProblemsByProblemIDs(c *gin.Context) {
 	logger.Info("FindProblemsByProblemIDs")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -218,7 +218,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 	logger.Infof("AddProblem")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -305,7 +305,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 	logger.Infof("ImportProblems")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -349,11 +349,11 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 }
 
 func (h *problemHandler) toProblemSelectParameter1(c *gin.Context) (service.ProblemSelectParameter1, error) {
-	workbookID, err := ginhelper.GetUint(c, "workbookID")
+	workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 	if err != nil {
 		return nil, libD.ErrInvalidArgument
 	}
-	problemID, err := ginhelper.GetUint(c, "problemID")
+	problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 	if err != nil {
 		return nil, libD.ErrInvalidArgument
 	}
@@ -366,11 +366,11 @@ func (h *problemHandler) toProblemSelectParameter1(c *gin.Context) (service.Prob
 }
 
 func (h *problemHandler) toProblemSelectParameter2(c *gin.Context) (service.ProblemSelectParameter2, error) {
-	workbookID, err := ginhelper.GetUint(c, "workbookID")
+	workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 	if err != nil {
 		return nil, libD.ErrInvalidArgument
 	}
-	problemID, err := ginhelper.GetUint(c, "problemID")
+	problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 	if err != nil {
 		return nil, libD.ErrInvalidArgument
 	}

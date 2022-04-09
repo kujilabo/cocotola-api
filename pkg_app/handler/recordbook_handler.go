@@ -49,12 +49,12 @@ func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	logger.Info("FindRecordbook")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		studyType := ginhelper.GetString(c, "studyType")
+		studyType := ginhelper.GetStringFromPath(c, "studyType")
 
 		result, err := h.studyService.FindResults(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType)
 		if err != nil {
@@ -77,13 +77,13 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 	logger.Info("SetStudyResult")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		studyType := ginhelper.GetString(c, "studyType")
-		problemID, err := ginhelper.GetUint(c, "problemID")
+		studyType := ginhelper.GetStringFromPath(c, "studyType")
+		problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 		if err != nil {
 			return err
 		}

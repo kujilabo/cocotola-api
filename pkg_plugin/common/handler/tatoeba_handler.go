@@ -2,12 +2,10 @@ package handler
 
 import (
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/application"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
@@ -17,26 +15,22 @@ import (
 )
 
 type TatoebaHandler interface {
-	FindSentences(c *gin.Context)
+	FindSentencePairs(c *gin.Context)
 	ImportSentences(c *gin.Context)
 	ImportLinks(c *gin.Context)
 }
 
 type tatoebaHandler struct {
-	tatoebaService                       application.TatoebaService
-	newTatoebaSentenceAddParameterReader func(reader io.Reader) service.TatoebaSentenceAddParameterIterator
-	newTatoebaLinkAddParameterReader     func(reader io.Reader) service.TatoebaLinkAddParameterIterator
+	tatoebaClient service.TatoebaClient
 }
 
-func NewTatoebaHandler(tatoebaService application.TatoebaService, newTatoebaSentenceAddParameterReader func(reader io.Reader) service.TatoebaSentenceAddParameterIterator, newTatoebaLinkAddParameterReader func(reader io.Reader) service.TatoebaLinkAddParameterIterator) TatoebaHandler {
+func NewTatoebaHandler(tatoebaClient service.TatoebaClient) TatoebaHandler {
 	return &tatoebaHandler{
-		tatoebaService:                       tatoebaService,
-		newTatoebaSentenceAddParameterReader: newTatoebaSentenceAddParameterReader,
-		newTatoebaLinkAddParameterReader:     newTatoebaLinkAddParameterReader,
+		tatoebaClient: tatoebaClient,
 	}
 }
 
-func (h *tatoebaHandler) FindSentences(c *gin.Context) {
+func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 	ctx := c.Request.Context()
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 		param := entity.TatoebaSentenceFindParameter{}
@@ -48,7 +42,7 @@ func (h *tatoebaHandler) FindSentences(c *gin.Context) {
 		if err != nil {
 			return err
 		}
-		result, err := h.tatoebaService.FindSentences(ctx, parameter)
+		result, err := h.tatoebaClient.FindSentencePairs(ctx, parameter)
 		if err != nil {
 			return xerrors.Errorf("failed to FindSentences. err: %w", err)
 		}
@@ -83,10 +77,8 @@ func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 		}
 		defer multipartFile.Close()
 
-		iterator := h.newTatoebaSentenceAddParameterReader(multipartFile)
-
-		if err := h.tatoebaService.ImportSentences(ctx, iterator); err != nil {
-			return xerrors.Errorf("failed to ImportSentences. err: %w", err)
+		if err := h.tatoebaClient.ImportSentences(ctx, multipartFile); err != nil {
+			return err
 		}
 
 		c.Status(http.StatusOK)
@@ -115,10 +107,8 @@ func (h *tatoebaHandler) ImportLinks(c *gin.Context) {
 		}
 		defer multipartFile.Close()
 
-		iterator := h.newTatoebaLinkAddParameterReader(multipartFile)
-
-		if err := h.tatoebaService.ImportLinks(ctx, iterator); err != nil {
-			return xerrors.Errorf("failed to ImportLinks. err: %w", err)
+		if err := h.tatoebaClient.ImportSentences(ctx, multipartFile); err != nil {
+			return err
 		}
 
 		c.Status(http.StatusOK)

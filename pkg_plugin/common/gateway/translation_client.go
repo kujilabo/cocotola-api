@@ -16,17 +16,61 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
+type translationResponse struct {
+	Text       string `json:"text"`
+	Pos        int    `json:"pos"`
+	Lang       string `json:"lang"`
+	Translated string `json:"translated"`
+	Provider   string `json:"provider"`
+}
+
+func (r *translationResponse) toModel() (domain.Translation, error) {
+	pos, err := domain.NewWordPos(r.Pos)
+	if err != nil {
+		return nil, err
+	}
+
+	lang, err := app.NewLang2(r.Lang)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.NewTranslation(r.Text, pos, lang, r.Translated, r.Provider)
+}
+
+type translationFindResponse struct {
+	Results []translationResponse `json:"results"`
+}
+
+func (r *translationFindResponse) toModel() ([]domain.Translation, error) {
+	translationList := make([]domain.Translation, len(r.Results))
+	for i, r := range r.Results {
+		m, err := r.toModel()
+		if err != nil {
+			return nil, err
+		}
+		translationList[i] = m
+	}
+
+	return translationList, nil
+}
+
 type translationClient struct {
 	endpoint string
+	username string
+	password string
 	client   http.Client
 }
 
-func NewTranslationClient(endpoint string, timeout time.Duration) (service.TranslationClient, error) {
+func NewTranslationClient(endpoint, username, password string, timeout time.Duration) service.TranslationClient {
 	return &translationClient{
+		endpoint: endpoint,
+		username: username,
+		password: password,
 		client: http.Client{
 			Timeout: timeout,
 		},
-	}, nil
+	}
 }
 
 func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error) {
@@ -45,6 +89,7 @@ func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLa
 		return nil, err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -55,12 +100,12 @@ func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLa
 		return nil, err
 	}
 
-	response := []domain.Translation{}
+	response := translationFindResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	return response.toModel()
 }
 
 func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
@@ -80,6 +125,7 @@ func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 		return nil, err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -90,16 +136,12 @@ func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 		return nil, err
 	}
 
-	response := []domain.Translation{}
+	response := translationResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	if len(response) == 0 {
-		return nil, service.ErrTranslationNotFound
-	}
-
-	return response[0], nil
+	return response.toModel()
 }
 
 func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error) {
@@ -123,6 +165,7 @@ func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, l
 		return nil, err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -133,12 +176,12 @@ func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, l
 		return nil, err
 	}
 
-	response := []domain.Translation{}
+	response := translationFindResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	return response.toModel()
 }
 
 func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
@@ -154,6 +197,7 @@ func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lan
 		return nil, err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -164,16 +208,12 @@ func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lan
 		return nil, err
 	}
 
-	response := []domain.Translation{}
+	response := translationResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	if len(response) == 0 {
-		return nil, service.ErrTranslationNotFound
-	}
-
-	return response[0], nil
+	return response.toModel()
 }
 
 func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
@@ -189,6 +229,7 @@ func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app
 		return nil, err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -199,20 +240,12 @@ func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app
 		return nil, err
 	}
 
-	response := []domain.Translation{}
+	response := translationFindResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return response, nil
-}
-
-func (c *translationClient) errorHandle(statusCode int) error {
-	if statusCode == http.StatusOK {
-		return nil
-	}
-
-	return errors.New(http.StatusText(statusCode))
+	return response.toModel()
 }
 
 func (c *translationClient) AddTranslation(ctx context.Context, param service.TranslationAddParameter) error {
@@ -238,6 +271,7 @@ func (c *translationClient) AddTranslation(ctx context.Context, param service.Tr
 		return err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
@@ -272,6 +306,7 @@ func (c *translationClient) UpdateTranslation(ctx context.Context, lang app.Lang
 		return err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
@@ -298,6 +333,7 @@ func (c *translationClient) RemoveTranslation(ctx context.Context, lang app.Lang
 		return err
 	}
 
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
@@ -309,4 +345,12 @@ func (c *translationClient) RemoveTranslation(ctx context.Context, lang app.Lang
 	}
 
 	return nil
+}
+
+func (c *translationClient) errorHandle(statusCode int) error {
+	if statusCode == http.StatusOK {
+		return nil
+	}
+
+	return errors.New(http.StatusText(statusCode))
 }
