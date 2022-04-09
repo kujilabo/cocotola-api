@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: errcheck
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: gosec
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -62,7 +62,7 @@ jobs:
   #   steps:
   #     - uses: actions/checkout@v2
   #     - name: dupl
-  #       uses: reviewdog/action-golangci-lint@v1
+  #       uses: reviewdog/action-golangci-lint@v2
   #       with:
   #         github_token: ${{ secrets.REVIEWDOG_TOKEN }}
   #         reporter: github-pr-review
@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: gofmt
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -92,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: unconvert
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: gomnd
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: errorlint
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -138,7 +138,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: gocyclo
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
@@ -153,7 +153,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: goimports
-        uses: reviewdog/action-golangci-lint@v1
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
