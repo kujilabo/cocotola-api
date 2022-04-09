@@ -17,6 +17,8 @@ import (
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
+var timeoutImportMin = 20
+
 func main() {
 	ctx := context.Background()
 	cfg, err := config.LoadConfig("local")
@@ -85,7 +87,7 @@ func main() {
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 
 	client := http.Client{
-		Timeout: time.Duration(20) * time.Minute,
+		Timeout: time.Duration(timeoutImportMin) * time.Minute,
 	}
 
 	resp, err := client.Do(req)
