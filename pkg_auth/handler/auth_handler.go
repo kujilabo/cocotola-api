@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
 	"github.com/kujilabo/cocotola-api/pkg_auth/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_auth/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
@@ -15,10 +15,10 @@ type AuthHandler interface {
 }
 
 type authHandler struct {
-	authTokenManager domain.AuthTokenManager
+	authTokenManager service.AuthTokenManager
 }
 
-func NewAuthHandler(authTokenManager domain.AuthTokenManager) AuthHandler {
+func NewAuthHandler(authTokenManager service.AuthTokenManager) AuthHandler {
 	return &authHandler{
 		authTokenManager: authTokenManager,
 	}

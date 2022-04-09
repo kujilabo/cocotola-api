@@ -8,6 +8,7 @@ import (
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 var (
@@ -32,13 +33,13 @@ func (u *groupUserEntity) TableName() string {
 	return GroupUserTableName
 }
 
-func NewGroupUserRepository(db *gorm.DB) domain.GroupUserRepository {
+func NewGroupUserRepository(db *gorm.DB) service.GroupUserRepository {
 	return &groupUserRepository{
 		db: db,
 	}
 }
 
-func (r *groupUserRepository) AddGroupUser(ctx context.Context, operator domain.AppUser, appUserGroupID domain.AppUserGroupID, appUserID domain.AppUserID) error {
+func (r *groupUserRepository) AddGroupUser(ctx context.Context, operator domain.AppUserModel, appUserGroupID domain.AppUserGroupID, appUserID domain.AppUserID) error {
 	groupUser := groupUserEntity{
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),
@@ -47,7 +48,7 @@ func (r *groupUserRepository) AddGroupUser(ctx context.Context, operator domain.
 		AppUserID:      uint(appUserID),
 	}
 	if result := r.db.Create(&groupUser); result.Error != nil {
-		return libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
+		return libG.ConvertDuplicatedError(result.Error, service.ErrAppUserAlreadyExists)
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 // func TestAddUser(t *testing.T) {
@@ -76,11 +77,11 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 	// logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (service.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
-	domain.InitSystemAdmin(userRfFunc)
+	service.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
@@ -90,8 +91,8 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 		_, owner := testInitOrganization(t, db)
 
 		type args struct {
-			operator domain.Owner
-			param    domain.AppUserAddParameter
+			operator domain.OwnerModel
+			param    service.AppUserAddParameter
 		}
 		tests := []struct {
 			name string
@@ -112,7 +113,7 @@ func Test_appUserRepository_AddAppUser(t *testing.T) {
 					operator: owner,
 					param:    testNewAppUserAddParameter(t, "LOGIN_ID", "USERNAME"),
 				},
-				err: domain.ErrAppUserAlreadyExists,
+				err: service.ErrAppUserAlreadyExists,
 			},
 		}
 		appUserRepo := gateway.NewAppUserRepository(nil, db)

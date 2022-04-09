@@ -6,13 +6,14 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 )
 
-func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindParameter, workbookID domain.WorkbookID) (domain.ProblemSearchCondition, error) {
-	return domain.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, param.Keyword)
+func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindParameter, workbookID domain.WorkbookID) (service.ProblemSearchCondition, error) {
+	return service.NewProblemSearchCondition(workbookID, param.PageNo, param.PageSize, param.Keyword)
 }
 
-func ToProblemFindResponse(ctx context.Context, result domain.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
+func ToProblemFindResponse(ctx context.Context, result service.ProblemSearchResult) (*entity.ProblemFindResponse, error) {
 	problems := make([]entity.Problem, len(result.GetResults()))
 	for i, p := range result.GetResults() {
 		bytes, err := json.Marshal(p.GetProperties(ctx))
@@ -39,7 +40,7 @@ func ToProblemFindResponse(ctx context.Context, result domain.ProblemSearchResul
 	}, nil
 }
 
-func ToProblemFindAllResponse(ctx context.Context, result domain.ProblemSearchResult) (*entity.ProblemFindAllResponse, error) {
+func ToProblemFindAllResponse(ctx context.Context, result service.ProblemSearchResult) (*entity.ProblemFindAllResponse, error) {
 	problems := make([]entity.SimpleProblem, len(result.GetResults()))
 	for i, p := range result.GetResults() {
 		bytes, err := json.Marshal(p.GetProperties(ctx))
@@ -66,7 +67,7 @@ func ToProblemFindAllResponse(ctx context.Context, result domain.ProblemSearchRe
 	}, nil
 }
 
-func ToProblemResponse(ctx context.Context, problem domain.Problem) (*entity.Problem, error) {
+func ToProblemResponse(ctx context.Context, problem domain.ProblemModel) (*entity.Problem, error) {
 	bytes, err := json.Marshal(problem.GetProperties(ctx))
 	if err != nil {
 		return nil, err
@@ -85,29 +86,29 @@ func ToProblemResponse(ctx context.Context, problem domain.Problem) (*entity.Pro
 	}, nil
 }
 
-func ToProblemIDsCondition(ctx context.Context, param *entity.ProblemIDsParameter, workbookID domain.WorkbookID) (domain.ProblemIDsCondition, error) {
+func ToProblemIDsCondition(ctx context.Context, param *entity.ProblemIDsParameter, workbookID domain.WorkbookID) (service.ProblemIDsCondition, error) {
 	ids := make([]domain.ProblemID, 0)
 	for _, id := range param.IDs {
 		ids = append(ids, domain.ProblemID(id))
 	}
-	return domain.NewProblemIDsCondition(workbookID, ids)
+	return service.NewProblemIDsCondition(workbookID, ids)
 
 }
 
-func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAddParameter) (domain.ProblemAddParameter, error) {
+func ToProblemAddParameter(workbookID domain.WorkbookID, param *entity.ProblemAddParameter) (service.ProblemAddParameter, error) {
 	var properties map[string]string
 	if err := json.Unmarshal(param.Properties, &properties); err != nil {
 		return nil, err
 	}
 
-	return domain.NewProblemAddParameter(workbookID, param.Number, properties)
+	return service.NewProblemAddParameter(workbookID, param.Number, properties)
 }
 
-func ToProblemUpdateParameter(param *entity.ProblemUpdateParameter) (domain.ProblemUpdateParameter, error) {
+func ToProblemUpdateParameter(param *entity.ProblemUpdateParameter) (service.ProblemUpdateParameter, error) {
 	var properties map[string]string
 	if err := json.Unmarshal(param.Properties, &properties); err != nil {
 		return nil, err
 	}
 
-	return domain.NewProblemUpdateParameter(param.Number, properties)
+	return service.NewProblemUpdateParameter(param.Number, properties)
 }

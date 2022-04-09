@@ -52,8 +52,8 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 		return
 	}
 
-	logger.Info("RegisterStudent")
-	authResult, err := h.googleAuthService.RegisterStudent(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
+	logger.Info("RegisterAppUser")
+	authResult, err := h.googleAuthService.RegisterAppUser(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
 	if err != nil {
 		logger.Warnf("failed to RegisterStudent. err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": http.StatusText(http.StatusBadRequest)})

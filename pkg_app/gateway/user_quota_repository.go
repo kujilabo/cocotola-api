@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 )
 
 var jst *time.Location
@@ -33,13 +34,13 @@ type userQuotaRepository struct {
 	db *gorm.DB
 }
 
-func NewUserQuotaRepository(db *gorm.DB) domain.UserQuotaRepository {
+func NewUserQuotaRepository(db *gorm.DB) service.UserQuotaRepository {
 	return &userQuotaRepository{
 		db: db,
 	}
 }
 
-func (r *userQuotaRepository) IsExceeded(ctx context.Context, operator domain.Student, name string, unit domain.QuotaUnit, limit int) (bool, error) {
+func (r *userQuotaRepository) IsExceeded(ctx context.Context, operator domain.StudentModel, name string, unit service.QuotaUnit, limit int) (bool, error) {
 	now := time.Now()
 	var date time.Time
 	if unit == "month" {
@@ -68,7 +69,7 @@ func (r *userQuotaRepository) IsExceeded(ctx context.Context, operator domain.St
 	return false, nil
 }
 
-func (r *userQuotaRepository) Increment(ctx context.Context, operator domain.Student, name string, unit domain.QuotaUnit, limit int, count int) (bool, error) {
+func (r *userQuotaRepository) Increment(ctx context.Context, operator domain.StudentModel, name string, unit service.QuotaUnit, limit int, count int) (bool, error) {
 	now := time.Now()
 	var date time.Time
 	if unit == "month" {

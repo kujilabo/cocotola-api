@@ -1,19 +1,17 @@
 package domain
 
 import (
-	"time"
-
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
-type TranslationID uint
+// type TranslationID uint
 
 type Translation interface {
-	GetID() TranslationID
-	GetVersion() int
-	GetCreatedAt() time.Time
-	GetUpdatedAt() time.Time
+	// GetID() TranslationID
+	// GetVersion() int
+	// GetCreatedAt() time.Time
+	// GetUpdatedAt() time.Time
 	GetText() string
 	GetPos() WordPos
 	GetLang() app.Lang2
@@ -22,10 +20,10 @@ type Translation interface {
 }
 
 type translation struct {
-	ID         TranslationID `validate:"gte=0"`
-	Version    int           `validate:"required,gte=1"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	// ID         TranslationID `validate:"gte=0"`
+	// Version    int `validate:"required,gte=1"`
+	// CreatedAt  time.Time
+	// UpdatedAt  time.Time
 	Text       string `validate:"required"`
 	Pos        WordPos
 	Lang2      app.Lang2
@@ -33,12 +31,15 @@ type translation struct {
 	Provider   string
 }
 
-func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedAt time.Time, text string, pos WordPos, lang app.Lang2, translated, provider string) (Translation, error) {
+func NewTranslation(
+	// id TranslationID,
+	// version int, createdAt time.Time, updatedAt time.Time,
+	text string, pos WordPos, lang app.Lang2, translated, provider string) (Translation, error) {
 	m := &translation{
-		ID:         id,
-		Version:    version,
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
+		// ID:         id,
+		// Version:    version,
+		// CreatedAt:  createdAt,
+		// UpdatedAt:  updatedAt,
 		Text:       text,
 		Pos:        pos,
 		Lang2:      lang,
@@ -49,21 +50,21 @@ func NewTranslation(id TranslationID, version int, createdAt time.Time, updatedA
 	return m, lib.Validator.Struct(m)
 }
 
-func (t *translation) GetID() TranslationID {
-	return t.ID
-}
+// func (t *translation) GetID() TranslationID {
+// 	return t.ID
+// }
 
-func (t *translation) GetVersion() int {
-	return t.Version
-}
+// func (t *translation) GetVersion() int {
+// 	return t.Version
+// }
 
-func (t *translation) GetCreatedAt() time.Time {
-	return t.CreatedAt
-}
+// func (t *translation) GetCreatedAt() time.Time {
+// 	return t.CreatedAt
+// }
 
-func (t *translation) GetUpdatedAt() time.Time {
-	return t.UpdatedAt
-}
+// func (t *translation) GetUpdatedAt() time.Time {
+// 	return t.UpdatedAt
+// }
 
 func (t *translation) GetText() string {
 	return t.Text

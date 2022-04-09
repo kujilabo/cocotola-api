@@ -23,8 +23,16 @@ auth:
 google:
   synthesizerKey: $SYNTHESIZER_KEY
   synthesizerTimeoutSec: 10
-azure:
-  subscriptionKey: $SUBSCRIPTION_KEY
+translation:
+  endpoint: http://localhost:8180
+  timeoutSec: 3
+  username: user
+  password: password
+tatoeba:
+  endpoint: http://localhost:8280
+  timeoutSec: 3
+  username: user
+  password: password
 cors:
   allowOrigins:
     - "*"

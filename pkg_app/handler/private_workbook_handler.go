@@ -13,6 +13,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -161,7 +162,7 @@ func (h *privateWorkbookHandler) UpdateWorkbook(c *gin.Context) {
 			logger.Warnf("failed to BindJSON. err: %v", err)
 			return nil
 		}
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -194,7 +195,7 @@ func (h *privateWorkbookHandler) RemoveWorkbook(c *gin.Context) {
 	logger.Info("RemoveWorkbook")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -220,11 +221,11 @@ func (h *privateWorkbookHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	fmt.Println(err)
-	if errors.Is(err, domain.ErrWorkbookAlreadyExists) {
+	if errors.Is(err, service.ErrWorkbookAlreadyExists) {
 		logger.Warnf("workbookHandler err: %+v", err)
 		c.JSON(http.StatusConflict, gin.H{"message": "Workbook already exists"})
 		return true
-	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
+	} else if errors.Is(err, service.ErrWorkbookNotFound) {
 		logger.Warnf("workbookHandler err: %+v", err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "Workbook not found"})
 		return true

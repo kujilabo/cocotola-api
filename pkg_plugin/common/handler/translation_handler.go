@@ -13,6 +13,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
@@ -20,7 +21,7 @@ import (
 type TranslationHandler interface {
 	FindTranslations(c *gin.Context)
 	FindTranslationByTextAndPos(c *gin.Context)
-	FindTranslationByText(c *gin.Context)
+	FindTranslationsByText(c *gin.Context)
 	AddTranslation(c *gin.Context)
 	UpdateTranslation(c *gin.Context)
 	RemoveTranslation(c *gin.Context)
@@ -28,11 +29,11 @@ type TranslationHandler interface {
 }
 
 type translationHandler struct {
-	translator domain.Translator
+	translationClient service.TranslationClient
 }
 
-func NewTranslationHandler(translator domain.Translator) TranslationHandler {
-	return &translationHandler{translator: translator}
+func NewTranslationHandler(translationClient service.TranslationClient) TranslationHandler {
+	return &translationHandler{translationClient: translationClient}
 }
 
 func (h *translationHandler) FindTranslations(c *gin.Context) {
@@ -48,7 +49,7 @@ func (h *translationHandler) FindTranslations(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.translator.FindTranslationsByFirstLetter(ctx, app.Lang2JA, param.Letter)
+		result, err := h.translationClient.FindTranslationsByFirstLetter(ctx, app.Lang2JA, param.Letter)
 		if err != nil {
 			return err
 		}
@@ -70,9 +71,9 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 
-		text := ginhelper.GetString(c, "text")
+		text := ginhelper.GetStringFromPath(c, "text")
 
-		pos, err := ginhelper.GetInt(c, "pos")
+		pos, err := ginhelper.GetIntFromPath(c, "pos")
 		if err != nil {
 			return err
 		}
@@ -81,7 +82,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 		if err != nil {
 			return err
 		}
-		result, err := h.translator.FindTranslationByTextAndPos(ctx, app.Lang2JA, text, wordPos)
+		result, err := h.translationClient.FindTranslationByTextAndPos(ctx, app.Lang2JA, text, wordPos)
 		if err != nil {
 			return err
 		}
@@ -96,13 +97,13 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 	}, h.errorHandle)
 }
 
-func (h *translationHandler) FindTranslationByText(c *gin.Context) {
+func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 
-		text := ginhelper.GetString(c, "text")
-		results, err := h.translator.FindTranslationByText(ctx, app.Lang2JA, text)
+		text := ginhelper.GetStringFromPath(c, "text")
+		results, err := h.translationClient.FindTranslationsByText(ctx, app.Lang2JA, text)
 		if err != nil {
 			return err
 		}
@@ -131,7 +132,7 @@ func (h *translationHandler) AddTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translator.AddTranslation(ctx, parameter); err != nil {
+		if err := h.translationClient.AddTranslation(ctx, parameter); err != nil {
 			return err
 		}
 
@@ -144,9 +145,9 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		text := ginhelper.GetString(c, "text")
+		text := ginhelper.GetStringFromPath(c, "text")
 
-		pos, err := ginhelper.GetInt(c, "pos")
+		pos, err := ginhelper.GetIntFromPath(c, "pos")
 		if err != nil {
 			return err
 		}
@@ -165,7 +166,7 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translator.UpdateTranslation(ctx, app.Lang2JA, text, wordPos, parameter); err != nil {
+		if err := h.translationClient.UpdateTranslation(ctx, app.Lang2JA, text, wordPos, parameter); err != nil {
 			return err
 		}
 
@@ -178,9 +179,9 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		text := ginhelper.GetString(c, "text")
+		text := ginhelper.GetStringFromPath(c, "text")
 
-		pos, err := ginhelper.GetInt(c, "pos")
+		pos, err := ginhelper.GetIntFromPath(c, "pos")
 		if err != nil {
 			return err
 		}
@@ -189,7 +190,7 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translator.RemoveTranslation(ctx, app.Lang2JA, text, wordPos); err != nil {
+		if err := h.translationClient.RemoveTranslation(ctx, app.Lang2JA, text, wordPos); err != nil {
 			return err
 		}
 
@@ -222,7 +223,7 @@ func (h *translationHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 
-	if errors.Is(err, domain.ErrTranslationAlreadyExists) {
+	if errors.Is(err, service.ErrTranslationAlreadyExists) {
 		logger.Warnf("translationHandler. err: %v", err)
 		c.JSON(http.StatusConflict, gin.H{"message": "Translation already exists"})
 		return true

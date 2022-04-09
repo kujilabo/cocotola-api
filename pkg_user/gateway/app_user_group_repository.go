@@ -8,6 +8,7 @@ import (
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 var (
@@ -35,21 +36,27 @@ func (e *appUserGroupEntity) TableName() string {
 	return AppUserGroupTableName
 }
 
-func (e *appUserGroupEntity) toAppUserGroup() (domain.AppUserGroup, error) {
+func (e *appUserGroupEntity) toAppUserGroup() (service.AppUserGroup, error) {
 	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
-	return domain.NewAppUserGroup(model, domain.OrganizationID(e.OrganizationID), e.Key, e.Name, e.Description)
+
+	appUserGroupMdoel, err := domain.NewAppUserGroup(model, domain.OrganizationID(e.OrganizationID), e.Key, e.Name, e.Description)
+	if err != nil {
+		return nil, err
+	}
+
+	return service.NewAppUserGroup(appUserGroupMdoel)
 }
 
-func NewAppUserGroupRepository(db *gorm.DB) domain.AppUserGroupRepository {
+func NewAppUserGroupRepository(db *gorm.DB) service.AppUserGroupRepository {
 	return &appUserGroupRepository{
 		db: db,
 	}
 }
 
-func (r *appUserGroupRepository) FindPublicGroup(ctx context.Context, operator domain.SystemOwner) (domain.AppUserGroup, error) {
+func (r *appUserGroupRepository) FindPublicGroup(ctx context.Context, operator domain.SystemOwnerModel) (service.AppUserGroup, error) {
 	appUserGroup := appUserGroupEntity{}
 	if result := r.db.Where(&appUserGroupEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
@@ -60,7 +67,7 @@ func (r *appUserGroupRepository) FindPublicGroup(ctx context.Context, operator d
 	return appUserGroup.toAppUserGroup()
 }
 
-func (r *appUserGroupRepository) AddPublicGroup(ctx context.Context, operator domain.SystemOwner) (domain.AppUserGroupID, error) {
+func (r *appUserGroupRepository) AddPublicGroup(ctx context.Context, operator domain.SystemOwnerModel) (domain.AppUserGroupID, error) {
 	appUserGroup := appUserGroupEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -70,12 +77,12 @@ func (r *appUserGroupRepository) AddPublicGroup(ctx context.Context, operator do
 		Name:           "Public group",
 	}
 	if result := r.db.Create(&appUserGroup); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrAppUserAlreadyExists)
 	}
 	return domain.AppUserGroupID(appUserGroup.ID), nil
 }
 
-func (r *appUserGroupRepository) AddPersonalGroup(ctx context.Context, operator domain.AppUser) (uint, error) {
+func (r *appUserGroupRepository) AddPersonalGroup(ctx context.Context, operator domain.AppUserModel) (uint, error) {
 	appUserGroup := appUserGroupEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -85,7 +92,7 @@ func (r *appUserGroupRepository) AddPersonalGroup(ctx context.Context, operator 
 		Name:           "Personal group",
 	}
 	if result := r.db.Create(&appUserGroup); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(result.Error, domain.ErrAppUserAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrAppUserAlreadyExists)
 	}
 	return appUserGroup.ID, nil
 }

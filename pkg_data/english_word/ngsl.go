@@ -4,22 +4,23 @@ import (
 	"context"
 	"strconv"
 
-	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
+
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	"golang.org/x/xerrors"
 )
 
-func CreateDemoWorkbook(ctx context.Context, student appD.Student) error {
-	if err := CreateWorkbook(ctx, student, "Example", pluginCommonDomain.PosOther, []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"}); err != nil {
+func CreateDemoWorkbook(ctx context.Context, studentService appS.Student) error {
+	if err := CreateWorkbook(ctx, studentService, "Example", pluginCommonDomain.PosOther, []string{"butcher", "bakery", "library", "bookstore", "drugstore", "restaurant", "garage", "barbershop", "bank", "market"}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func Create20NGSLWorkbook(ctx context.Context, student appD.Student) error {
-	if err := CreateWorkbook(ctx, student, "NGSL-20", pluginCommonDomain.PosOther, []string{
+func Create20NGSLWorkbook(ctx context.Context, studentService appS.Student) error {
+	if err := CreateWorkbook(ctx, studentService, "NGSL-20", pluginCommonDomain.PosOther, []string{
 		"know",
 		"more",
 		"get",
@@ -56,8 +57,8 @@ func Create20NGSLWorkbook(ctx context.Context, student appD.Student) error {
 	return nil
 }
 
-func Create300NGSLWorkbook(ctx context.Context, student appD.Student) error {
-	if err := CreateWorkbook(ctx, student, "NGSL-300", pluginCommonDomain.PosOther, []string{
+func Create300NGSLWorkbook(ctx context.Context, studentService appS.Student) error {
+	if err := CreateWorkbook(ctx, studentService, "NGSL-300", pluginCommonDomain.PosOther, []string{
 		"know",
 		"more",
 		"get",
@@ -363,13 +364,13 @@ func Create300NGSLWorkbook(ctx context.Context, student appD.Student) error {
 	}
 	return nil
 }
-func CreateWorkbook(ctx context.Context, student appD.Student, workbookName string, pos pluginCommonDomain.WordPos, words []string) error {
+func CreateWorkbook(ctx context.Context, student appS.Student, workbookName string, pos pluginCommonDomain.WordPos, words []string) error {
 	logger := log.FromContext(ctx)
 
 	workbookProperties := map[string]string{
 		"audioEnabled": "false",
 	}
-	param, err := appD.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
+	param, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
 	if err != nil {
 		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
 	}
@@ -390,7 +391,7 @@ func CreateWorkbook(ctx context.Context, student appD.Student, workbookName stri
 			"lang": "ja",
 			"pos":  strconv.Itoa(int(pos)),
 		}
-		param, err := appD.NewProblemAddParameter(workbookID, i+1, properties)
+		param, err := appS.NewProblemAddParameter(workbookID, i+1, properties)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}

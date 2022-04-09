@@ -5,23 +5,26 @@ import (
 	"errors"
 	"testing"
 
-	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
-	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
-	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
-	userD.InitSystemAdmin(userRfFunc)
+	userS.InitSystemAdmin(userRfFunc)
 	for driverName, db := range dbList() {
 		logrus.Println(driverName)
 		sqlDB, err := db.DB()
@@ -69,8 +72,8 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 		assert.GreaterOrEqual(t, uint(workbookID21), uint(1))
 
 		type args struct {
-			operator appD.Student
-			param    appD.WorkbookSearchCondition
+			operator appS.Student
+			param    appS.WorkbookSearchCondition
 		}
 		type want struct {
 			workbookID   appD.WorkbookID
@@ -140,24 +143,24 @@ func testNewProblemType(t *testing.T, name string) appD.ProblemType {
 	return p
 }
 
-func testNewStudent(t *testing.T, appUser userD.AppUser) appD.Student {
-	s, err := appD.NewStudent(nil, nil, nil, appUser)
+func testNewStudent(t *testing.T, appUser userS.AppUser) appS.Student {
+	s, err := appS.NewStudent(nil, nil, nil, appUser)
 	assert.NoError(t, err)
 	return s
 }
 
-func testNewWorkbookSearchCondition(t *testing.T) appD.WorkbookSearchCondition {
-	p, err := appD.NewWorkbookSearchCondition(1, 10, []userD.SpaceID{})
+func testNewWorkbookSearchCondition(t *testing.T) appS.WorkbookSearchCondition {
+	p, err := appS.NewWorkbookSearchCondition(1, 10, []userD.SpaceID{})
 	assert.NoError(t, err)
 	return p
 }
 
-func testNewWorkbookAddParameter(t *testing.T, name string) appD.WorkbookAddParameter {
-	p, err := appD.NewWorkbookAddParameter("english_word_problem", name, "", map[string]string{"audioEnabled": "false"})
+func testNewWorkbookAddParameter(t *testing.T, name string) appS.WorkbookAddParameter {
+	p, err := appS.NewWorkbookAddParameter("english_word_problem", name, "", map[string]string{"audioEnabled": "false"})
 	assert.NoError(t, err)
 	return p
 }
-func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userD.Owner, loginID, username string) userD.AppUser {
+func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userS.Owner, loginID, username string) userS.AppUser {
 	appUserRepo := userG.NewAppUserRepository(nil, db)
 	userID1, err := appUserRepo.AddAppUser(ctx, owner, testNewAppUserAddParameter(t, loginID, username))
 	assert.NoError(t, err)
@@ -166,7 +169,7 @@ func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userD.
 	assert.Equal(t, loginID, user1.GetLoginID())
 	return user1
 }
-func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo appD.WorkbookRepository, student appD.Student, spaceID userD.SpaceID, workbookName string) appD.Workbook {
+func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo appS.WorkbookRepository, student appS.Student, spaceID userD.SpaceID, workbookName string) appS.Workbook {
 	workbookID11, err := workbookRepo.AddWorkbook(ctx, student, spaceID, testNewWorkbookAddParameter(t, workbookName))
 	assert.NoError(t, err)
 	assert.Greater(t, int(workbookID11), 0)
@@ -178,11 +181,11 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
-	userD.InitSystemAdmin(userRfFunc)
+	userS.InitSystemAdmin(userRfFunc)
 	for driverName, db := range dbList() {
 		logrus.Println(driverName)
 		sqlDB, err := db.DB()
@@ -212,7 +215,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB12")
 
 		type args struct {
-			operator appD.Student
+			operator appS.Student
 			param    string
 		}
 		type want struct {
@@ -262,11 +265,11 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userD.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
 
-	userD.InitSystemAdmin(userRfFunc)
+	userS.InitSystemAdmin(userRfFunc)
 	for driverName, db := range dbList() {
 		logrus.Println(driverName)
 		sqlDB, err := db.DB()
@@ -313,12 +316,12 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 
 		// user1 cannot read user2's workbooks(WB21, WB22)
 		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook21.GetID())); err != nil {
-			assert.True(t, errors.Is(err, appD.ErrWorkbookPermissionDenied))
+			assert.True(t, errors.Is(err, appS.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}
 		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook22.GetID())); err != nil {
-			assert.True(t, errors.Is(err, appD.ErrWorkbookPermissionDenied))
+			assert.True(t, errors.Is(err, appS.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}

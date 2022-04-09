@@ -3,15 +3,15 @@ package converter
 import (
 	"context"
 
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
-func ToTatoebaSentenceSearchCondition(ctx context.Context, param *entity.TatoebaSentenceFindParameter) (domain.TatoebaSentenceSearchCondition, error) {
-	return domain.NewTatoebaSentenceSearchCondition(param.PageNo, param.PageSize, param.Keyword, param.Random)
+func ToTatoebaSentenceSearchCondition(ctx context.Context, param *entity.TatoebaSentenceFindParameter) (service.TatoebaSentenceSearchCondition, error) {
+	return service.NewTatoebaSentenceSearchCondition(param.PageNo, param.PageSize, param.Keyword, param.Random)
 }
 
-func ToTatoebaSentenceResponse(ctx context.Context, result *domain.TatoebaSentenceSearchResult) (*entity.TatoebaSentenceFindResponse, error) {
+func ToTatoebaSentenceResponse(ctx context.Context, result *service.TatoebaSentencePairSearchResult) (*entity.TatoebaSentenceFindResponse, error) {
 	entities := make([]entity.TatoebaSentencePair, len(result.Results))
 	for i, m := range result.Results {
 		src := entity.TatoebaSentence{

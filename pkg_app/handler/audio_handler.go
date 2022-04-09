@@ -10,6 +10,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -36,12 +37,12 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 	logger.Info("FindAudioByID")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		problemID, err := ginhelper.GetUint(c, "problemID")
+		problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
@@ -71,7 +72,7 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 func (h *audioHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if errors.Is(err, domain.ErrAudioNotFound) {
+	if errors.Is(err, service.ErrAudioNotFound) {
 		logger.Warnf("audioHandler err: %+v", err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "Audio not found"})
 		return true

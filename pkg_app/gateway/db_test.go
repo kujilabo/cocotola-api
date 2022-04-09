@@ -11,11 +11,13 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
-	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
-	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
+
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 func dbList() map[string]*gorm.DB {
@@ -66,23 +68,25 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 	}
 }
 
-func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, userD.SystemOwner, userD.Owner) {
+func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, userS.SystemOwner, userS.Owner) {
 	log.Println("testInitOrganization")
 	bg := context.Background()
-	sysAd, err := userD.NewSystemAdminFromDB(bg, db)
+	sysAd, err := userS.NewSystemAdminFromDB(bg, db)
 	assert.NoError(t, err)
 
 	// delete all organizations
-	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")
+	result := db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from workbook")
+	assert.NoError(t, result.Error)
+	result = db.Debug().Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from space")
 	assert.NoError(t, result.Error)
 	result = db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from app_user")
 	assert.NoError(t, result.Error)
 	result = db.Session(&gorm.Session{AllowGlobalUpdate: true}).Exec("delete from organization")
 	assert.NoError(t, result.Error)
 
-	firstOwnerAddParam, err := userD.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
+	firstOwnerAddParam, err := userS.NewFirstOwnerAddParameter("OWNER_ID", "OWNER_NAME", "")
 	assert.NoError(t, err)
-	orgAddParam, err := userD.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
+	orgAddParam, err := userS.NewOrganizationAddParameter("ORG_NAME", firstOwnerAddParam)
 	assert.NoError(t, err)
 	orgRepo := userG.NewOrganizationRepository(db)
 
@@ -120,8 +124,8 @@ func testInitOrganization(t *testing.T, db *gorm.DB) (userD.OrganizationID, user
 	return orgID, sysOwner, firstOwner
 }
 
-func testNewAppUserAddParameter(t *testing.T, loginID, username string) userD.AppUserAddParameter {
-	p, err := userD.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
+func testNewAppUserAddParameter(t *testing.T, loginID, username string) userS.AppUserAddParameter {
+	p, err := userS.NewAppUserAddParameter(loginID, username, []string{}, map[string]string{})
 	assert.NoError(t, err)
 	return p
 }

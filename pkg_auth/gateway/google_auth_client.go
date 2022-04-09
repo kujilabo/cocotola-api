@@ -8,9 +8,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/domain"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"golang.org/x/xerrors"
+
+	"github.com/kujilabo/cocotola-api/pkg_auth/service"
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
 type googleAuthClient struct {
@@ -20,7 +21,7 @@ type googleAuthClient struct {
 	grantType    string
 }
 
-func NewGoogleAuthClient(clientID, clientSecret, redirectURI string) domain.GoogleAuthClient {
+func NewGoogleAuthClient(clientID, clientSecret, redirectURI string) service.GoogleAuthClient {
 	return &googleAuthClient{
 		clientID:     clientID,
 		clientSecret: clientSecret,
@@ -30,7 +31,7 @@ func NewGoogleAuthClient(clientID, clientSecret, redirectURI string) domain.Goog
 
 }
 
-func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string) (*domain.GoogleAuthResponse, error) {
+func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string) (*service.GoogleAuthResponse, error) {
 	logger := log.FromContext(ctx)
 
 	paramMap := map[string]string{
@@ -70,7 +71,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 		return nil, errors.New(string(respBytes))
 	}
 
-	googleAuthResponse := domain.GoogleAuthResponse{}
+	googleAuthResponse := service.GoogleAuthResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&googleAuthResponse); err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	return &googleAuthResponse, nil
 }
 
-func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthResponse *domain.GoogleAuthResponse) (*domain.GoogleUserInfo, error) {
+func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error) {
 	logger := log.FromContext(ctx)
 
 	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v1/userinfo", nil)
@@ -102,7 +103,7 @@ func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthRespo
 	logger.Debugf("access_token:%s", googleAuthResponse.AccessToken)
 	logger.Debugf("status:%d", resp.StatusCode)
 
-	googleUserInfo := domain.GoogleUserInfo{}
+	googleUserInfo := service.GoogleUserInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(&googleUserInfo); err != nil {
 		return nil, err
 	}

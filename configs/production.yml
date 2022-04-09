@@ -20,14 +20,22 @@ auth:
 google:
   synthesizerKey: $SYNTHESIZER_KEY
   synthesizerTimeoutSec: 10
-azure:
-  subscriptionKey: $SUBSCRIPTION_KEY
+translation:
+  endpoint: http://cocotola-translator-api
+  timeoutSec: 3
+  username: $AUTH_USERNAME
+  password: $AUTH_PASSWORD
+tatoeba:
+  endpoint: http://cocotola-tatoeba-api
+  timeoutSec: 3
+  username: $AUTH_USERNAME
+  password: $AUTH_PASSWORD
 cors:
   allowOrigins:
     - "https://www.cocotola.com"
 shutdown:
-  timeSec1: 1
-  timeSec2: 1
+  timeSec1: 10
+  timeSec2: 10
 log:
   level: debug
 debug:

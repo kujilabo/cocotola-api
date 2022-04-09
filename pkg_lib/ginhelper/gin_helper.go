@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUint(c *gin.Context, param string) (uint, error) {
+func GetUintFromPath(c *gin.Context, param string) (uint, error) {
 	idS := c.Param(param)
 	id, err := strconv.Atoi(idS)
 	if err != nil {
@@ -16,7 +16,7 @@ func GetUint(c *gin.Context, param string) (uint, error) {
 	return uint(id), nil
 }
 
-func GetInt(c *gin.Context, param string) (int, error) {
+func GetIntFromPath(c *gin.Context, param string) (int, error) {
 	idS := c.Param(param)
 	id, err := strconv.Atoi(idS)
 	if err != nil {
@@ -26,7 +26,7 @@ func GetInt(c *gin.Context, param string) (int, error) {
 	return id, nil
 }
 
-func GetString(c *gin.Context, param string) string {
+func GetStringFromPath(c *gin.Context, param string) string {
 	return c.Param(param)
 }
 

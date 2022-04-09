@@ -38,13 +38,3 @@ func (m *AppUserMock) GetProperties() map[string]string {
 	args := m.Called()
 	return args.Get(0).(map[string]string)
 }
-
-func (m *AppUserMock) GetDefaultSpace() (domain.Space, error) {
-	args := m.Called()
-	return args.Get(0).(domain.Space), args.Error(1)
-}
-
-func (m *AppUserMock) GetPersonalSpace() (domain.Space, error) {
-	args := m.Called()
-	return args.Get(0).(domain.Space), args.Error(1)
-}

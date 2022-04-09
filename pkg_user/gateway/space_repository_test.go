@@ -14,17 +14,18 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/gateway"
+	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (service.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
-	domain.InitSystemAdmin(userRfFunc)
+	service.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
@@ -34,17 +35,19 @@ func Test_spaceRepository_FindDefaultSpace(t *testing.T) {
 		orgID, owner := testInitOrganization(t, db)
 
 		type args struct {
-			operator domain.AppUser
+			operator domain.AppUserModel
 		}
 
 		model, err := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
 		assert.NoError(t, err)
-		space, err := domain.NewSpace(model, orgID, 1, "default", "Default", "")
+		spaceModel, err := domain.NewSpaceModel(model, orgID, 1, "default", "Default", "")
+		assert.NoError(t, err)
+		space, err := service.NewSpace(spaceModel)
 		assert.NoError(t, err)
 		tests := []struct {
 			name string
 			args args
-			want domain.Space
+			want service.Space
 			err  error
 		}{
 			{
@@ -78,11 +81,11 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
 
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (domain.RepositoryFactory, error) {
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (service.RepositoryFactory, error) {
 		return gateway.NewRepositoryFactory(db)
 	}
 
-	domain.InitSystemAdmin(userRfFunc)
+	service.InitSystemAdmin(userRfFunc)
 	for i, db := range dbList() {
 		log.Printf("%d", i)
 		sqlDB, err := db.DB()
@@ -92,17 +95,19 @@ func Test_spaceRepository_FindPersonalSpace(t *testing.T) {
 		orgID, owner := testInitOrganization(t, db)
 
 		type args struct {
-			operator domain.AppUser
+			operator domain.AppUserModel
 		}
 
 		model, err := domain.NewModel(1, 1, time.Now(), time.Now(), 1, 1)
 		assert.NoError(t, err)
-		space, err := domain.NewSpace(model, orgID, 1, strconv.Itoa(int(owner.GetID())), "Default", "")
+		spaceModel, err := domain.NewSpaceModel(model, orgID, 1, strconv.Itoa(int(owner.GetID())), "Default", "")
+		assert.NoError(t, err)
+		space, err := service.NewSpace(spaceModel)
 		assert.NoError(t, err)
 		tests := []struct {
 			name string
 			args args
-			want domain.Space
+			want service.Space
 			err  error
 		}{
 			{

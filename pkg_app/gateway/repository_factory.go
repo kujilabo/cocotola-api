@@ -7,20 +7,21 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type repositoryFactory struct {
 	db                  *gorm.DB
 	driverName          string
-	userRfFunc          user.RepositoryFactoryFunc
-	pf                  domain.ProcessorFactory
-	problemRepositories map[string]func(context.Context, *gorm.DB) (domain.ProblemRepository, error)
+	userRfFunc          userS.RepositoryFactoryFunc
+	pf                  service.ProcessorFactory
+	problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)
 	problemTypes        []domain.ProblemType
 }
 
-func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc user.RepositoryFactoryFunc, pf domain.ProcessorFactory, problemRepositories map[string]func(context.Context, *gorm.DB) (domain.ProblemRepository, error)) (domain.RepositoryFactory, error) {
+func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc userS.RepositoryFactoryFunc, pf service.ProcessorFactory, problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)) (service.RepositoryFactory, error) {
 	problemTypeRepo, err := NewProblemTypeRepository(db)
 	if err != nil {
 		return nil, err
@@ -39,7 +40,7 @@ func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, u
 	}, nil
 }
 
-func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.WorkbookRepository, error) {
+func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (service.WorkbookRepository, error) {
 	userRf, err := f.userRfFunc(ctx, f.db)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (domain.W
 	return NewWorkbookRepository(ctx, f.driverName, f, userRf, f.pf, f.db, f.problemTypes), nil
 }
 
-func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (domain.ProblemRepository, error) {
+func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (service.ProblemRepository, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("problemType: %s", problemType)
 	problemRepository, ok := f.problemRepositories[problemType]
@@ -57,23 +58,23 @@ func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemTyp
 	return problemRepository(ctx, f.db)
 }
 
-func (f *repositoryFactory) NewProblemTypeRepository(ctx context.Context) (domain.ProblemTypeRepository, error) {
+func (f *repositoryFactory) NewProblemTypeRepository(ctx context.Context) (service.ProblemTypeRepository, error) {
 	return NewProblemTypeRepository(f.db)
 }
 
-func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) (domain.StudyTypeRepository, error) {
+func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) (service.StudyTypeRepository, error) {
 	return NewStudyTypeRepository(f.db)
 }
 
-func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (domain.RecordbookRepository, error) {
+func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (service.RecordbookRepository, error) {
 	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes)
 }
 
-func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (domain.AudioRepository, error) {
+func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (service.AudioRepository, error) {
 	return NewAudioRepository(f.db), nil
 }
 
-func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) (domain.UserQuotaRepository, error) {
+func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) (service.UserQuotaRepository, error) {
 	return NewUserQuotaRepository(f.db), nil
 }
 
@@ -81,12 +82,12 @@ type audioRepositoryFactory struct {
 	db *gorm.DB
 }
 
-func NewAudioRepositoryFactory(ctx context.Context, db *gorm.DB) (domain.AudioRepositoryFactory, error) {
+func NewAudioRepositoryFactory(ctx context.Context, db *gorm.DB) (service.AudioRepositoryFactory, error) {
 	return &audioRepositoryFactory{
 		db: db,
 	}, nil
 }
 
-func (f *audioRepositoryFactory) NewAudioRepository(ctx context.Context) (domain.AudioRepository, error) {
+func (f *audioRepositoryFactory) NewAudioRepository(ctx context.Context) (service.AudioRepository, error) {
 	return NewAudioRepository(f.db), nil
 }

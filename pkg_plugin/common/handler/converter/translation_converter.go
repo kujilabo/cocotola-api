@@ -6,6 +6,7 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
 
 func ToTranslationFindResposne(ctx context.Context, translations []domain.Translation) (*entity.TranslationFindResponse, error) {
@@ -51,7 +52,7 @@ func ToTranslationListResposne(context context.Context, translations []domain.Tr
 	return results, nil
 }
 
-func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAddParameter) (domain.TranslationAddParameter, error) {
+func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAddParameter) (service.TranslationAddParameter, error) {
 	pos, err := domain.NewWordPos(param.Pos)
 	if err != nil {
 		return nil, err
@@ -61,9 +62,9 @@ func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAdd
 	if err != nil {
 		return nil, err
 	}
-	return domain.NewTransalationAddParameter(param.Text, pos, lang, param.Translated)
+	return service.NewTransalationAddParameter(param.Text, pos, lang, param.Translated)
 }
 
-func ToTranslationUpdateParameter(ctx context.Context, param *entity.TranslationUpdateParameter) (domain.TranslationUpdateParameter, error) {
-	return domain.NewTransaltionUpdateParameter(param.Translated)
+func ToTranslationUpdateParameter(ctx context.Context, param *entity.TranslationUpdateParameter) (service.TranslationUpdateParameter, error) {
+	return service.NewTransaltionUpdateParameter(param.Translated)
 }

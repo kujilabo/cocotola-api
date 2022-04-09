@@ -11,6 +11,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -48,12 +49,12 @@ func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	logger.Info("FindRecordbook")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		studyType := ginhelper.GetString(c, "studyType")
+		studyType := ginhelper.GetStringFromPath(c, "studyType")
 
 		result, err := h.studyService.FindResults(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType)
 		if err != nil {
@@ -76,13 +77,13 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 	logger.Info("SetStudyResult")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		workbookID, err := ginhelper.GetUint(c, "workbookID")
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		studyType := ginhelper.GetString(c, "studyType")
-		problemID, err := ginhelper.GetUint(c, "problemID")
+		studyType := ginhelper.GetStringFromPath(c, "studyType")
+		problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 		if err != nil {
 			return err
 		}
@@ -110,10 +111,10 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 func (h *recordbookHandler) errorHandle(c *gin.Context, err error) bool {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	if errors.Is(err, domain.ErrProblemAlreadyExists) {
+	if errors.Is(err, service.ErrProblemAlreadyExists) {
 		c.JSON(http.StatusConflict, gin.H{"message": "Problem already exists"})
 		return true
-	} else if errors.Is(err, domain.ErrWorkbookNotFound) {
+	} else if errors.Is(err, service.ErrWorkbookNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return true
 	}
