@@ -1,4 +1,4 @@
-package application
+package student
 
 import (
 	"context"
@@ -10,23 +10,24 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	"github.com/kujilabo/cocotola-api/pkg_app/usecase"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
-type AudioService interface {
+type StudentUsecaseAudio interface {
 	FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error)
 }
 
-type audioService struct {
+type studentUsecaseAudio struct {
 	db         *gorm.DB
 	pf         service.ProcessorFactory
 	rfFunc     service.RepositoryFactoryFunc
 	userRfFunc userS.RepositoryFactoryFunc
 }
 
-func NewAudioService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) AudioService {
-	return &audioService{
+func NewStudentUsecaseAudio(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) StudentUsecaseAudio {
+	return &studentUsecaseAudio{
 		db:         db,
 		pf:         pf,
 		rfFunc:     rfFunc,
@@ -34,7 +35,7 @@ func NewAudioService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.Re
 	}
 }
 
-func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error) {
+func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error) {
 	var result domain.AudioModel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbookService, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
@@ -73,7 +74,7 @@ func (s *audioService) FindAudioByID(ctx context.Context, organizationID user.Or
 	return result, nil
 }
 
-func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
+func (s *studentUsecaseAudio) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
 	repo, err := s.rfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err
@@ -82,7 +83,7 @@ func (s *audioService) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, 
 	if err != nil {
 		return nil, nil, err
 	}
-	studentService, err := findStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
+	studentService, err := usecase.FindStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
 	}

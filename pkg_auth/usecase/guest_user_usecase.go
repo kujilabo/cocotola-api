@@ -1,4 +1,4 @@
-package application
+package usecase
 
 import (
 	"context"
@@ -12,22 +12,22 @@ import (
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
-type GuestAuthService interface {
+type GuestUserUsecase interface {
 	RetrieveGuestToken(ctx context.Context, organizationName string) (*service.TokenSet, error)
 }
 
-type guestAuthService struct {
+type guestUserUsecase struct {
 	db               *gorm.DB
 	authTokenManager service.AuthTokenManager
 }
 
-func NewGuestAuthService(authTokenManager service.AuthTokenManager) GuestAuthService {
-	return &guestAuthService{
+func NewGuestUserUsecase(authTokenManager service.AuthTokenManager) GuestUserUsecase {
+	return &guestUserUsecase{
 		authTokenManager: authTokenManager,
 	}
 }
 
-func (s *guestAuthService) RetrieveGuestToken(ctx context.Context, organizationName string) (*service.TokenSet, error) {
+func (s *guestUserUsecase) RetrieveGuestToken(ctx context.Context, organizationName string) (*service.TokenSet, error) {
 	var tokenSet *service.TokenSet
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		systemAdmin, err := userS.NewSystemAdminFromDB(ctx, tx)

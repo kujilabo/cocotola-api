@@ -1,33 +1,35 @@
-package application
+package student
 
 import (
 	"context"
 
-	"golang.org/x/xerrors"
-	"gorm.io/gorm"
-
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	"github.com/kujilabo/cocotola-api/pkg_app/usecase"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
+	"golang.org/x/xerrors"
+	"gorm.io/gorm"
 )
 
-type StudyService interface {
+type StudentUsecaseStudy interface {
+
+	// study
 	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error)
 
 	// FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error)
 	SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error
 }
 
-type studyService struct {
+type studentUsecaseStudy struct {
 	db         *gorm.DB
 	pf         service.ProcessorFactory
 	rfFunc     service.RepositoryFactoryFunc
 	userRfFunc userS.RepositoryFactoryFunc
 }
 
-func NewStudyService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) StudyService {
-	return &studyService{
+func NewStudentUsecaseStudy(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) StudentUsecaseStudy {
+	return &studentUsecaseStudy{
 		db:         db,
 		pf:         pf,
 		rfFunc:     rfFunc,
@@ -35,7 +37,7 @@ func NewStudyService(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.Re
 	}
 }
 
-func (s *studyService) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error) {
+func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error) {
 	var results []domain.ProblemWithLevel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		rfFunc, err := s.rfFunc(ctx, tx)
@@ -46,7 +48,7 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
+		student, err := usecase.FindStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -67,7 +69,7 @@ func (s *studyService) FindResults(ctx context.Context, organizationID user.Orga
 	return results, nil
 }
 
-func (s *studyService) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
+func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		rf, err := s.rfFunc(ctx, tx)
 		if err != nil {
@@ -77,7 +79,7 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 		if err != nil {
 			return xerrors.Errorf("failed to userRepo. err: %w", err)
 		}
-		student, err := findStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
+		student, err := usecase.FindStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -98,23 +100,3 @@ func (s *studyService) SetResult(ctx context.Context, organizationID user.Organi
 	}
 	return nil
 }
-
-// func (s *studyService) FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error) {
-// 	student, err := findStudent(ctx, s.rfFuncsitoryFactory, organizationID, operatorID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	workbook, err := student.FindWorkbookByID(ctx, workbookID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	problems, err := workbook.FindAllProblems(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	problemWithResultsList := make([]domain.ProblemWithResults, 0)
-// 	for _, p := range problems {
-// 		problemWithResultsList = append(problemWithResultsList, domain.NewProblemWithResults(p, []bool{}, 0))
-// 	}
-// 	return domain.NewWorkbookWithProblems(workbook, problemWithResultsList), nil
-// }

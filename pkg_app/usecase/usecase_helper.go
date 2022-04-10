@@ -1,4 +1,4 @@
-package application
+package usecase
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func findStudent(ctx context.Context, pf service.ProcessorFactory, rf service.RepositoryFactory, userRf userS.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (service.Student, error) {
+func FindStudent(ctx context.Context, pf service.ProcessorFactory, rf service.RepositoryFactory, userRf userS.RepositoryFactory, organizationID user.OrganizationID, operatorID user.AppUserID) (service.Student, error) {
 	systemAdmin := userS.NewSystemAdmin(userRf)
 	systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationID(ctx, organizationID)
 	if err != nil {

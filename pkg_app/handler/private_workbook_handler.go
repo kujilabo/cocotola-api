@@ -9,11 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -30,12 +30,12 @@ type PrivateWorkbookHandler interface {
 
 type privateWorkbookHandler struct {
 	// repository             gateway.Repository
-	privateWorkbookService application.PrivateWorkbookService
+	studentUsecaseWorkbook studentU.StudentUsecaseWorkbook
 }
 
-func NewPrivateWorkbookHandler(privateWorkbookService application.PrivateWorkbookService) PrivateWorkbookHandler {
+func NewPrivateWorkbookHandler(studentUsecaseWorkbook studentU.StudentUsecaseWorkbook) PrivateWorkbookHandler {
 	return &privateWorkbookHandler{
-		privateWorkbookService: privateWorkbookService,
+		studentUsecaseWorkbook: studentUsecaseWorkbook,
 	}
 }
 
@@ -57,7 +57,7 @@ func (h *privateWorkbookHandler) FindWorkbooks(c *gin.Context) {
 	}
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
-		result, err := h.privateWorkbookService.FindWorkbooks(ctx, organizationID, operatorID)
+		result, err := h.studentUsecaseWorkbook.FindWorkbooks(ctx, organizationID, operatorID)
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,7 @@ func (h *privateWorkbookHandler) FindWorkbookByID(c *gin.Context) {
 			return nil
 		}
 
-		workbook, err := h.privateWorkbookService.FindWorkbookByID(ctx, organizationID, operatorID, domain.WorkbookID(uint(workbookID)))
+		workbook, err := h.studentUsecaseWorkbook.FindWorkbookByID(ctx, organizationID, operatorID, domain.WorkbookID(uint(workbookID)))
 		if err != nil {
 			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 		}
@@ -130,7 +130,7 @@ func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
 			return xerrors.Errorf("failed to ToAdd. err: %w", err)
 		}
 
-		workbookID, err := h.privateWorkbookService.AddWorkbook(ctx, organizationID, operatorID, parameter)
+		workbookID, err := h.studentUsecaseWorkbook.AddWorkbook(ctx, organizationID, operatorID, parameter)
 		if err != nil {
 			return xerrors.Errorf("failed to addWorkbook. err: %w", err)
 		}
@@ -179,7 +179,7 @@ func (h *privateWorkbookHandler) UpdateWorkbook(c *gin.Context) {
 			return err
 		}
 
-		if err := h.privateWorkbookService.UpdateWorkbook(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), version, parameter); err != nil {
+		if err := h.studentUsecaseWorkbook.UpdateWorkbook(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), version, parameter); err != nil {
 			logger.WithError(err).Errorf("failed to UpdateWorkbook. err: %v", err)
 			return err
 		}
@@ -207,7 +207,7 @@ func (h *privateWorkbookHandler) RemoveWorkbook(c *gin.Context) {
 			return nil
 		}
 
-		if err := h.privateWorkbookService.RemoveWorkbook(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), version); err != nil {
+		if err := h.studentUsecaseWorkbook.RemoveWorkbook(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), version); err != nil {
 			logger.WithError(err).Errorf("failed to RemoveWorkbook. err: %v", err)
 			return err
 		}

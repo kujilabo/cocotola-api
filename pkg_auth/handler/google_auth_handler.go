@@ -5,26 +5,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/application"
 	"github.com/kujilabo/cocotola-api/pkg_auth/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_auth/usecase"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
-type GoogleAuthHandler interface {
+type GoogleUserHandler interface {
 	Authorize(c *gin.Context)
 }
 
-type googleAuthHandler struct {
-	googleAuthService application.GoogleAuthService
+type googleUserHandler struct {
+	googleUserUsecase usecase.GoogleUserUsecase
 }
 
-func NewGoogleAuthHandler(googleAuthService application.GoogleAuthService) GoogleAuthHandler {
-	return &googleAuthHandler{
-		googleAuthService: googleAuthService,
+func NewGoogleAuthHandler(googleUserUsecase usecase.GoogleUserUsecase) GoogleUserHandler {
+	return &googleUserHandler{
+		googleUserUsecase: googleUserUsecase,
 	}
 }
 
-func (h *googleAuthHandler) Authorize(c *gin.Context) {
+func (h *googleUserHandler) Authorize(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	logger.Info("Authorize")
@@ -37,7 +37,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	}
 
 	logger.Infof("RetrieveAccessToken. code: %s", googleAuthParameter)
-	googleAuthResponse, err := h.googleAuthService.RetrieveAccessToken(ctx, googleAuthParameter.Code)
+	googleAuthResponse, err := h.googleUserUsecase.RetrieveAccessToken(ctx, googleAuthParameter.Code)
 	if err != nil {
 		logger.Warnf("failed to RetrieveAccessToken. err: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
@@ -45,7 +45,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	}
 
 	logger.Infof("RetrieveUserInfo. googleResponse: %+v", googleAuthResponse)
-	userInfo, err := h.googleAuthService.RetrieveUserInfo(ctx, googleAuthResponse)
+	userInfo, err := h.googleUserUsecase.RetrieveUserInfo(ctx, googleAuthResponse)
 	if err != nil {
 		logger.Warnf("failed to RetrieveUserInfo. error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": http.StatusText(http.StatusBadRequest)})
@@ -53,7 +53,7 @@ func (h *googleAuthHandler) Authorize(c *gin.Context) {
 	}
 
 	logger.Info("RegisterAppUser")
-	authResult, err := h.googleAuthService.RegisterAppUser(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
+	authResult, err := h.googleUserUsecase.RegisterAppUser(ctx, userInfo, googleAuthResponse, googleAuthParameter.OrganizationName)
 	if err != nil {
 		logger.Warnf("failed to RegisterStudent. err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": http.StatusText(http.StatusBadRequest)})
