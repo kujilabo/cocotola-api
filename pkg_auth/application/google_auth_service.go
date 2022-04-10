@@ -25,10 +25,10 @@ type googleAuthService struct {
 	db                      *gorm.DB
 	googleAuthClient        service.GoogleAuthClient
 	authTokenManager        service.AuthTokenManager
-	registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUserModel) error
+	registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser user.AppUserModel) error
 }
 
-func NewGoogleAuthService(db *gorm.DB, googleAuthClient service.GoogleAuthClient, authTokenManager service.AuthTokenManager, registerAppUserCallback func(ctx context.Context, organizationName string, appUser user.AppUserModel) error) GoogleAuthService {
+func NewGoogleAuthService(db *gorm.DB, googleAuthClient service.GoogleAuthClient, authTokenManager service.AuthTokenManager, registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser user.AppUserModel) error) GoogleAuthService {
 	return &googleAuthService{
 		db:                      db,
 		googleAuthClient:        googleAuthClient,
@@ -112,7 +112,7 @@ func (s *googleAuthService) RegisterAppUser(ctx context.Context, googleUserInfo 
 			return xerrors.Errorf("failed to FindStudentByID. err: %w", err)
 		}
 
-		if err := s.registerAppUserCallback(ctx, organizationName, student2); err != nil {
+		if err := s.registerAppUserCallback(ctx, tx, organizationName, student2); err != nil {
 			return xerrors.Errorf("failed to registerStudentCallback. err: %w", err)
 		}
 

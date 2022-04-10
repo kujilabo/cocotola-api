@@ -128,7 +128,7 @@ func main() {
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
-	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUserModel) error {
+	registerAppUserCallback := func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error {
 		rf, err := rfFunc(ctx, db)
 		if err != nil {
 			return err
@@ -624,16 +624,16 @@ func callback(ctx context.Context, testUserEmail string, pf appS.ProcessorFactor
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {
-			return err
+			return xerrors.Errorf("failed to CreateDemoWorkbook. err: %w", err)
 		}
 
 		if err := english_word.Create20NGSLWorkbook(ctx, student); err != nil {
-			return err
+			return xerrors.Errorf("failed to Create20NGSLWorkbook. err: %w", err)
 		}
 
-		if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
-			return err
-		}
+		// if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
+		// 	return xerrors.Errorf("failed to Create300NGSLWorkbook. err: %w", err)
+		// }
 	}
 
 	return nil
