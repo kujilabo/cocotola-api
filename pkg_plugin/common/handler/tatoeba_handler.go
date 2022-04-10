@@ -32,7 +32,7 @@ func NewTatoebaHandler(tatoebaClient service.TatoebaClient) TatoebaHandler {
 
 func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 	ctx := c.Request.Context()
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 		param := entity.TatoebaSentenceFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.Status(http.StatusBadRequest)

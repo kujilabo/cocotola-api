@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -25,16 +24,16 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 
 	"github.com/kujilabo/cocotola-api/docs"
-	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/config"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appG "github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	appH "github.com/kujilabo/cocotola-api/pkg_app/handler"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
-	authA "github.com/kujilabo/cocotola-api/pkg_auth/application"
+	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
 	authH "github.com/kujilabo/cocotola-api/pkg_auth/handler"
 	authM "github.com/kujilabo/cocotola-api/pkg_auth/handler/middleware"
+	authU "github.com/kujilabo/cocotola-api/pkg_auth/usecase"
 	english_word "github.com/kujilabo/cocotola-api/pkg_data/english_word"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
@@ -128,7 +127,7 @@ func main() {
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
-	registerAppUserCallback := func(ctx context.Context, organizationName string, appUser userD.AppUserModel) error {
+	registerAppUserCallback := func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error {
 		rf, err := rfFunc(ctx, db)
 		if err != nil {
 			return err
@@ -143,18 +142,18 @@ func main() {
 	v1 := router.Group("v1")
 	{
 		v1auth := v1.Group("auth")
-		googleAuthService := authA.NewGoogleAuthService(db, googleAuthClient, authTokenManager, registerAppUserCallback)
-		guestAuthService := authA.NewGuestAuthService(authTokenManager)
+		googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
+		guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
 		authHandler := authH.NewAuthHandler(authTokenManager)
-		googleAuthHandler := authH.NewGoogleAuthHandler(googleAuthService)
-		guestAuthHandler := authH.NewGuestAuthHandler(guestAuthService)
+		googleAuthHandler := authH.NewGoogleAuthHandler(googleUserUsecase)
+		guestAuthHandler := authH.NewGuestAuthHandler(guestUserUsecase)
 		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
 		v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
 		v1auth.POST("refresh_token", authHandler.RefreshToken)
 
-		privateWorkbookService := application.NewPrivateWorkbookService(db, pf, rfFunc, userRfFunc)
-		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(privateWorkbookService)
 		v1Workbook := v1.Group("private/workbook")
+		studentUsecaseWorkbook := studentU.NewStudentUsecaseWorkbook(db, pf, rfFunc, userRfFunc)
+		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(studentUsecaseWorkbook)
 		v1Workbook.Use(authMiddleware)
 		v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
 		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
@@ -162,30 +161,30 @@ func main() {
 		v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
 		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
 
-		problemService := application.NewProblemService(db, pf, rfFunc, userRfFunc)
-		problemHandler := appH.NewProblemHandler(problemService, newIterator)
-		v1Problem := v1.Group("workbook/:workbookID")
+		v1Problem := v1.Group("workbook/:workbookID/problem")
+		studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
+		problemHandler := appH.NewProblemHandler(studentUsecaseProblem, newIterator)
 		v1Problem.Use(authMiddleware)
-		v1Problem.POST("problem", problemHandler.AddProblem)
-		v1Problem.GET("problem/:problemID", problemHandler.FindProblemByID)
-		v1Problem.DELETE("problem/:problemID", problemHandler.RemoveProblem)
-		v1Problem.PUT("problem/:problemID", problemHandler.UpdateProblem)
+		v1Problem.POST("", problemHandler.AddProblem)
+		v1Problem.GET(":problemID", problemHandler.FindProblemByID)
+		v1Problem.DELETE(":problemID", problemHandler.RemoveProblem)
+		v1Problem.PUT(":problemID", problemHandler.UpdateProblem)
 		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
-		v1Problem.POST("problem/find", problemHandler.FindProblems)
-		v1Problem.POST("problem/find_all", problemHandler.FindAllProblems)
-		v1Problem.POST("problem/find_by_ids", problemHandler.FindProblemsByProblemIDs)
-		v1Problem.POST("problem/import", problemHandler.ImportProblems)
+		v1Problem.POST("find", problemHandler.FindProblems)
+		v1Problem.POST("find_all", problemHandler.FindAllProblems)
+		v1Problem.POST("find_by_ids", problemHandler.FindProblemsByProblemIDs)
+		v1Problem.POST("import", problemHandler.ImportProblems)
 
-		studyService := application.NewStudyService(db, pf, rfFunc, userRfFunc)
-		recordbookHandler := appH.NewRecordbookHandler(studyService)
-		v1Study := v1.Group("study/workbook/:workbookID")
+		v1Study := v1.Group("study/workbook/:workbookID/study_type")
+		studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
+		recordbookHandler := appH.NewRecordbookHandler(studentUseCaseStudy)
 		v1Study.Use(authMiddleware)
-		v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
-		v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
+		v1Study.GET(":studyType", recordbookHandler.FindRecordbook)
+		v1Study.POST(":studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
 
-		audioService := application.NewAudioService(db, pf, rfFunc, userRfFunc)
-		audioHandler := appH.NewAudioHandler(audioService)
 		v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
+		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc)
+		audioHandler := appH.NewAudioHandler(studentUsecaseAudio)
 		v1Audio.Use(authMiddleware)
 		v1Audio.GET(":audioID", audioHandler.FindAudioByID)
 	}
@@ -276,7 +275,7 @@ func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommo
 	}
 
 	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
-		fmt.Println("-------Word")
+		// fmt.Println("-------Word")
 		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
 		if err != nil {
 			return nil, err
@@ -291,7 +290,7 @@ func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommo
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, rf, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 	englishSentenceProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
-		fmt.Println("-------Sentence")
+		// fmt.Println("-------Sentence")
 		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
 		if err != nil {
 			return nil, err
@@ -624,16 +623,16 @@ func callback(ctx context.Context, testUserEmail string, pf appS.ProcessorFactor
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {
-			return err
+			return xerrors.Errorf("failed to CreateDemoWorkbook. err: %w", err)
 		}
 
 		if err := english_word.Create20NGSLWorkbook(ctx, student); err != nil {
-			return err
+			return xerrors.Errorf("failed to Create20NGSLWorkbook. err: %w", err)
 		}
 
-		if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
-			return err
-		}
+		// if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
+		// 	return xerrors.Errorf("failed to Create300NGSLWorkbook. err: %w", err)
+		// }
 	}
 
 	return nil

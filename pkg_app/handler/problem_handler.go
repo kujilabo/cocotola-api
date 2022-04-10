@@ -10,11 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
@@ -43,14 +43,14 @@ type ProblemHandler interface {
 }
 
 type problemHandler struct {
-	problemService application.ProblemService
-	newIterator    func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (service.ProblemAddParameterIterator, error)
+	studentUsecaseProblem studentU.StudentUsecaseProblem
+	newIterator           func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (service.ProblemAddParameterIterator, error)
 }
 
-func NewProblemHandler(problemService application.ProblemService, newIterator func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (service.ProblemAddParameterIterator, error)) ProblemHandler {
+func NewProblemHandler(studentUsecaseProblem studentU.StudentUsecaseProblem, newIterator func(ctx context.Context, workbookID domain.WorkbookID, problemType string, reader io.Reader) (service.ProblemAddParameterIterator, error)) ProblemHandler {
 	return &problemHandler{
-		problemService: problemService,
-		newIterator:    newIterator,
+		studentUsecaseProblem: studentUsecaseProblem,
+		newIterator:           newIterator,
 	}
 }
 
@@ -77,7 +77,7 @@ func (h *problemHandler) FindProblems(c *gin.Context) {
 			return err
 		}
 
-		result, err := h.problemService.FindProblemsByWorkbookID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), parameter)
+		result, err := h.studentUsecaseProblem.FindProblemsByWorkbookID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), parameter)
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (h *problemHandler) FindAllProblems(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.problemService.FindAllProblemsByWorkbookID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID))
+		result, err := h.studentUsecaseProblem.FindAllProblemsByWorkbookID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID))
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (h *problemHandler) FindProblemsByProblemIDs(c *gin.Context) {
 			return err
 		}
 
-		result, err := h.problemService.FindProblemsByProblemIDs(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), parameter)
+		result, err := h.studentUsecaseProblem.FindProblemsByProblemIDs(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), parameter)
 		if err != nil {
 			return err
 		}
@@ -169,7 +169,7 @@ func (h *problemHandler) FindProblemByID(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.problemService.FindProblemByID(ctx, organizationID, operatorID, id)
+		result, err := h.studentUsecaseProblem.FindProblemByID(ctx, organizationID, operatorID, id)
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 			return err
 		}
 
-		problemID, err := h.problemService.AddProblem(ctx, organizationID, operatorID, parameter)
+		problemID, err := h.studentUsecaseProblem.AddProblem(ctx, organizationID, operatorID, parameter)
 		if err != nil {
 			return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
 		}
@@ -268,7 +268,7 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 			return xerrors.Errorf("failed to ToProblemUpdateParameter. param: %+v, err: %w", parameter, err)
 		}
 
-		if err := h.problemService.UpdateProblem(ctx, organizationID, operatorID, id, parameter); err != nil {
+		if err := h.studentUsecaseProblem.UpdateProblem(ctx, organizationID, operatorID, id, parameter); err != nil {
 			return xerrors.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
 		}
 
@@ -290,7 +290,7 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 			return nil
 		}
 
-		if err := h.problemService.RemoveProblem(ctx, organizationID, operatorID, id); err != nil {
+		if err := h.studentUsecaseProblem.RemoveProblem(ctx, organizationID, operatorID, id); err != nil {
 			return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
 		}
 
@@ -339,7 +339,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 			return h.newIterator(ctx, workbookID, problemType, multipartFile)
 		}
 
-		if err := h.problemService.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), newIterator); err != nil {
+		if err := h.studentUsecaseProblem.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), newIterator); err != nil {
 			return xerrors.Errorf("failed to ImportProblems. err: %w", err)
 		}
 

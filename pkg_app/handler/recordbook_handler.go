@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -24,12 +24,12 @@ type RecordbookHandler interface {
 }
 
 type recordbookHandler struct {
-	studyService application.StudyService
+	studentUsecaseStudy studentU.StudentUsecaseStudy
 }
 
-func NewRecordbookHandler(studyService application.StudyService) RecordbookHandler {
+func NewRecordbookHandler(studentUsecaseStudy studentU.StudentUsecaseStudy) RecordbookHandler {
 	return &recordbookHandler{
-		studyService: studyService,
+		studentUsecaseStudy: studentUsecaseStudy,
 	}
 }
 
@@ -56,7 +56,7 @@ func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 		}
 		studyType := ginhelper.GetStringFromPath(c, "studyType")
 
-		result, err := h.studyService.FindResults(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType)
+		result, err := h.studentUsecaseStudy.FindResults(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType)
 		if err != nil {
 			return err
 		}
@@ -99,7 +99,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		// 	return err
 		// }
 
-		if err := h.studyService.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
+		if err := h.studentUsecaseStudy.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
 			return xerrors.Errorf("failed to SetResult. err: %w", err)
 		}
 

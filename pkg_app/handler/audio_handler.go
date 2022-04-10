@@ -7,10 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/application"
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
@@ -22,12 +22,12 @@ type AudioHandler interface {
 }
 
 type audioHandler struct {
-	audioService application.AudioService
+	studentUsecaseAudio studentU.StudentUsecaseAudio
 }
 
-func NewAudioHandler(audioService application.AudioService) AudioHandler {
+func NewAudioHandler(studentUsecaseAudio studentU.StudentUsecaseAudio) AudioHandler {
 	return &audioHandler{
-		audioService: audioService,
+		studentUsecaseAudio: studentUsecaseAudio,
 	}
 }
 
@@ -54,7 +54,7 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.audioService.FindAudioByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), domain.AudioID(uint(audioID)))
+		result, err := h.studentUsecaseAudio.FindAudioByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), domain.AudioID(uint(audioID)))
 		if err != nil {
 			return err
 		}

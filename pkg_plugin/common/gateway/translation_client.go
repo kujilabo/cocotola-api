@@ -79,7 +79,7 @@ func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLa
 		return nil, err
 	}
 
-	u.Path = path.Join(u.Path, "dictionary", "lookup")
+	u.Path = path.Join(u.Path, "v1", "user", "dictionary", "lookup")
 	q := u.Query()
 	q.Set("text", text)
 	u.RawQuery = q.Encode()
@@ -114,7 +114,7 @@ func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 		return nil, err
 	}
 
-	u.Path = path.Join(u.Path, "dictionary", "lookup")
+	u.Path = path.Join(u.Path, "v1", "user", "dictionary", "lookup")
 	q := u.Query()
 	q.Set("text", text)
 	q.Set("pos", strconv.Itoa(int(pos)))

@@ -5,26 +5,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/kujilabo/cocotola-api/pkg_auth/application"
 	"github.com/kujilabo/cocotola-api/pkg_auth/handler/entity"
+	"github.com/kujilabo/cocotola-api/pkg_auth/usecase"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
-type GuestAuthHandler interface {
+type GuestUserHandler interface {
 	Authorize(c *gin.Context)
 }
 
-type guestAuthHandler struct {
-	guestAuthService application.GuestAuthService
+type guestUserHandler struct {
+	guestUserUsecase usecase.GuestUserUsecase
 }
 
-func NewGuestAuthHandler(guestAuthService application.GuestAuthService) GuestAuthHandler {
-	return &guestAuthHandler{
-		guestAuthService: guestAuthService,
+func NewGuestAuthHandler(guestUserUsecase usecase.GuestUserUsecase) GuestUserHandler {
+	return &guestUserHandler{
+		guestUserUsecase: guestUserUsecase,
 	}
 }
 
-func (h *guestAuthHandler) Authorize(c *gin.Context) {
+func (h *guestUserHandler) Authorize(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 	logger.Info("Authorize")
@@ -36,7 +36,7 @@ func (h *guestAuthHandler) Authorize(c *gin.Context) {
 		return
 	}
 
-	authResult, err := h.guestAuthService.RetrieveGuestToken(ctx, guestAuthParameter.OrganizationName)
+	authResult, err := h.guestUserUsecase.RetrieveGuestToken(ctx, guestAuthParameter.OrganizationName)
 	if err != nil {
 		logger.Warnf("failed to RetrieveGuestToken. err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": http.StatusText(http.StatusBadRequest)})
