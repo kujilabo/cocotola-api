@@ -21,9 +21,10 @@ import (
 // var tracer = otel.Tracer("tracer")
 
 const (
-	service     = "trace-demo"
-	environment = "production"
-	id          = 1
+	service        = "trace-demo"
+	environment    = "production"
+	id             = 1
+	sentenceNumber = 1286
 )
 
 func main() {
@@ -66,7 +67,7 @@ func main() {
 	client := gateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.Timeout)*time.Second)
 
 	tr := tp.Tracer("component-main")
-	_, span := tr.Start(ctx, "find", oteltrace.WithAttributes(attribute.Int("sentencenumber", 1286)))
+	_, span := tr.Start(ctx, "find", oteltrace.WithAttributes(attribute.Int("sentencenumber", sentenceNumber)))
 	defer span.End()
 
 	sentence, err := client.FindSentenceBySentenceNumber(ctx, 1296)
