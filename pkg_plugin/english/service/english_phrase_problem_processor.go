@@ -146,7 +146,7 @@ func (p *englishPhraseProblemProcessor) findOrAddAudio(ctx context.Context, repo
 		}
 	}
 
-	audioContent, err := p.synthesizer.Synthesize(app.Lang5ENUS, text)
+	audioContent, err := p.synthesizer.Synthesize(ctx, app.Lang5ENUS, text)
 	if err != nil {
 		return 0, err
 	}

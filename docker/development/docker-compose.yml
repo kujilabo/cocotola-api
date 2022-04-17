@@ -13,3 +13,9 @@ dev-mysql:
     - 3306:3306
   volumes:
     - "./mysql-data:/var/lib/mysql"
+dev-jaeger:
+  image: jaegertracing/all-in-one:1.33.0
+  container_name: dev-jaeger
+  ports:
+    - 14268:14268
+    - 16686:16686

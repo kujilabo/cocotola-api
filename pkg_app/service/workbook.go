@@ -10,20 +10,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// type WorkbookID uint
-
 type Workbook interface {
 	domain.WorkbookModel
-	// GetWorkbookModel() domain.WorkbookModel
 
-	// user.Model
-	// GetSpaceID() user.SpaceID
-	// GetOwnerID() user.AppUserID
-	// GetName() string
-	// GetProblemType() string
-	// GetQuestionText() string
-	// GetProperties() map[string]string
-
+	// FindProblems searches for problems based on search condition
 	FindProblems(ctx context.Context, operator domain.StudentModel, param ProblemSearchCondition) (ProblemSearchResult, error)
 
 	FindAllProblems(ctx context.Context, operator domain.StudentModel) (ProblemSearchResult, error)
@@ -32,6 +22,7 @@ type Workbook interface {
 
 	FindProblemIDs(ctx context.Context, operator domain.StudentModel) ([]domain.ProblemID, error)
 
+	// FindProblems searches for problem based on a problem ID
 	FindProblemByID(ctx context.Context, operator domain.StudentModel, problemID domain.ProblemID) (Problem, error)
 
 	AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) (Added, domain.ProblemID, error)
@@ -49,39 +40,13 @@ type workbook struct {
 	domain.WorkbookModel
 	rf RepositoryFactory
 	pf ProcessorFactory
-	// WorkbookModel domain.WorkbookModel
-	// user.Model
-	// spaceID      user.SpaceID    `validate:"required"`
-	// ownerID      user.AppUserID  `validate:"required"`
-	// privileges   user.Privileges `validate:"required"`
-	// Name         string          `validate:"required"`
-	// ProblemType  string          `validate:"required"`
-	// QuestionText string
-	// Properties   map[string]string
 }
 
-func NewWorkbook(rf RepositoryFactory, pf ProcessorFactory,
-	// model user.Model, spaceID user.SpaceID, ownerID user.AppUserID, privileges user.Privileges, name string, problemType string, questsionText string, properties map[string]string
-	workbookModel domain.WorkbookModel) (Workbook, error) {
+func NewWorkbook(rf RepositoryFactory, pf ProcessorFactory, workbookModel domain.WorkbookModel) (Workbook, error) {
 	m := &workbook{
 		WorkbookModel: workbookModel,
 		rf:            rf,
 		pf:            pf,
-		// WorkbookModel: workbookModel,
-		// privileges: privileges,
-		// Model:      model,
-		// spaceID:    spaceID,
-		// ownerID:    ownerID,
-		// // Properties: workbookProperties{
-		// // 	Name:         name,
-		// // 	ProblemType:  problemType,
-		// // 	QuestionText: questsionText,
-		// // },
-
-		// Name:         name,
-		// ProblemType:  problemType,
-		// QuestionText: questsionText,
-		// Properties:   properties,
 	}
 
 	return m, lib.Validator.Struct(m)
@@ -90,30 +55,6 @@ func NewWorkbook(rf RepositoryFactory, pf ProcessorFactory,
 func (m *workbook) GetWorkbookModel() domain.WorkbookModel {
 	return m.WorkbookModel
 }
-
-// func (m *workbook) GetSpaceID() user.SpaceID {
-// 	return m.spaceID
-// }
-
-// func (m *workbook) GetOwnerID() user.AppUserID {
-// 	return m.ownerID
-// }
-
-// func (m *workbook) GetName() string {
-// 	return m.Name
-// }
-
-// func (m *workbook) GetProblemType() string {
-// 	return m.ProblemType
-// }
-
-// func (m *workbook) GetQuestionText() string {
-// 	return m.QuestionText
-// }
-
-// func (m *workbook) GetProperties() map[string]string {
-// 	return m.Properties
-// }
 
 func (m *workbook) FindProblems(ctx context.Context, operator domain.StudentModel, param ProblemSearchCondition) (ProblemSearchResult, error) {
 	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetWorkbookModel().GetProblemType())

@@ -29,6 +29,12 @@ var (
 	// EnglishWordProblemUpdatePropertyTatoebaSentenceNumber1 = "tatoebaSentenceNumber1"
 	// EnglishWordProblemUpdatePropertyTatoebaSentenceNumber2 = "tatoebaSentenceNumber2"
 	EnglishWordProblemUpdatePropertySentenceID1 = "sentenceId1"
+
+	EnglishWordProblemAddPropertyAudioID    = "audioId"
+	EnglishWordProblemAddPropertyLang       = "lang"
+	EnglishWordProblemAddPropertyText       = "text"
+	EnglishWordProblemAddPropertyTranslated = "translated"
+	EnglishWordProblemAddPropertyPos        = "pos"
 )
 
 type englishWordProblemAddParemeter struct {
@@ -36,6 +42,16 @@ type englishWordProblemAddParemeter struct {
 	Text       string         `validate:"required"`
 	Pos        plugin.WordPos `validate:"required"`
 	Translated string
+}
+
+func (p *englishWordProblemAddParemeter) toProperties(audioID app.AudioID) map[string]string {
+	return map[string]string{
+		EnglishWordProblemAddPropertyAudioID:    strconv.Itoa(int(uint(audioID))),
+		EnglishWordProblemAddPropertyLang:       p.Lang.String(),
+		EnglishWordProblemAddPropertyText:       p.Text,
+		EnglishWordProblemAddPropertyTranslated: p.Translated,
+		EnglishWordProblemAddPropertyPos:        strconv.Itoa(int(p.Pos)),
+	}
 }
 
 func toEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
@@ -154,6 +170,10 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 	if extractedParam.Translated == "" && extractedParam.Pos == plugin.PosOther {
 		count, problemID, err := p.addMultipleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
 		if err != nil {
+			if errors.Is(err, pluginS.ErrTranslationNotFound) {
+				message := "Translation not found"
+				return 0, 0, app.NewPluginError("client", message, []string{message}, err)
+			}
 			return 0, 0, xerrors.Errorf("failed to addMultipleProblem: err: %w", err)
 		}
 
@@ -185,14 +205,9 @@ func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, oper
 		}
 	}
 
-	properties := map[string]string{
-		"lang":       extractedParam.Lang.String(),
-		"text":       extractedParam.Text,
-		"translated": extractedParam.Translated,
-		"pos":        strconv.Itoa(int(extractedParam.Pos)),
-		"audioId":    strconv.Itoa(int(audioID)),
-	}
+	properties := extractedParam.toProperties(audioID)
 	newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
+
 	if err != nil {
 		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
 	}
@@ -212,14 +227,10 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 	translated, err := p.translate(ctx, extractedParam.Text, app.Lang2EN, app.Lang2JA)
 	if err != nil {
 		logger.Errorf("translate err: %v", err)
-		properties := map[string]string{
-			"text":       extractedParam.Text,
-			"translated": extractedParam.Translated,
-			"pos":        strconv.Itoa(int(extractedParam.Pos)),
-			"audioId":    strconv.Itoa(int(audioID)),
-			"lang":       app.Lang2JA.String(),
-		}
+
+		properties := extractedParam.toProperties(audioID)
 		newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
+
 		if err != nil {
 			return 0, 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
 		}
@@ -232,6 +243,11 @@ func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, op
 		return 1, problemID, nil
 	}
 
+	if len(translated) == 0 {
+		return 0, 0, pluginS.ErrTranslationNotFound
+	}
+
+	logger.Infof("translated: %v", translated)
 	for _, t := range translated {
 		properties := map[string]string{
 			"text":       extractedParam.Text,
@@ -365,7 +381,7 @@ func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, rf app
 		}
 	}
 
-	audioContent, err := p.synthesizer.Synthesize(app.Lang5ENUS, text)
+	audioContent, err := p.synthesizer.Synthesize(ctx, app.Lang5ENUS, text)
 	if err != nil {
 		return 0, err
 	}

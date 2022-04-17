@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 )
@@ -96,15 +98,20 @@ func NewTatoebaClient(endpoint, username, password string, timeout time.Duration
 		username: username,
 		password: password,
 		client: http.Client{
-			Timeout: timeout,
+			Timeout:   timeout,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		},
 		importClient: http.Client{
-			Timeout: time.Minute * time.Duration(timeoutImportMin),
+			Timeout:   time.Minute * time.Duration(timeoutImportMin),
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
 }
 
 func (c *tatoebaClient) FindSentencePairs(ctx context.Context, param service.TatoebaSentenceSearchCondition) (*service.TatoebaSentencePairSearchResult, error) {
+	ctx, span := tracer.Start(ctx, "tatoebaClient.FindSentencePairs")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -124,7 +131,7 @@ func (c *tatoebaClient) FindSentencePairs(ctx context.Context, param service.Tat
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(paramBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(paramBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +156,9 @@ func (c *tatoebaClient) FindSentencePairs(ctx context.Context, param service.Tat
 }
 
 func (c *tatoebaClient) FindSentenceBySentenceNumber(ctx context.Context, sentenceNumber int) (service.TatoebaSentence, error) {
+	ctx, span := tracer.Start(ctx, "tatoebaClient.FindSentenceBySentenceNumber")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -156,7 +166,7 @@ func (c *tatoebaClient) FindSentenceBySentenceNumber(ctx context.Context, senten
 
 	u.Path = path.Join(u.Path, "v1", "user", "sentence", strconv.Itoa(sentenceNumber))
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -182,6 +192,9 @@ func (c *tatoebaClient) FindSentenceBySentenceNumber(ctx context.Context, senten
 }
 
 func (c *tatoebaClient) ImportSentences(ctx context.Context, reader io.Reader) error {
+	ctx, span := tracer.Start(ctx, "tatoebaClient.ImportSentences")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return err
@@ -204,7 +217,7 @@ func (c *tatoebaClient) ImportSentences(ctx context.Context, reader io.Reader) e
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, u.String(), &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), &body)
 	if err != nil {
 		return err
 	}
@@ -225,6 +238,9 @@ func (c *tatoebaClient) ImportSentences(ctx context.Context, reader io.Reader) e
 }
 
 func (c *tatoebaClient) ImportLinks(ctx context.Context, reader io.Reader) error {
+	ctx, span := tracer.Start(ctx, "tatoebaClient.ImportLinks")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return err
@@ -247,7 +263,7 @@ func (c *tatoebaClient) ImportLinks(ctx context.Context, reader io.Reader) error
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, u.String(), &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), &body)
 	if err != nil {
 		return err
 	}

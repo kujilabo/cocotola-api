@@ -1,8 +1,13 @@
 ---
 app:
+  name: cocotola-api
+  port: 8080
   ownerPassword: $OWNER_PASSWORD
   testUserEmail: $TEST_USER_EMAIL
 db:
+  # driverName: sqlite3
+  # sqlite3:
+  #   file: app.db
   driverName: mysql
   mysql:
     username: $MYSQL_USERNAME
@@ -30,6 +35,10 @@ tatoeba:
   timeoutSec: 3
   username: $AUTH_USERNAME
   password: $AUTH_PASSWORD
+trace:
+  exporter: gcp
+  # jaeger:
+  #   endpoint: http://localhost:14268/api/traces
 cors:
   allowOrigins:
     - "https://www.cocotola.com"
@@ -38,6 +47,9 @@ shutdown:
   timeSec2: 10
 log:
   level: debug
+# swagger:
+#   host: localhost:8080
+#   schema: http
 debug:
   ginMode: false
   wait: false

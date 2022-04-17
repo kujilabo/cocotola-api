@@ -240,18 +240,20 @@ func (m *problemSearchResult) GetResults() []domain.ProblemModel {
 }
 
 type ProblemRepository interface {
+	// FindProblems searches for problems based on search condition
 	FindProblems(ctx context.Context, operator domain.StudentModel, param ProblemSearchCondition) (ProblemSearchResult, error)
 
 	FindAllProblems(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (ProblemSearchResult, error)
 
 	FindProblemsByProblemIDs(ctx context.Context, operator domain.StudentModel, param ProblemIDsCondition) (ProblemSearchResult, error)
 
-	FindProblemIDs(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
+	FindProblemsByCustomCondition(ctx context.Context, operator domain.StudentModel, condition interface{}) ([]domain.ProblemModel, error)
 
 	FindProblemByID(ctx context.Context, operator domain.StudentModel, id ProblemSelectParameter1) (Problem, error)
 
-	FindProblemsByCustomCondition(ctx context.Context, operator domain.StudentModel, condition interface{}) ([]domain.ProblemModel, error)
+	FindProblemIDs(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
 
+	// AddProblem register a new problem
 	AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) (domain.ProblemID, error)
 
 	UpdateProblem(ctx context.Context, operator domain.StudentModel, id ProblemSelectParameter2, param ProblemUpdateParameter) error

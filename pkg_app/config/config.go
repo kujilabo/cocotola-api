@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -13,6 +12,8 @@ import (
 )
 
 type AppConfig struct {
+	Name          string `yaml:"name" validate:"required"`
+	Port          int    `yaml:"port" validate:"required"`
 	OwnerPassword string `yaml:"ownerPassword" validate:"required"`
 	TestUserEmail string `yaml:"testUserEmail" validate:"required"`
 }
@@ -63,6 +64,15 @@ type TatoebaConfig struct {
 	Password string `yaml:"password" validate:"required"`
 }
 
+type JaegerConfig struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+}
+
+type TraceConfog struct {
+	Exporter string        `yaml:"exporter" validate:"required"`
+	Jaeger   *JaegerConfig `yaml:"jaeger"`
+}
+
 type CORSConfig struct {
 	AllowOrigins []string `yaml:"allowOrigins"`
 }
@@ -74,6 +84,11 @@ type ShutdownConfig struct {
 
 type LogConfig struct {
 	Level string `yaml:"level"`
+}
+
+type SwaggerConfig struct {
+	Host   string `yaml:"host"`
+	Schema string `yaml:"schema"`
 }
 
 type DebugConfig struct {
@@ -88,14 +103,16 @@ type Config struct {
 	Google      *GoogleConfig      `yaml:"google" validate:"required"`
 	Translation *TranslationConfig `yaml:"translation" validate:"required"`
 	Tatoeba     *TatoebaConfig     `yaml:"tatoeba" validate:"required"`
+	Trace       *TraceConfog       `yaml:"trace" validate:"required"`
 	CORS        *CORSConfig        `yaml:"cors" validate:"required"`
 	Shutdown    *ShutdownConfig    `yaml:"shutdown" validate:"required"`
 	Log         *LogConfig         `yaml:"log" validate:"required"`
+	Swagger     *SwaggerConfig     `yaml:"swagger" validate:"required"`
 	Debug       *DebugConfig       `yaml:"debug"`
 }
 
 func LoadConfig(env string) (*Config, error) {
-	confContent, err := ioutil.ReadFile("./configs/" + env + ".yml")
+	confContent, err := os.ReadFile("./configs/" + env + ".yml")
 	if err != nil {
 		return nil, err
 	}

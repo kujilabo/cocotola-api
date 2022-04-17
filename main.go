@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -17,6 +18,10 @@ import (
 	"github.com/gin-gonic/gin"
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
@@ -35,8 +40,6 @@ import (
 	authM "github.com/kujilabo/cocotola-api/pkg_auth/handler/middleware"
 	authU "github.com/kujilabo/cocotola-api/pkg_auth/usecase"
 	english_word "github.com/kujilabo/cocotola-api/pkg_data/english_word"
-	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
@@ -77,12 +80,17 @@ func main() {
 		done <- true
 	}()
 
-	cfg, db, sqlDB, router, err := initialize(ctx, *env)
+	cfg, db, sqlDB, router, tp, err := initialize(ctx, *env)
 	if err != nil {
 		panic(err)
 	}
 	defer sqlDB.Close()
+	defer tp.ForceFlush(ctx) // flushes any pending spans
 
+	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
+		return userG.NewRepositoryFactory(db)
+	}
+	appS.UserRfFunc = userRfFunc
 	if err := initApp1(ctx, db, cfg.App.OwnerPassword); err != nil {
 		panic(err)
 	}
@@ -95,11 +103,6 @@ func main() {
 
 	translationClient := pluginCommonGateway.NewTranslationClient(cfg.Translation.Endpoint, cfg.Translation.Username, cfg.Translation.Password, time.Duration(cfg.Translation.Timeout)*time.Second)
 	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.Timeout)*time.Second)
-
-	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
-		return userG.NewRepositoryFactory(db)
-	}
-	appS.UserRfFunc = userRfFunc
 
 	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaClient)
 
@@ -141,6 +144,7 @@ func main() {
 
 	v1 := router.Group("v1")
 	{
+		v1.Use(otelgin.Middleware(cfg.App.Name))
 		v1auth := v1.Group("auth")
 		googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
 		guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
@@ -191,6 +195,7 @@ func main() {
 
 	plugin := router.Group("plugin")
 	{
+		plugin.Use(otelgin.Middleware(cfg.App.Name))
 		plugin.Use(authMiddleware)
 		{
 			pluginTranslation := plugin.Group("translation")
@@ -214,17 +219,15 @@ func main() {
 	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	docs.SwaggerInfo.Title = "Swagger Example API"
-	docs.SwaggerInfo.Description = "This is a sample server Petstore server."
+	docs.SwaggerInfo.Title = cfg.App.Name
 	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.Host = "cocotola.com"
-	docs.SwaggerInfo.BasePath = "/v1"
-	docs.SwaggerInfo.Schemes = []string{"https"}
+	docs.SwaggerInfo.Host = cfg.Swagger.Host
+	docs.SwaggerInfo.Schemes = []string{cfg.Swagger.Schema}
 
 	gracefulShutdownTime1 := time.Duration(cfg.Shutdown.TimeSec1) * time.Second
 	gracefulShutdownTime2 := time.Duration(cfg.Shutdown.TimeSec2) * time.Second
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + strconv.Itoa(cfg.App.Port),
 		Handler: router,
 	}
 
@@ -308,15 +311,15 @@ func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommo
 	return pf, problemRepositories, problemImportProcessor
 }
 
-func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *gin.Engine, error) {
+func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *gin.Engine, *sdktrace.TracerProvider, error) {
 	cfg, err := config.LoadConfig(env)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	// init log
 	if err := config.InitLog(env, cfg.Log); err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	// cors
@@ -324,20 +327,31 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	logrus.Infof("cors: %+v", corsConfig)
 
 	if err := corsConfig.Validate(); err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
-	// init db
-	db, sqlDB, err := initDB(cfg.DB)
+	// tracer
+	tp, err := config.InitTracerProvider(cfg)
 	if err != nil {
-		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, nil, xerrors.Errorf("failed to InitTracerProvider. err: %w", err)
+	}
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	// init db
+	db, sqlDB, err := config.InitDB(cfg.DB)
+	if err != nil {
+		return nil, nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
 		return userG.NewRepositoryFactory(db)
 	}
-
 	userS.InitSystemAdmin(userRfFunc)
+
+	if !cfg.Debug.GinMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
@@ -346,62 +360,13 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 
 	if cfg.Debug.GinMode {
 		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	} else {
-		gin.SetMode(gin.ReleaseMode)
 	}
 
 	if cfg.Debug.Wait {
 		router.Use(middleware.NewWaitMiddleware())
 	}
 
-	return cfg, db, sqlDB, router, nil
-}
-
-func initDB(cfg *config.DBConfig) (*gorm.DB, *sql.DB, error) {
-	switch cfg.DriverName {
-	case "sqlite3":
-		db, err := libG.OpenSQLite("./" + cfg.SQLite3.File)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		sqlDB, err := db.DB()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if err := sqlDB.Ping(); err != nil {
-			return nil, nil, err
-		}
-
-		if err := appG.MigrateSQLiteDB(db); err != nil {
-			return nil, nil, err
-		}
-
-		return db, sqlDB, nil
-	case "mysql":
-		db, err := libG.OpenMySQL(cfg.MySQL.Username, cfg.MySQL.Password, cfg.MySQL.Host, cfg.MySQL.Port, cfg.MySQL.Database)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		sqlDB, err := db.DB()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if err := sqlDB.Ping(); err != nil {
-			return nil, nil, err
-		}
-
-		if err := appG.MigrateMySQLDB(db); err != nil {
-			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
-		}
-
-		return db, sqlDB, nil
-	default:
-		return nil, nil, libD.ErrInvalidArgument
-	}
+	return cfg, db, sqlDB, router, tp, nil
 }
 
 func initApp1(ctx context.Context, db *gorm.DB, password string) error {

@@ -82,7 +82,7 @@ func (r *spaceRepository) FindDefaultSpace(ctx context.Context, operator domain.
 
 func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain.AppUserModel) (service.Space, error) {
 	logger := log.FromContext(ctx)
-	logger.Infof("operator %+v", operator)
+	logger.Infof("FindePersonalSpace. Operator ID: %d", operator.GetID())
 
 	space := spaceEntity{}
 	if result := r.db.Where(&spaceEntity{
@@ -101,7 +101,7 @@ func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain
 
 func (r *spaceRepository) FindSystemSpace(ctx context.Context, operator domain.AppUserModel) (service.Space, error) {
 	logger := log.FromContext(ctx)
-	logger.Infof("operator %+v", operator)
+	logger.Infof("FindSystemSpace. Operator ID: %d", operator.GetID())
 
 	space := spaceEntity{}
 	if result := r.db.Where(&spaceEntity{
