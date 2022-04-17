@@ -28,7 +28,6 @@ const (
 )
 
 func main() {
-	ctx := context.Background()
 
 	// tp := initTracer()
 	// defer func() {
