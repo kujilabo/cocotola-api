@@ -24,7 +24,7 @@ const (
 	service        = "trace-demo"
 	environment    = "production"
 	id             = 1
-	sentenceNumber = 1286
+	sentenceNumber = 1296
 	timeoutSec     = 5
 )
 
@@ -70,7 +70,7 @@ func main() {
 	_, span := tr.Start(ctx, "find", oteltrace.WithAttributes(attribute.Int("sentencenumber", sentenceNumber)))
 	defer span.End()
 
-	sentence, err := client.FindSentenceBySentenceNumber(ctx, 1296)
+	sentence, err := client.FindSentenceBySentenceNumber(ctx, sentenceNumber)
 	if err != nil {
 		panic(err)
 	}
