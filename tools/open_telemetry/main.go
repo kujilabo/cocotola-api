@@ -25,6 +25,7 @@ const (
 	environment    = "production"
 	id             = 1
 	sentenceNumber = 1286
+	timeoutSec     = 5
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 	// Cleanly shutdown and flush telemetry when the application exits.
 	defer func(ctx context.Context) {
 		// Do not make the application hang when it is shutdown.
-		ctx, cancel = context.WithTimeout(ctx, time.Second*5)
+		ctx, cancel = context.WithTimeout(ctx, time.Second*timeoutSec)
 		defer cancel()
 		if err := tp.Shutdown(ctx); err != nil {
 			log.Fatal(err)
