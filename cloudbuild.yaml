@@ -4,7 +4,14 @@ steps:
     args: ["build", "-t", "gcr.io/$PROJECT_ID/cocotola-api:$SHORT_SHA", "."]
 
   - name: "gcr.io/cloud-builders/docker"
-    id: Push
+    id: "docker tag"
+    args:
+      - "tag"
+      - "gcr.io/$PROJECT_ID/cocotola-api:$SHORT_SHA"
+      - "gcr.io/$PROJECT_ID/cocotola-api:latest"
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "docker push"
     args:
       - "push"
       - "gcr.io/$PROJECT_ID/cocotola-api:$SHORT_SHA"
