@@ -118,8 +118,12 @@ func (r *workbookRepository) toProblemTypeID(problemType string) uint {
 }
 
 func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator domain.StudentModel, param service.WorkbookSearchCondition) (service.WorkbookSearchResult, error) {
+	ctx, span := tracer.Start(ctx, "workbookRepository.FindWorkbooks")
+	defer span.End()
+
 	logger := log.FromContext(ctx)
-	logger.Infof("workbookRepository.FindWorkbooks %v", operator)
+	logger.Debugf("workbookRepository.FindWorkbooks. OperatorID: %d", operator.GetID())
+
 	if param == nil {
 		return nil, libD.ErrInvalidArgument
 	}
@@ -214,6 +218,9 @@ func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user
 // }
 
 func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (service.Workbook, error) {
+	ctx, span := tracer.Start(ctx, "workbookRepository.FindWorkbookByID")
+	defer span.End()
+
 	workbookEntity := workbookEntity{}
 	if result := r.db.
 		Where("organization_id = ?", uint(operator.GetOrganizationID())).
@@ -244,6 +251,9 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 }
 
 func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, name string) (service.Workbook, error) {
+	ctx, span := tracer.Start(ctx, "workbookRepository.FindWorkbookByName")
+	defer span.End()
+
 	workbookEntity := workbookEntity{}
 	if result := r.db.
 		Where("organization_id = ?", uint(operator.GetOrganizationID())).
@@ -294,6 +304,9 @@ func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.Ap
 }
 
 func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param service.WorkbookAddParameter) (domain.WorkbookID, error) {
+	ctx, span := tracer.Start(ctx, "workbookRepository.AddWorkbook")
+	defer span.End()
+
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
 		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
@@ -347,6 +360,9 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 }
 
 func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int) error {
+	ctx, span := tracer.Start(ctx, "workbookRepository.RemoveWorkbook")
+	defer span.End()
+
 	workbook := workbookEntity{}
 	if result := r.db.Where("organization_id = ? and id = ? and version = ?", operator.GetOrganizationID(), id, version).Delete(&workbook); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -360,6 +376,9 @@ func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain
 }
 
 func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int, param service.WorkbookUpdateParameter) error {
+	ctx, span := tracer.Start(ctx, "workbookRepository.UpdateWorkbook")
+	defer span.End()
+
 	if result := r.db.Model(&workbookEntity{}).
 		Where("organization_id = ? and id = ? and version = ?",
 			uint(operator.GetOrganizationID()), uint(id), version).

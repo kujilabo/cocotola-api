@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"golang.org/x/xerrors"
@@ -47,7 +47,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", "https://accounts.google.com/o/oauth2/token", bytes.NewBuffer(paramBytes))
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://accounts.google.com/o/oauth2/token", bytes.NewBuffer(paramBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBytes, err := ioutil.ReadAll(resp.Body)
+		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error) {
 	logger := log.FromContext(ctx)
 
-	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v1/userinfo", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v1/userinfo", nil)
 	if err != nil {
 		return nil, err
 	}

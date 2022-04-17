@@ -1,5 +1,7 @@
 ---
 app:
+  name: cocotola-api
+  port: 8080
   ownerPassword: password
   testUserEmail: $TEST_USER_EMAIL
 db:
@@ -28,6 +30,10 @@ translation:
   timeoutSec: 3
   username: user
   password: password
+trace:
+  exporter: jaeger
+  jaeger:
+    endpoint: http://localhost:14268/api/traces
 tatoeba:
   endpoint: http://localhost:8280
   timeoutSec: 3
@@ -41,6 +47,9 @@ shutdown:
   timeSec2: 1
 log:
   level: info
+swagger:
+  host: localhost:8080
+  schema: http
 debug:
   ginMode: true
   wait: true

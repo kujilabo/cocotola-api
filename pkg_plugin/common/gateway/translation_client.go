@@ -84,7 +84,7 @@ func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLa
 	q.Set("text", text)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 	q.Set("pos", strconv.Itoa(int(pos)))
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, l
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), bytes.NewBuffer(paramBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), bytes.NewBuffer(paramBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lan
 
 	u.Path = path.Join(u.Path, "text", text, "pos", strconv.Itoa(int(pos)))
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app
 
 	u.Path = path.Join(u.Path, "text", text)
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (c *translationClient) UpdateTranslation(ctx context.Context, lang app.Lang
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(paramBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(paramBytes))
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (c *translationClient) RemoveTranslation(ctx context.Context, lang app.Lang
 
 	u.Path = path.Join(u.Path, "text", text, "pos", strconv.Itoa(int(pos)))
 
-	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u.String(), nil)
 	if err != nil {
 		return err
 	}

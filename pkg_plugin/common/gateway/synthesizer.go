@@ -2,8 +2,9 @@ package gateway
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -31,7 +32,7 @@ func NewSynthesizer(key string, timeout time.Duration) service.Synthesizer {
 	}
 }
 
-func (s *synthesizer) Synthesize(lang app.Lang5, text string) (string, error) {
+func (s *synthesizer) Synthesize(ctx context.Context, lang app.Lang5, text string) (string, error) {
 	type m map[string]interface{}
 
 	values := m{
@@ -62,7 +63,7 @@ func (s *synthesizer) Synthesize(lang app.Lang5, text string) (string, error) {
 	q.Set("key", s.key)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(b))
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewReader(b))
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +75,7 @@ func (s *synthesizer) Synthesize(lang app.Lang5, text string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
