@@ -304,7 +304,7 @@ func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.Ap
 }
 
 func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param service.WorkbookAddParameter) (domain.WorkbookID, error) {
-	ctx, span := tracer.Start(ctx, "workbookRepository.AddWorkbook")
+	_, span := tracer.Start(ctx, "workbookRepository.AddWorkbook")
 	defer span.End()
 
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
@@ -360,7 +360,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 }
 
 func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int) error {
-	ctx, span := tracer.Start(ctx, "workbookRepository.RemoveWorkbook")
+	_, span := tracer.Start(ctx, "workbookRepository.RemoveWorkbook")
 	defer span.End()
 
 	workbook := workbookEntity{}
@@ -376,7 +376,7 @@ func (r *workbookRepository) RemoveWorkbook(ctx context.Context, operator domain
 }
 
 func (r *workbookRepository) UpdateWorkbook(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID, version int, param service.WorkbookUpdateParameter) error {
-	ctx, span := tracer.Start(ctx, "workbookRepository.UpdateWorkbook")
+	_, span := tracer.Start(ctx, "workbookRepository.UpdateWorkbook")
 	defer span.End()
 
 	if result := r.db.Model(&workbookEntity{}).
