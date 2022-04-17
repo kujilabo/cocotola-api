@@ -218,11 +218,13 @@ func main() {
 		}
 	}
 
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	docs.SwaggerInfo.Title = cfg.App.Name
-	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.Host = cfg.Swagger.Host
-	docs.SwaggerInfo.Schemes = []string{cfg.Swagger.Schema}
+	if cfg.Swagger.Enabled {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		docs.SwaggerInfo.Title = cfg.App.Name
+		docs.SwaggerInfo.Version = "1.0"
+		docs.SwaggerInfo.Host = cfg.Swagger.Host
+		docs.SwaggerInfo.Schemes = []string{cfg.Swagger.Schema}
+	}
 
 	gracefulShutdownTime1 := time.Duration(cfg.Shutdown.TimeSec1) * time.Second
 	gracefulShutdownTime2 := time.Duration(cfg.Shutdown.TimeSec2) * time.Second

@@ -48,6 +48,7 @@ shutdown:
 log:
   level: info
 swagger:
+  enabled: true
   host: localhost:8080
   schema: http
 debug:

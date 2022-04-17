@@ -47,9 +47,10 @@ shutdown:
   timeSec2: 10
 log:
   level: debug
-# swagger:
-#   host: localhost:8080
-#   schema: http
+swagger:
+  enabled: false
+  host: localhost:8080
+  schema: http
 debug:
   ginMode: false
   wait: false

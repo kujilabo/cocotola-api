@@ -87,8 +87,9 @@ type LogConfig struct {
 }
 
 type SwaggerConfig struct {
-	Host   string `yaml:"host"`
-	Schema string `yaml:"schema"`
+	Enabled bool   `yaml:"enabled"`
+	Host    string `yaml:"host"`
+	Schema  string `yaml:"schema"`
 }
 
 type DebugConfig struct {
