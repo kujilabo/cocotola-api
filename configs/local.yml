@@ -22,9 +22,6 @@ auth:
   googleCallbackUrl: http://localhost:3000/app/callback
   googleClientId: 830416463276-3ts1rsinahi0hdnsfc10m6mabpttrd5i.apps.googleusercontent.com
   googleClientSecret: $GOOGLE_CLIENT_SECRET
-google:
-  synthesizerKey: $SYNTHESIZER_KEY
-  synthesizerTimeoutSec: 10
 translation:
   endpoint: http://localhost:8180
   timeoutSec: 3

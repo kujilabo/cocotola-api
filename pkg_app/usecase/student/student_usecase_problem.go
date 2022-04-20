@@ -28,7 +28,7 @@ type StudentUsecaseProblem interface {
 
 	FindProblemIDs(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) ([]domain.ProblemID, error)
 
-	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) (domain.ProblemID, error)
+	AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) ([]domain.ProblemID, error)
 
 	UpdateProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error
 
@@ -148,9 +148,9 @@ func (s *studentUsecaseProblem) FindProblemIDs(ctx context.Context, organization
 	return result, nil
 }
 
-func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) (domain.ProblemID, error) {
+func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, param service.ProblemAddParameter) ([]domain.ProblemID, error) {
 	logger := log.FromContext(ctx)
-	var result domain.ProblemID
+	var result []domain.ProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		studentService, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
 		if err != nil {
@@ -163,7 +163,7 @@ func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID u
 		result = tmpResult
 		return nil
 	}); err != nil {
-		return 0, err
+		return nil, err
 	}
 	logger.Debug("problem id: %d", result)
 	return result, nil
@@ -285,25 +285,25 @@ func (s *studentUsecaseProblem) findStudentAndWorkbook(ctx context.Context, tx *
 	return student, workbook, nil
 }
 
-func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.Student, workbook service.Workbook, param service.ProblemAddParameter) (domain.ProblemID, error) {
+func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.Student, workbook service.Workbook, param service.ProblemAddParameter) ([]domain.ProblemID, error) {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
-		return 0, err
+		return nil, err
 	}
 	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
-		return 0, err
+		return nil, err
 	}
-	added, id, err := workbook.AddProblem(ctx, student, param)
+	addedIDs, err := workbook.AddProblem(ctx, student, param)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", int(added)); err != nil {
-		return 0, err
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", len(addedIDs)); err != nil {
+		return nil, err
 	}
-	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", int(added)); err != nil {
-		return 0, err
+	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", len(addedIDs)); err != nil {
+		return nil, err
 	}
-	return id, nil
+	return addedIDs, nil
 }
 
 func (s *studentUsecaseProblem) updateProblem(ctx context.Context, student service.Student, workbook service.Workbook, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error {

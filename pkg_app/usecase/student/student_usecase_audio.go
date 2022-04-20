@@ -42,10 +42,12 @@ func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID 
 		if err != nil {
 			return err
 		}
+
 		problem, err := workbookService.FindProblemByID(ctx, student, problemID)
 		if err != nil {
 			return err
 		}
+
 		if strconv.Itoa(int(audioID)) != problem.GetProperties(ctx)["audioId"] {
 			return errors.New("invalid audio id")
 		}
@@ -57,14 +59,13 @@ func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID 
 		if err != nil {
 			return err
 		}
-		audioRepo, err := rf.NewAudioRepository(ctx)
-		if err != nil {
-			return err
-		}
+
+		audioRepo := rf.NewAudioRepository(ctx)
 		tmpResult, err := audioRepo.FindAudioByAudioID(ctx, audioID)
 		if err != nil {
 			return err
 		}
+
 		result = tmpResult.GetAudioModel()
 		return nil
 	}); err != nil {

@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name AudioModel
 package domain
 
 import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"

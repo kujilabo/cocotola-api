@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name Workbook
 package service
 
 import (
@@ -25,7 +26,7 @@ type Workbook interface {
 	// FindProblems searches for problem based on a problem ID
 	FindProblemByID(ctx context.Context, operator domain.StudentModel, problemID domain.ProblemID) (Problem, error)
 
-	AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) (Added, domain.ProblemID, error)
+	AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) ([]domain.ProblemID, error)
 
 	UpdateProblem(ctx context.Context, operator domain.StudentModel, id ProblemSelectParameter2, param ProblemUpdateParameter) (Added, Updated, error)
 
@@ -100,17 +101,17 @@ func (m *workbook) FindProblemByID(ctx context.Context, operator domain.StudentM
 	return problemRepo.FindProblemByID(ctx, operator, id)
 }
 
-func (m *workbook) AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) (Added, domain.ProblemID, error) {
+func (m *workbook) AddProblem(ctx context.Context, operator domain.StudentModel, param ProblemAddParameter) ([]domain.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("workbook.AddProblem")
 
 	if !m.GetWorkbookModel().HasPrivilege(domain.PrivilegeUpdate) {
-		return 0, 0, errors.New("no update privilege")
+		return nil, errors.New("no update privilege")
 	}
 
 	processor, err := m.pf.NewProblemAddProcessor(m.GetWorkbookModel().GetProblemType())
 	if err != nil {
-		return 0, 0, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetWorkbookModel().GetProblemType(), err)
+		return nil, xerrors.Errorf("processor not found. problemType: %s, err: %w", m.GetWorkbookModel().GetProblemType(), err)
 	}
 
 	logger.Infof("processor.AddProblem")

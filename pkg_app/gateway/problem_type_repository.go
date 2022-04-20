@@ -26,10 +26,8 @@ type problemTypeRepository struct {
 	db *gorm.DB
 }
 
-func NewProblemTypeRepository(db *gorm.DB) (service.ProblemTypeRepository, error) {
-	return &problemTypeRepository{
-		db: db,
-	}, nil
+func NewProblemTypeRepository(db *gorm.DB) service.ProblemTypeRepository {
+	return &problemTypeRepository{db: db}
 }
 
 func (r *problemTypeRepository) FindAllProblemTypes(ctx context.Context) ([]domain.ProblemType, error) {
@@ -37,13 +35,16 @@ func (r *problemTypeRepository) FindAllProblemTypes(ctx context.Context) ([]doma
 	if err := r.db.Find(&entities).Error; err != nil {
 		return nil, err
 	}
-	models := make([]domain.ProblemType, 0)
-	for _, e := range entities {
+
+	models := make([]domain.ProblemType, len(entities))
+	for i, e := range entities {
 		model, err := e.toModel()
 		if err != nil {
 			return nil, err
 		}
-		models = append(models, model)
+
+		models[i] = model
 	}
+
 	return models, nil
 }

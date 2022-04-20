@@ -281,25 +281,16 @@ func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommo
 
 	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		// fmt.Println("-------Word")
-		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+		rf := appG.NewAudioRepositoryFactory(ctx, db)
 		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, rf, pluginEnglishDomain.EnglishWordProblemType)
 	}
 	englishPhraseProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
-		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+		rf := appG.NewAudioRepositoryFactory(ctx, db)
 		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, rf, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 	englishSentenceProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		// fmt.Println("-------Sentence")
-		rf, err := appG.NewAudioRepositoryFactory(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+		rf := appG.NewAudioRepositoryFactory(ctx, db)
 		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, rf, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 

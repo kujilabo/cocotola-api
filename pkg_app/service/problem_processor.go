@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name ProblemQuotaProcessor
 package service
 
 import (
@@ -12,7 +13,7 @@ type Added int
 type Updated int
 
 type ProblemAddProcessor interface {
-	AddProblem(ctx context.Context, repo RepositoryFactory, operator domain.StudentModel, workbookModel domain.WorkbookModel, param ProblemAddParameter) (Added, domain.ProblemID, error)
+	AddProblem(ctx context.Context, repo RepositoryFactory, operator domain.StudentModel, workbookModel domain.WorkbookModel, param ProblemAddParameter) ([]domain.ProblemID, error)
 }
 
 type ProblemUpdateProcessor interface {

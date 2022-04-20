@@ -396,11 +396,11 @@ func CreateWorkbook(ctx context.Context, student appS.Student, workbookName stri
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
-		_, problemID, err := workbook.AddProblem(ctx, student, param)
+		problemIDs, err := workbook.AddProblem(ctx, student, param)
 		if err != nil {
 			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
-		logger.Infof("problemID: %d", problemID)
+		logger.Infof("problemIDs: %v", problemIDs)
 	}
 
 	logger.Infof("Example %d", workbookID)

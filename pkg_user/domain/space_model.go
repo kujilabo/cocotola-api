@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name SpaceModel
 package domain
 
 import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"

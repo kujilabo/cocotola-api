@@ -5,12 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
-	service_mock "github.com/kujilabo/cocotola-api/pkg_app/service/mock"
+	mocks "github.com/kujilabo/cocotola-api/pkg_app/service/mock"
 	user_mock "github.com/kujilabo/cocotola-api/pkg_user/domain/mock"
 	userSM "github.com/kujilabo/cocotola-api/pkg_user/service/mock"
 )
@@ -23,20 +23,20 @@ const (
 func student_Init(t *testing.T, ctx context.Context) (
 	spaceRepo *userSM.SpaceRepositoryMock,
 	userRf *userSM.RepositoryFactoryMock,
-	workbookRepo *service_mock.WorkbookRepositoryMock,
-	userQuotaRepo *service_mock.UserQuotaRepositoryMock,
-	rf *service_mock.RepositoryFactoryMock,
-	problemQuotaProcessor *service_mock.ProblemQuotaProcessorMock,
-	pf *service_mock.ProcessorFactoryMock) {
+	workbookRepo *mocks.WorkbookRepository,
+	userQuotaRepo *mocks.UserQuotaRepository,
+	rf *mocks.RepositoryFactory,
+	problemQuotaProcessor *mocks.ProblemQuotaProcessor,
+	pf *mocks.ProcessorFactory) {
 
-	workbookRepo = new(service_mock.WorkbookRepositoryMock)
-	userQuotaRepo = new(service_mock.UserQuotaRepositoryMock)
-	rf = new(service_mock.RepositoryFactoryMock)
+	workbookRepo = new(mocks.WorkbookRepository)
+	userQuotaRepo = new(mocks.UserQuotaRepository)
+	rf = new(mocks.RepositoryFactory)
 	rf.On("NewWorkbookRepository", ctx).Return(workbookRepo, nil)
 	rf.On("NewUserQuotaRepository", ctx).Return(userQuotaRepo, nil)
 
-	problemQuotaProcessor = new(service_mock.ProblemQuotaProcessorMock)
-	pf = new(service_mock.ProcessorFactoryMock)
+	problemQuotaProcessor = new(mocks.ProblemQuotaProcessor)
+	pf = new(mocks.ProcessorFactory)
 	pf.On("NewProblemQuotaProcessor", problemType1).Return(problemQuotaProcessor, nil)
 	pf.On("NewProblemQuotaProcessor", problemType2).Return(problemQuotaProcessor, nil)
 
@@ -53,19 +53,19 @@ func Test_student_GetDefaultSpace(t *testing.T) {
 	spaceRepo, userRf, _, _, _, _, _ := student_Init(t, ctx)
 
 	userRf.On("NewSpaceRepository").Return(spaceRepo)
-	expected := new(user_mock.SpaceMock)
+	expected := new(user_mock.SpaceModel)
 	spaceRepo.On("FindDefaultSpace", ctx, mock.Anything).Return(expected, nil)
 	studentModel, err := domain.NewStudentModel(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	student, err := service.NewStudent(nil, nil, userRf, studentModel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// given
 	expected.On("GetKey").Return("KEY")
 	// when
 	actual, err := student.GetDefaultSpace(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// then
-	assert.Equal(t, "KEY", actual.GetKey())
+	require.Equal(t, "KEY", actual.GetKey())
 	spaceRepo.AssertCalled(t, "FindDefaultSpace", ctx, mock.Anything)
 	spaceRepo.AssertNumberOfCalls(t, "FindDefaultSpace", 1)
 }
@@ -74,19 +74,19 @@ func Test_student_GetPersonalSpace(t *testing.T) {
 	ctx := context.Background()
 	spaceRepo, userRf, _, _, _, _, _ := student_Init(t, ctx)
 
-	expected := new(user_mock.SpaceMock)
+	expected := new(user_mock.SpaceModel)
 	spaceRepo.On("FindPersonalSpace", ctx, mock.Anything).Return(expected, nil)
 	studentModel, err := domain.NewStudentModel(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	student, err := service.NewStudent(nil, nil, userRf, studentModel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// given
 	expected.On("GetKey").Return("KEY")
 	// when
 	actual, err := student.GetPersonalSpace(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// then
-	assert.Equal(t, "KEY", actual.GetKey())
+	require.Equal(t, "KEY", actual.GetKey())
 	spaceRepo.AssertCalled(t, "FindPersonalSpace", ctx, mock.Anything)
 	spaceRepo.AssertNumberOfCalls(t, "FindPersonalSpace", 1)
 }
@@ -95,25 +95,25 @@ func Test_student_FindWorkbooksFromPersonalSpace(t *testing.T) {
 	ctx := context.Background()
 	spaceRepo, userRf, workbookRepo, _, rf, _, _ := student_Init(t, ctx)
 
-	space := new(user_mock.SpaceMock)
+	space := new(user_mock.SpaceModel)
 	space.On("GetID").Return(uint(100))
 	spaceRepo.On("FindPersonalSpace", ctx, mock.Anything).Return(space, nil)
 
 	studentModel, err := domain.NewStudentModel(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	student, err := service.NewStudent(nil, rf, userRf, studentModel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// given
 	expected, err := service.NewWorkbookSearchResult(123, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	workbookRepo.On("FindPersonalWorkbooks", ctx, mock.Anything, mock.Anything).Return(expected, nil)
 	// when
 	condition, err := service.NewWorkbookSearchCondition(1, 100, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	actual, err := student.FindWorkbooksFromPersonalSpace(ctx, condition)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// then
-	assert.Equal(t, 123, actual.GetTotalCount())
+	require.Equal(t, 123, actual.GetTotalCount())
 	spaceRepo.AssertCalled(t, "FindPersonalSpace", ctx, mock.Anything)
 	spaceRepo.AssertNumberOfCalls(t, "FindPersonalSpace", 1)
 }
@@ -122,20 +122,20 @@ func Test_student_FindWorkbookByID(t *testing.T) {
 	ctx := context.Background()
 	_, userRf, workbookRepo, _, rf, _, _ := student_Init(t, ctx)
 
-	expected := new(service_mock.WorkbookMock)
+	expected := new(mocks.Workbook)
 	workbookRepo.On("FindWorkbookByID", ctx, mock.Anything, mock.Anything).Return(expected, nil)
 
 	studentModel, err := domain.NewStudentModel(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	student, err := service.NewStudent(nil, rf, userRf, studentModel)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// given
 	expected.On("GetID").Return(uint(123))
 	// when
 	actual, err := student.FindWorkbookByID(ctx, domain.WorkbookID(100))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// then
-	assert.Equal(t, uint(123), actual.GetID())
+	require.Equal(t, uint(123), actual.GetID())
 }
 
 func Test_student_CheckQuota(t *testing.T) {
@@ -213,7 +213,7 @@ func Test_student_CheckQuota(t *testing.T) {
 			problemQuotaProcessor.On("GetLimitForUpdateQuota").Return(tt.quotaLimit)
 
 			s, err := service.NewStudent(pf, rf, userRf, nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			err = s.CheckQuota(ctx, tt.args.problemType, tt.args.name)
 			if err == nil && tt.err != nil {
 				t.Errorf("student.CheckQuota() error = %v, err %v", err, tt.err)
