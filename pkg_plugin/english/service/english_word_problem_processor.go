@@ -407,20 +407,6 @@ func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, rf app
 	return id, err
 }
 
-func (p *englishWordProblemProcessor) translateWithPos(ctx context.Context, text string, pos plugin.WordPos, fromLang, toLang app.Lang2) (plugin.Translation, error) {
-	logger := log.FromContext(ctx)
-	logger.Infof("translateWithPos. text: %s", text)
-
-	return p.translationClient.DictionaryLookupWithPos(ctx, fromLang, toLang, text, pos)
-}
-
-func (p *englishWordProblemProcessor) translate(ctx context.Context, text string, fromLang, toLang app.Lang2) ([]plugin.Translation, error) {
-	logger := log.FromContext(ctx)
-	logger.Infof("translate. text: %s", text)
-
-	return p.translationClient.DictionaryLookup(ctx, fromLang, toLang, text)
-}
-
 func (p *englishWordProblemProcessor) GetUnitForSizeQuota() appS.QuotaUnit {
 	return quotaSizeUnit
 }
