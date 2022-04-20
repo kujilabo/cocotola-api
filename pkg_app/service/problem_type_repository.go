@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name ProblemTypeRepository
 package service
 
 import (
