@@ -43,10 +43,7 @@ type recordbookRepository struct {
 }
 
 func NewRecordbookRepository(ctx context.Context, rf service.RepositoryFactory, db *gorm.DB, problemTypes []domain.ProblemType) (service.RecordbookRepository, error) {
-	studyTypeRepo, err := rf.NewStudyTypeRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
+	studyTypeRepo := rf.NewStudyTypeRepository(ctx)
 	studyTypes, err := studyTypeRepo.FindAllStudyTypes(ctx)
 	if err != nil {
 		return nil, err

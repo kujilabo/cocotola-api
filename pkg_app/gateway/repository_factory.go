@@ -8,6 +8,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
@@ -22,14 +23,16 @@ type repositoryFactory struct {
 }
 
 func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc userS.RepositoryFactoryFunc, pf service.ProcessorFactory, problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)) (service.RepositoryFactory, error) {
-	problemTypeRepo, err := NewProblemTypeRepository(db)
-	if err != nil {
-		return nil, err
+	if db == nil {
+		return nil, libD.ErrInvalidArgument
 	}
+
+	problemTypeRepo := NewProblemTypeRepository(db)
 	problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return &repositoryFactory{
 		db:                  db,
 		driverName:          driverName,
@@ -45,6 +48,7 @@ func (f *repositoryFactory) NewWorkbookRepository(ctx context.Context) (service.
 	if err != nil {
 		return nil, err
 	}
+
 	return NewWorkbookRepository(ctx, f.driverName, f, userRf, f.pf, f.db, f.problemTypes), nil
 }
 
@@ -58,11 +62,11 @@ func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemTyp
 	return problemRepository(ctx, f.db)
 }
 
-func (f *repositoryFactory) NewProblemTypeRepository(ctx context.Context) (service.ProblemTypeRepository, error) {
+func (f *repositoryFactory) NewProblemTypeRepository(ctx context.Context) service.ProblemTypeRepository {
 	return NewProblemTypeRepository(f.db)
 }
 
-func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) (service.StudyTypeRepository, error) {
+func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) service.StudyTypeRepository {
 	return NewStudyTypeRepository(f.db)
 }
 
@@ -70,24 +74,22 @@ func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (servic
 	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes)
 }
 
-func (f *repositoryFactory) NewAudioRepository(ctx context.Context) (service.AudioRepository, error) {
-	return NewAudioRepository(f.db), nil
+func (f *repositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
+	return NewAudioRepository(f.db)
 }
 
-func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) (service.UserQuotaRepository, error) {
-	return NewUserQuotaRepository(f.db), nil
+func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) service.UserQuotaRepository {
+	return NewUserQuotaRepository(f.db)
 }
 
 type audioRepositoryFactory struct {
 	db *gorm.DB
 }
 
-func NewAudioRepositoryFactory(ctx context.Context, db *gorm.DB) (service.AudioRepositoryFactory, error) {
-	return &audioRepositoryFactory{
-		db: db,
-	}, nil
+func NewAudioRepositoryFactory(ctx context.Context, db *gorm.DB) service.AudioRepositoryFactory {
+	return &audioRepositoryFactory{db: db}
 }
 
-func (f *audioRepositoryFactory) NewAudioRepository(ctx context.Context) (service.AudioRepository, error) {
-	return NewAudioRepository(f.db), nil
+func (f *audioRepositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
+	return NewAudioRepository(f.db)
 }

@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name Student
 package service
 
 import (
@@ -152,10 +153,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 		return err
 	}
 
-	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
-	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
-	}
+	userQuotaRepo := s.rf.NewUserQuotaRepository(ctx)
 
 	switch name {
 	case QuotaNameSize:
@@ -195,10 +193,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 		return err
 	}
 
-	userQuotaRepo, err := s.rf.NewUserQuotaRepository(ctx)
-	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
-	}
+	userQuotaRepo := s.rf.NewUserQuotaRepository(ctx)
 
 	switch name {
 	case QuotaNameSize:

@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name StudentModel
 package domain
 
 import (

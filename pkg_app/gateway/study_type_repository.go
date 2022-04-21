@@ -26,10 +26,8 @@ type studyTypeRepository struct {
 	db *gorm.DB
 }
 
-func NewStudyTypeRepository(db *gorm.DB) (service.StudyTypeRepository, error) {
-	return &studyTypeRepository{
-		db: db,
-	}, nil
+func NewStudyTypeRepository(db *gorm.DB) service.StudyTypeRepository {
+	return &studyTypeRepository{db: db}
 }
 
 func (r *studyTypeRepository) FindAllStudyTypes(ctx context.Context) ([]domain.StudyType, error) {
@@ -37,13 +35,16 @@ func (r *studyTypeRepository) FindAllStudyTypes(ctx context.Context) ([]domain.S
 	if err := r.db.Find(&entities).Error; err != nil {
 		return nil, err
 	}
-	models := make([]domain.StudyType, 0)
-	for _, e := range entities {
+
+	models := make([]domain.StudyType, len(entities))
+	for i, e := range entities {
 		model, err := e.toModel()
 		if err != nil {
 			return nil, err
 		}
-		models = append(models, model)
+
+		models[i] = model
 	}
+
 	return models, nil
 }

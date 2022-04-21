@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name ProcessorFactory
 package service
 
 import "golang.org/x/xerrors"

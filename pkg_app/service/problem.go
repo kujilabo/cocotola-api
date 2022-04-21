@@ -1,3 +1,4 @@
+//go:generate mockery --output mock --name Problem
 package service
 
 import (
@@ -13,9 +14,6 @@ type ProblemFeature interface {
 
 type Problem interface {
 	domain.ProblemModel
-	// GetProblemModel() domain.ProblemModel
-	// GetProblemType() string
-	// GetProperties(ctx context.Context) map[string]interface{}
 	ProblemFeature
 }
 
@@ -35,15 +33,8 @@ func NewProblem(rf AudioRepositoryFactory, problemModel domain.ProblemModel) (Pr
 	return s, lib.Validator.Struct(s)
 }
 
-// func (s *problem) GetProblemModel() domain.ProblemModel {
-// 	return s.problemModel
-// }
-
 func (s *problem) FindAudioByID(ctx context.Context, audioID domain.AudioID) (Audio, error) {
-	audioRepo, err := s.rf.NewAudioRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
+	audioRepo := s.rf.NewAudioRepository(ctx)
 	return audioRepo.FindAudioByAudioID(ctx, audioID)
 }
 

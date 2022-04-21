@@ -1,3 +1,10 @@
+//go:generate mockery --output mock --name ProblemAddParameter
+//go:generate mockery --output mock --name ProblemSelectParameter1
+//go:generate mockery --output mock --name ProblemSelectParameter2
+//go:generate mockery --output mock --name ProblemUpdateParameter
+//go:generate mockery --output mock --name ProblemSearchCondition
+//go:generate mockery --output mock --name ProblemTypeRepository
+//go:generate mockery --output mock --name ProblemRepository
 package service
 
 import (
