@@ -183,7 +183,7 @@ func Test_englishWordProblemProcessor_UpdateProblem(t *testing.T) {
 		assert.Equal(t, "ペン", param.GetProperties()["translated"])
 		assert.Equal(t, "pen", param.GetProperties()["text"])
 		assert.Equal(t, "0", param.GetProperties()["audioId"])
-		assert.Equal(t, "", param.GetProperties()["sentenceId1"])
+		assert.Equal(t, "0", param.GetProperties()["sentenceId1"])
 		assert.Len(t, param.GetProperties(), 4)
 	}
 }

@@ -45,6 +45,27 @@ func (_m *Workbook) AddProblem(ctx context.Context, operator domain.StudentModel
 	return r0, r1
 }
 
+// CountProblems provides a mock function with given fields: ctx, operator
+func (_m *Workbook) CountProblems(ctx context.Context, operator domain.StudentModel) (int, error) {
+	ret := _m.Called(ctx, operator)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, domain.StudentModel) int); ok {
+		r0 = rf(ctx, operator)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, domain.StudentModel) error); ok {
+		r1 = rf(ctx, operator)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindAllProblems provides a mock function with given fields: ctx, operator
 func (_m *Workbook) FindAllProblems(ctx context.Context, operator domain.StudentModel) (service.ProblemSearchResult, error) {
 	ret := _m.Called(ctx, operator)
