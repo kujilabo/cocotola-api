@@ -14,6 +14,7 @@ import (
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type translationResponse struct {
@@ -55,25 +56,29 @@ func (r *translationFindResponse) toModel() ([]domain.Translation, error) {
 	return translationList, nil
 }
 
-type translationClient struct {
+type translatorClient struct {
 	endpoint string
 	username string
 	password string
 	client   http.Client
 }
 
-func NewTranslationClient(endpoint, username, password string, timeout time.Duration) service.TranslationClient {
-	return &translationClient{
+func NewTranslatorClient(endpoint, username, password string, timeout time.Duration) service.TranslatorClient {
+	return &translatorClient{
 		endpoint: endpoint,
 		username: username,
 		password: password,
 		client: http.Client{
-			Timeout: timeout,
+			Timeout:   timeout,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
 }
 
-func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error) {
+func (c *translatorClient) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error) {
+	ctx, span := tracer.Start(ctx, "translatorClient.DictionaryLookup")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -108,7 +113,10 @@ func (c *translationClient) DictionaryLookup(ctx context.Context, fromLang, toLa
 	return response.toModel()
 }
 
-func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+func (c *translatorClient) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+	ctx, span := tracer.Start(ctx, "translatorClient.DictionaryLookupWithPos")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -144,7 +152,10 @@ func (c *translationClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 	return response.toModel()
 }
 
-func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error) {
+	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByFirstLetter")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -184,7 +195,10 @@ func (c *translationClient) FindTranslationsByFirstLetter(ctx context.Context, l
 	return response.toModel()
 }
 
-func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationByTextAndPos")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -216,7 +230,10 @@ func (c *translationClient) FindTranslationByTextAndPos(ctx context.Context, lan
 	return response.toModel()
 }
 
-func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
+	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByText")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, err
@@ -248,7 +265,10 @@ func (c *translationClient) FindTranslationsByText(ctx context.Context, lang app
 	return response.toModel()
 }
 
-func (c *translationClient) AddTranslation(ctx context.Context, param service.TranslationAddParameter) error {
+func (c *translatorClient) AddTranslation(ctx context.Context, param service.TranslationAddParameter) error {
+	ctx, span := tracer.Start(ctx, "translatorClient.AddTranslation")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return err
@@ -266,7 +286,7 @@ func (c *translationClient) AddTranslation(ctx context.Context, param service.Tr
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(paramBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(paramBytes))
 	if err != nil {
 		return err
 	}
@@ -285,7 +305,10 @@ func (c *translationClient) AddTranslation(ctx context.Context, param service.Tr
 	return nil
 }
 
-func (c *translationClient) UpdateTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
+func (c *translatorClient) UpdateTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
+	ctx, span := tracer.Start(ctx, "translatorClient.UpdateTranslation")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return err
@@ -320,7 +343,10 @@ func (c *translationClient) UpdateTranslation(ctx context.Context, lang app.Lang
 	return nil
 }
 
-func (c *translationClient) RemoveTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error {
+func (c *translatorClient) RemoveTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error {
+	ctx, span := tracer.Start(ctx, "translatorClient.RemoveTranslation")
+	defer span.End()
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return err
@@ -347,7 +373,7 @@ func (c *translationClient) RemoveTranslation(ctx context.Context, lang app.Lang
 	return nil
 }
 
-func (c *translationClient) errorHandle(statusCode int) error {
+func (c *translatorClient) errorHandle(statusCode int) error {
 	if statusCode == http.StatusOK {
 		return nil
 	}

@@ -94,6 +94,29 @@ func (_m *Student) FindRecordbook(ctx context.Context, workbookID domain.Workboo
 	return r0, r1
 }
 
+// FindRecordbookSummary provides a mock function with given fields: ctx, workbookID
+func (_m *Student) FindRecordbookSummary(ctx context.Context, workbookID domain.WorkbookID) (service.RecordbookSummary, error) {
+	ret := _m.Called(ctx, workbookID)
+
+	var r0 service.RecordbookSummary
+	if rf, ok := ret.Get(0).(func(context.Context, domain.WorkbookID) service.RecordbookSummary); ok {
+		r0 = rf(ctx, workbookID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(service.RecordbookSummary)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, domain.WorkbookID) error); ok {
+		r1 = rf(ctx, workbookID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindWorkbookByID provides a mock function with given fields: ctx, id
 func (_m *Student) FindWorkbookByID(ctx context.Context, id domain.WorkbookID) (service.Workbook, error) {
 	ret := _m.Called(ctx, id)

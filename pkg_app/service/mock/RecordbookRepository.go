@@ -16,6 +16,29 @@ type RecordbookRepository struct {
 	mock.Mock
 }
 
+// CountMemorizedProblem provides a mock function with given fields: ctx, operator, workbookID
+func (_m *RecordbookRepository) CountMemorizedProblem(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (map[string]int, error) {
+	ret := _m.Called(ctx, operator, workbookID)
+
+	var r0 map[string]int
+	if rf, ok := ret.Get(0).(func(context.Context, domain.StudentModel, domain.WorkbookID) map[string]int); ok {
+		r0 = rf(ctx, operator, workbookID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]int)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, domain.StudentModel, domain.WorkbookID) error); ok {
+		r1 = rf(ctx, operator, workbookID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindStudyResults provides a mock function with given fields: ctx, operator, workbookID, studyType
 func (_m *RecordbookRepository) FindStudyResults(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
 	ret := _m.Called(ctx, operator, workbookID, studyType)

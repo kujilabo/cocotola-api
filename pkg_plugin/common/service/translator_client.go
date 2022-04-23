@@ -13,7 +13,7 @@ import (
 var ErrTranslationNotFound = errors.New("translation not found")
 var ErrTranslationAlreadyExists = errors.New("custsomtranslation already exists")
 
-type TranslationClient interface {
+type TranslatorClient interface {
 	DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error)
 	DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
 	FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error)

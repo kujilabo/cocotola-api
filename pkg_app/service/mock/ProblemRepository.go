@@ -39,6 +39,27 @@ func (_m *ProblemRepository) AddProblem(ctx context.Context, operator domain.Stu
 	return r0, r1
 }
 
+// CountProblems provides a mock function with given fields: ctx, operator, workbookID
+func (_m *ProblemRepository) CountProblems(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (int, error) {
+	ret := _m.Called(ctx, operator, workbookID)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, domain.StudentModel, domain.WorkbookID) int); ok {
+		r0 = rf(ctx, operator, workbookID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, domain.StudentModel, domain.WorkbookID) error); ok {
+		r1 = rf(ctx, operator, workbookID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindAllProblems provides a mock function with given fields: ctx, operator, workbookID
 func (_m *ProblemRepository) FindAllProblems(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (service.ProblemSearchResult, error) {
 	ret := _m.Called(ctx, operator, workbookID)

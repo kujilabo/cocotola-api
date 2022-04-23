@@ -266,4 +266,6 @@ type ProblemRepository interface {
 	UpdateProblem(ctx context.Context, operator domain.StudentModel, id ProblemSelectParameter2, param ProblemUpdateParameter) error
 
 	RemoveProblem(ctx context.Context, operator domain.StudentModel, id ProblemSelectParameter2) error
+
+	CountProblems(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (int, error)
 }

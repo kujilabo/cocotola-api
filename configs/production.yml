@@ -22,13 +22,19 @@ auth:
   googleCallbackUrl: https://www.cocotola.com/app/callback
   googleClientId: 830416463276-lf7d9r39v1ct78u6p1dke6cv5kd8g6o1.apps.googleusercontent.com
   googleClientSecret: $GOOGLE_CLIENT_SECRET
-translation:
+  apiTimeoutSec: 5
+translator:
   endpoint: http://cocotola-translator-api
   timeoutSec: 3
   username: $AUTH_USERNAME
   password: $AUTH_PASSWORD
 tatoeba:
   endpoint: http://cocotola-tatoeba-api
+  timeoutSec: 3
+  username: $AUTH_USERNAME
+  password: $AUTH_PASSWORD
+synthesizer:
+  endpoint: http://cocotola-synthesizer-api
   timeoutSec: 3
   username: $AUTH_USERNAME
   password: $AUTH_PASSWORD

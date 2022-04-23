@@ -20,7 +20,10 @@ import (
 
 type RecordbookHandler interface {
 	FindRecordbook(c *gin.Context)
+
 	SetStudyResult(c *gin.Context)
+
+	GetCompletionRate(c *gin.Context)
 }
 
 type recordbookHandler struct {
@@ -104,6 +107,38 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		}
 
 		c.Status(http.StatusOK)
+		return nil
+	}, h.errorHandle)
+}
+
+// GetCompletionRate godoc
+// @Summary     Get the completion rate of the workbook
+// @Tags        study
+// @Produce     json
+// @Param       workbookID path string true "Workbook ID"
+// @Param       studyType  path string true "Study type"
+// @Success     200 {object} entity.ProblemWithLevelList
+// @Failure     400
+// @Router      /v1/study/workbook/{workbookID}/study_type/{studyType}/completion_rate [get]
+func (h *recordbookHandler) GetCompletionRate(c *gin.Context) {
+	ctx := c.Request.Context()
+	logger := log.FromContext(ctx)
+	logger.Info("FindRecordbook")
+
+	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
+
+		results, err := h.studentUsecaseStudy.GetCompletionRate(ctx, organizationID, operatorID, domain.WorkbookID(workbookID))
+		if err != nil {
+			return err
+		}
+
+		logger.Infof("FindRecordbook. response: %+v", results)
+		c.JSON(http.StatusOK, results)
 		return nil
 	}, h.errorHandle)
 }

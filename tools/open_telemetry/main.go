@@ -64,7 +64,7 @@ func main() {
 		panic(err)
 	}
 
-	client := gateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.Timeout)*time.Second)
+	client := gateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
 
 	tr := tp.Tracer("component-main")
 	_, span := tr.Start(ctx, "find", oteltrace.WithAttributes(attribute.Int("sentencenumber", sentenceNumber)))

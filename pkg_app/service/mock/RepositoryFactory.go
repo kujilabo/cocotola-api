@@ -72,7 +72,7 @@ func (_m *RepositoryFactory) NewProblemTypeRepository(ctx context.Context) servi
 }
 
 // NewRecordbookRepository provides a mock function with given fields: ctx
-func (_m *RepositoryFactory) NewRecordbookRepository(ctx context.Context) (service.RecordbookRepository, error) {
+func (_m *RepositoryFactory) NewRecordbookRepository(ctx context.Context) service.RecordbookRepository {
 	ret := _m.Called(ctx)
 
 	var r0 service.RecordbookRepository
@@ -84,14 +84,7 @@ func (_m *RepositoryFactory) NewRecordbookRepository(ctx context.Context) (servi
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewStudyTypeRepository provides a mock function with given fields: ctx

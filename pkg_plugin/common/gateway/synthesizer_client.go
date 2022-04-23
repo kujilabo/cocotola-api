@@ -9,13 +9,15 @@ import (
 	"net/url"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/xerrors"
+
 	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
-	"golang.org/x/xerrors"
 )
 
-type synthesizer struct {
-	client *http.Client
+type synthesizerClient struct {
+	client http.Client
 	key    string
 }
 
@@ -23,16 +25,20 @@ type synthesizeResponse struct {
 	AudioContent string `json:"audioContent"`
 }
 
-func NewSynthesizer(key string, timeout time.Duration) service.Synthesizer {
-	return &synthesizer{
-		client: &http.Client{
-			Timeout: timeout,
+func NewSynthesizerClient(key string, timeout time.Duration) service.SynthesizerClient {
+	return &synthesizerClient{
+		client: http.Client{
+			Timeout:   timeout,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		},
 		key: key,
 	}
 }
 
-func (s *synthesizer) Synthesize(ctx context.Context, lang app.Lang5, text string) (string, error) {
+func (s *synthesizerClient) Synthesize(ctx context.Context, lang app.Lang5, text string) (string, error) {
+	ctx, span := tracer.Start(ctx, "synthesizerClient.Synthesize")
+	defer span.End()
+
 	type m map[string]interface{}
 
 	values := m{

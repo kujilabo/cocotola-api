@@ -29,11 +29,11 @@ type TranslationHandler interface {
 }
 
 type translationHandler struct {
-	translationClient service.TranslationClient
+	translatorClient service.TranslatorClient
 }
 
-func NewTranslationHandler(translationClient service.TranslationClient) TranslationHandler {
-	return &translationHandler{translationClient: translationClient}
+func NewTranslationHandler(translatorClient service.TranslatorClient) TranslationHandler {
+	return &translationHandler{translatorClient: translatorClient}
 }
 
 func (h *translationHandler) FindTranslations(c *gin.Context) {
@@ -49,7 +49,7 @@ func (h *translationHandler) FindTranslations(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.translationClient.FindTranslationsByFirstLetter(ctx, app.Lang2JA, param.Letter)
+		result, err := h.translatorClient.FindTranslationsByFirstLetter(ctx, app.Lang2JA, param.Letter)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 		if err != nil {
 			return err
 		}
-		result, err := h.translationClient.FindTranslationByTextAndPos(ctx, app.Lang2JA, text, wordPos)
+		result, err := h.translatorClient.FindTranslationByTextAndPos(ctx, app.Lang2JA, text, wordPos)
 		if err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 
 		text := ginhelper.GetStringFromPath(c, "text")
-		results, err := h.translationClient.FindTranslationsByText(ctx, app.Lang2JA, text)
+		results, err := h.translatorClient.FindTranslationsByText(ctx, app.Lang2JA, text)
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func (h *translationHandler) AddTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translationClient.AddTranslation(ctx, parameter); err != nil {
+		if err := h.translatorClient.AddTranslation(ctx, parameter); err != nil {
 			return err
 		}
 
@@ -166,7 +166,7 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translationClient.UpdateTranslation(ctx, app.Lang2JA, text, wordPos, parameter); err != nil {
+		if err := h.translatorClient.UpdateTranslation(ctx, app.Lang2JA, text, wordPos, parameter); err != nil {
 			return err
 		}
 
@@ -190,7 +190,7 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translationClient.RemoveTranslation(ctx, app.Lang2JA, text, wordPos); err != nil {
+		if err := h.translatorClient.RemoveTranslation(ctx, app.Lang2JA, text, wordPos); err != nil {
 			return err
 		}
 

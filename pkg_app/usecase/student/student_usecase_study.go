@@ -17,6 +17,8 @@ type StudentUsecaseStudy interface {
 	// study
 	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error)
 
+	GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error)
+
 	// FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error)
 	SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error
 }
@@ -52,11 +54,43 @@ func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID us
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
-		tmpResult, err := student.FindRecordbook(ctx, workbookID, studyType)
+		recordbook, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
 			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
-		tmpResults, err := tmpResult.GetResultsSortedLevel(ctx)
+		tmpResults, err := recordbook.GetResultsSortedLevel(ctx)
+		if err != nil {
+			return xerrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
+		}
+		results = tmpResults
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error) {
+	var results map[string]int
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		rfFunc, err := s.rfFunc(ctx, tx)
+		if err != nil {
+			return xerrors.Errorf("failed to rfFunc. err: %w", err)
+		}
+		userRepo, err := s.userRfFunc(ctx, tx)
+		if err != nil {
+			return xerrors.Errorf("failed to userRepo. err: %w", err)
+		}
+		student, err := usecase.FindStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
+		if err != nil {
+			return xerrors.Errorf("failed to findStudent. err: %w", err)
+		}
+		recordbookSummary, err := student.FindRecordbookSummary(ctx, workbookID)
+		if err != nil {
+			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+		}
+		tmpResults, err := recordbookSummary.GetCompletionRate(ctx)
 		if err != nil {
 			return xerrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
 		}
@@ -87,11 +121,11 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 		if err != nil {
 			return err
 		}
-		tmpResult, err := student.FindRecordbook(ctx, workbookID, studyType)
+		recordbook, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
 			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
-		if err := tmpResult.SetResult(ctx, workbook.GetProblemType(), problemID, result, memorized); err != nil {
+		if err := recordbook.SetResult(ctx, workbook.GetProblemType(), problemID, result, memorized); err != nil {
 			return xerrors.Errorf("failed to SetResult. err: %w", err)
 		}
 		return nil

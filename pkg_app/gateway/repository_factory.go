@@ -20,6 +20,7 @@ type repositoryFactory struct {
 	pf                  service.ProcessorFactory
 	problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)
 	problemTypes        []domain.ProblemType
+	studyTypes          []domain.StudyType
 }
 
 func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc userS.RepositoryFactoryFunc, pf service.ProcessorFactory, problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)) (service.RepositoryFactory, error) {
@@ -33,6 +34,12 @@ func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, u
 		return nil, err
 	}
 
+	studyTypeRepo := NewStudyTypeRepository(db)
+	studyTypes, err := studyTypeRepo.FindAllStudyTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &repositoryFactory{
 		db:                  db,
 		driverName:          driverName,
@@ -40,6 +47,7 @@ func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, u
 		pf:                  pf,
 		problemRepositories: problemRepositories,
 		problemTypes:        problemTypes,
+		studyTypes:          studyTypes,
 	}, nil
 }
 
@@ -70,8 +78,8 @@ func (f *repositoryFactory) NewStudyTypeRepository(ctx context.Context) service.
 	return NewStudyTypeRepository(f.db)
 }
 
-func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) (service.RecordbookRepository, error) {
-	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes)
+func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) service.RecordbookRepository {
+	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes, f.studyTypes)
 }
 
 func (f *repositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
