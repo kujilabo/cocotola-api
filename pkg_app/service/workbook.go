@@ -35,6 +35,8 @@ type Workbook interface {
 	UpdateWorkbook(ctx context.Context, operator domain.StudentModel, version int, parameter WorkbookUpdateParameter) error
 
 	RemoveWorkbook(ctx context.Context, operator domain.StudentModel, version int) error
+
+	CountProblems(ctx context.Context, operator domain.StudentModel) (int, error)
 }
 
 type workbook struct {
@@ -148,7 +150,6 @@ func (m *workbook) RemoveProblem(ctx context.Context, operator domain.StudentMod
 	}
 
 	return processor.RemoveProblem(ctx, m.rf, operator, id)
-
 }
 
 func (m *workbook) UpdateWorkbook(ctx context.Context, operator domain.StudentModel, version int, parameter WorkbookUpdateParameter) error {
@@ -175,4 +176,12 @@ func (m *workbook) RemoveWorkbook(ctx context.Context, operator domain.StudentMo
 	}
 
 	return workbookRepo.RemoveWorkbook(ctx, operator, domain.WorkbookID(m.GetWorkbookModel().GetID()), version)
+}
+
+func (m *workbook) CountProblems(ctx context.Context, operator domain.StudentModel) (int, error) {
+	problemRepo, err := m.rf.NewProblemRepository(ctx, m.GetWorkbookModel().GetProblemType())
+	if err != nil {
+		return 0, err
+	}
+	return problemRepo.CountProblems(ctx, operator, domain.WorkbookID(m.GetWorkbookModel().GetID()))
 }

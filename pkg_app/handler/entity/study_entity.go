@@ -14,3 +14,7 @@ type ProblemWithLevel struct {
 type ProblemWithLevelList struct {
 	Records []ProblemWithLevel `json:"records"`
 }
+
+type IntValue struct {
+	Value int `json:"value"`
+}

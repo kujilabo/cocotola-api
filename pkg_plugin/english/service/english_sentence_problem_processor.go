@@ -85,15 +85,15 @@ type EnglishSentenceProblemProcessor interface {
 }
 
 type englishSentenceProblemProcessor struct {
-	synthesizer                     pluginS.Synthesizer
-	translationClient               pluginS.TranslationClient
+	synthesizerClient               pluginS.SynthesizerClient
+	translatorClient                pluginS.TranslatorClient
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator
 }
 
-func NewEnglishSentenceProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
+func NewEnglishSentenceProblemProcessor(synthesizerClient pluginS.SynthesizerClient, translatorClient pluginS.TranslatorClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishSentenceProblemProcessor {
 	return &englishSentenceProblemProcessor{
-		synthesizer:                     synthesizer,
-		translationClient:               translationClient,
+		synthesizerClient:               synthesizerClient,
+		translatorClient:                translatorClient,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
 }
@@ -179,7 +179,7 @@ func (p *englishSentenceProblemProcessor) findOrAddAudio(ctx context.Context, re
 		}
 	}
 
-	audioContent, err := p.synthesizer.Synthesize(ctx, app.Lang5ENUS, text)
+	audioContent, err := p.synthesizerClient.Synthesize(ctx, app.Lang5ENUS, text)
 	if err != nil {
 		return 0, err
 	}

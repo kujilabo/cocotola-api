@@ -17,7 +17,7 @@ type RepositoryFactory interface {
 
 	NewAudioRepository(ctx context.Context) AudioRepository
 
-	NewRecordbookRepository(ctx context.Context) (RecordbookRepository, error)
+	NewRecordbookRepository(ctx context.Context) RecordbookRepository
 
 	NewUserQuotaRepository(ctx context.Context) UserQuotaRepository
 }

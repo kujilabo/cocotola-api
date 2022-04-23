@@ -48,14 +48,14 @@ type EnglishPhraseProblemProcessor interface {
 }
 
 type englishPhraseProblemProcessor struct {
-	synthesizer       pluginS.Synthesizer
-	translationClient pluginS.TranslationClient
+	synthesizerClient pluginS.SynthesizerClient
+	translatorClient  pluginS.TranslatorClient
 }
 
-func NewEnglishPhraseProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient) EnglishPhraseProblemProcessor {
+func NewEnglishPhraseProblemProcessor(synthesizerClient pluginS.SynthesizerClient, translatorClient pluginS.TranslatorClient) EnglishPhraseProblemProcessor {
 	return &englishPhraseProblemProcessor{
-		synthesizer:       synthesizer,
-		translationClient: translationClient,
+		synthesizerClient: synthesizerClient,
+		translatorClient:  translatorClient,
 	}
 }
 
@@ -143,7 +143,7 @@ func (p *englishPhraseProblemProcessor) findOrAddAudio(ctx context.Context, repo
 		}
 	}
 
-	audioContent, err := p.synthesizer.Synthesize(ctx, app.Lang5ENUS, text)
+	audioContent, err := p.synthesizerClient.Synthesize(ctx, app.Lang5ENUS, text)
 	if err != nil {
 		return 0, err
 	}

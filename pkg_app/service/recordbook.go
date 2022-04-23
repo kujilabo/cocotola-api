@@ -12,9 +12,13 @@ import (
 
 type Recordbook interface {
 	GetStudent() Student
+
 	GetWorkbookID() domain.WorkbookID
+
 	GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyStatus, error)
+
 	GetResultsSortedLevel(ctx context.Context) ([]domain.ProblemWithLevel, error)
+
 	SetResult(ctx context.Context, problemType string, problemID domain.ProblemID, result, memorized bool) error
 }
 
@@ -45,10 +49,7 @@ func (m *recordbook) GetWorkbookID() domain.WorkbookID {
 }
 
 func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyStatus, error) {
-	repo, err := m.rf.NewRecordbookRepository(ctx)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to NewRecordbookRepository. err: %w", err)
-	}
+	repo := m.rf.NewRecordbookRepository(ctx)
 
 	studyResults, err := repo.FindStudyResults(ctx, m.GetStudent(), m.workbookID, m.studyType)
 	if err != nil {
@@ -101,14 +102,68 @@ func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.Proble
 }
 
 func (m *recordbook) SetResult(ctx context.Context, problemType string, problemID domain.ProblemID, result, memorized bool) error {
-	repo, err := m.rf.NewRecordbookRepository(ctx)
-	if err != nil {
-		return xerrors.Errorf("failed to NewStudyResultRepository. err: %w", err)
-	}
+	repo := m.rf.NewRecordbookRepository(ctx)
 
 	if err := repo.SetResult(ctx, m.GetStudent(), m.workbookID, m.studyType, problemType, problemID, result, memorized); err != nil {
 		return xerrors.Errorf("failed to SetResult. err: %w", err)
 	}
 
 	return nil
+}
+
+type RecordbookSummary interface {
+	GetCompletionRate(ctx context.Context) (map[string]int, error)
+}
+
+type recordbookSummary struct {
+	rf         RepositoryFactory
+	student    Student
+	workbookID domain.WorkbookID `validate:"required"`
+}
+
+func (m *recordbookSummary) GetStudent() Student {
+	return m.student
+}
+
+func (m *recordbookSummary) GetWorkbookID() domain.WorkbookID {
+	return m.workbookID
+}
+
+func NewRecordbookSummary(rf RepositoryFactory, student Student, workbookID domain.WorkbookID) (RecordbookSummary, error) {
+	m := &recordbookSummary{
+		rf:         rf,
+		student:    student,
+		workbookID: workbookID,
+	}
+
+	return m, libD.Validator.Struct(m)
+}
+func (m *recordbookSummary) GetCompletionRate(ctx context.Context) (map[string]int, error) {
+	repo := m.rf.NewRecordbookRepository(ctx)
+
+	numberOfMemorizedProblemsMap, err := repo.CountMemorizedProblem(ctx, m.GetStudent(), m.workbookID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to SetResult. err: %w", err)
+	}
+
+	workbookService, err := m.GetStudent().FindWorkbookByID(ctx, m.workbookID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+	}
+
+	numberOfProblems, err := workbookService.CountProblems(ctx, m.GetStudent())
+	if err != nil {
+		return nil, xerrors.Errorf("failed to SetResult. err: %w", err)
+	}
+
+	completionRateMap := map[string]int{}
+	for studyType, numberOfMemorizedProblems := range numberOfMemorizedProblemsMap {
+		if numberOfProblems == 0 {
+			completionRateMap[studyType] = 0
+		} else {
+			completionRateMap[studyType] = numberOfMemorizedProblems * 100 / numberOfProblems
+		}
+	}
+
+	return completionRateMap, nil
 }

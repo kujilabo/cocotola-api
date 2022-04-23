@@ -43,25 +43,28 @@ type AuthConfig struct {
 	GoogleCallbackURL   string `yaml:"googleCallbackUrl" validate:"required"`
 	GoogleClientID      string `yaml:"googleClientId" validate:"required"`
 	GoogleClientSecret  string `yaml:"googleClientSecret" validate:"required"`
+	APITimeoutSec       int    `yaml:"apiTimeoutSec" validate:"gte=1"`
 }
 
-type GoogleConfig struct {
-	SynthesizerKey        string `yaml:"synthesizerKey" validate:"required"`
-	SynthesizerTimeoutSec int    `yaml:"synthesizerTimeoutSec" validate:"gte=1"`
-}
-
-type TranslationConfig struct {
-	Endpoint string `yaml:"endpoint" validate:"required"`
-	Timeout  int    `yaml:"timeoutSec" validate:"gte=1"`
-	Username string `yaml:"username" validate:"required"`
-	Password string `yaml:"password" validate:"required"`
+type TranslatorConfig struct {
+	Endpoint   string `yaml:"endpoint" validate:"required"`
+	TimeoutSec int    `yaml:"timeoutSec" validate:"gte=1"`
+	Username   string `yaml:"username" validate:"required"`
+	Password   string `yaml:"password" validate:"required"`
 }
 
 type TatoebaConfig struct {
-	Endpoint string `yaml:"endpoint" validate:"required"`
-	Timeout  int    `yaml:"timeoutSec" validate:"gte=1"`
-	Username string `yaml:"username" validate:"required"`
-	Password string `yaml:"password" validate:"required"`
+	Endpoint   string `yaml:"endpoint" validate:"required"`
+	TimeoutSec int    `yaml:"timeoutSec" validate:"gte=1"`
+	Username   string `yaml:"username" validate:"required"`
+	Password   string `yaml:"password" validate:"required"`
+}
+
+type SynthesizerConfig struct {
+	Endpoint   string `yaml:"endpoint" validate:"required"`
+	TimeoutSec int    `yaml:"timeoutSec" validate:"gte=1"`
+	Username   string `yaml:"username" validate:"required"`
+	Password   string `yaml:"password" validate:"required"`
 }
 
 type JaegerConfig struct {
@@ -101,9 +104,9 @@ type Config struct {
 	App         *AppConfig         `yaml:"app" validate:"required"`
 	DB          *DBConfig          `yaml:"db" validate:"required"`
 	Auth        *AuthConfig        `yaml:"auth" validate:"required"`
-	Google      *GoogleConfig      `yaml:"google" validate:"required"`
-	Translation *TranslationConfig `yaml:"translation" validate:"required"`
+	Translator  *TranslatorConfig  `yaml:"translator" validate:"required"`
 	Tatoeba     *TatoebaConfig     `yaml:"tatoeba" validate:"required"`
+	Synthesizer *SynthesizerConfig `yaml:"synthesizer" validate:"required"`
 	Trace       *TraceConfog       `yaml:"trace" validate:"required"`
 	CORS        *CORSConfig        `yaml:"cors" validate:"required"`
 	Shutdown    *ShutdownConfig    `yaml:"shutdown" validate:"required"`

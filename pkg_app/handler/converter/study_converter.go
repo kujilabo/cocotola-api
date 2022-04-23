@@ -43,3 +43,7 @@ func ToProblemWithLevelList(ctx context.Context, problems []domain.ProblemWithLe
 		Records: list,
 	}, nil
 }
+
+func ToIntValue(ctx context.Context, value int) *entity.IntValue {
+	return &entity.IntValue{Value: value}
+}

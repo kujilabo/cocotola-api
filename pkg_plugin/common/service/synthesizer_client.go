@@ -1,4 +1,4 @@
-//go:generate mockery --output mock --name Synthesizer
+//go:generate mockery --output mock --name SynthesizerClient
 package service
 
 import (
@@ -7,6 +7,6 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
-type Synthesizer interface {
+type SynthesizerClient interface {
 	Synthesize(ctx context.Context, lang domain.Lang5, text string) (string, error)
 }

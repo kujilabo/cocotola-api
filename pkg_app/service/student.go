@@ -37,6 +37,8 @@ type Student interface {
 	DecrementQuotaUsage(ctx context.Context, problemType string, name QuotaName, value int) error
 
 	FindRecordbook(ctx context.Context, workbookID domain.WorkbookID, studyType string) (Recordbook, error)
+
+	FindRecordbookSummary(ctx context.Context, workbookID domain.WorkbookID) (RecordbookSummary, error)
 }
 
 type student struct {
@@ -233,4 +235,8 @@ func (s *student) DecrementQuotaUsage(ctx context.Context, problemType string, n
 
 func (s *student) FindRecordbook(ctx context.Context, workbookID domain.WorkbookID, studyType string) (Recordbook, error) {
 	return NewRecordbook(s.rf, s, workbookID, studyType)
+}
+
+func (s *student) FindRecordbookSummary(ctx context.Context, workbookID domain.WorkbookID) (RecordbookSummary, error) {
+	return NewRecordbookSummary(s.rf, s, workbookID)
 }

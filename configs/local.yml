@@ -22,7 +22,8 @@ auth:
   googleCallbackUrl: http://localhost:3000/app/callback
   googleClientId: 830416463276-3ts1rsinahi0hdnsfc10m6mabpttrd5i.apps.googleusercontent.com
   googleClientSecret: $GOOGLE_CLIENT_SECRET
-translation:
+  apiTimeoutSec: 5
+translator:
   endpoint: http://localhost:8180
   timeoutSec: 3
   username: user
@@ -36,6 +37,11 @@ tatoeba:
   timeoutSec: 3
   username: user
   password: password
+synthesizer:
+  endpoint: http://localhost:8380
+  timeoutSec: 3
+  username: user
+  password: password
 cors:
   allowOrigins:
     - "*"
@@ -43,11 +49,11 @@ shutdown:
   timeSec1: 1
   timeSec2: 1
 log:
-  level: info
+  level: debug
 swagger:
   enabled: true
   host: localhost:8080
   schema: http
 debug:
   ginMode: true
-  wait: true
+  # wait: true

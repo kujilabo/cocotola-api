@@ -99,10 +99,10 @@ func main() {
 		c.Status(http.StatusOK)
 	})
 
-	synthesizer := pluginCommonGateway.NewSynthesizer(cfg.Google.SynthesizerKey, time.Duration(cfg.Google.SynthesizerTimeoutSec)*time.Minute)
+	synthesizer := pluginCommonGateway.NewSynthesizerClient("", time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
-	translationClient := pluginCommonGateway.NewTranslationClient(cfg.Translation.Endpoint, cfg.Translation.Username, cfg.Translation.Password, time.Duration(cfg.Translation.Timeout)*time.Second)
-	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.Timeout)*time.Second)
+	translationClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
 
 	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaClient)
 
@@ -127,7 +127,7 @@ func main() {
 	signingMethod := jwt.SigningMethodHS256
 	authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(cfg.Auth.AccessTokenTTLMin)*time.Minute, time.Duration(cfg.Auth.RefreshTokenTTLHour)*time.Hour)
 
-	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL)
+	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL, time.Duration(cfg.Auth.APITimeoutSec)*time.Second)
 	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUserCallback := func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error {
@@ -179,12 +179,13 @@ func main() {
 		v1Problem.POST("find_by_ids", problemHandler.FindProblemsByProblemIDs)
 		v1Problem.POST("import", problemHandler.ImportProblems)
 
-		v1Study := v1.Group("study/workbook/:workbookID/study_type")
+		v1Study := v1.Group("study/workbook/:workbookID")
 		studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
 		recordbookHandler := appH.NewRecordbookHandler(studentUseCaseStudy)
 		v1Study.Use(authMiddleware)
-		v1Study.GET(":studyType", recordbookHandler.FindRecordbook)
-		v1Study.POST(":studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
+		v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
+		v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
+		v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
 
 		v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
 		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc)
@@ -214,7 +215,6 @@ func main() {
 			pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
 			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
 			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
-
 		}
 	}
 
@@ -253,11 +253,11 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initPf(synthesizer pluginCommonS.Synthesizer, translationClient pluginCommonS.TranslationClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
+func initPf(synthesizerClient pluginCommonS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
-	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizer, translationClient, tatoebaClient, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
-	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizer, translationClient)
-	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizer, translationClient, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
+	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizerClient, translatorClient, tatoebaClient, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
+	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizerClient, translatorClient)
+	englishSentenceProblemProcessor := pluginEnglishS.NewEnglishSentenceProblemProcessor(synthesizerClient, translatorClient, pluginEnglishGateway.NewEnglishSentenceProblemAddParameterCSVReader)
 
 	problemAddProcessor := map[string]appS.ProblemAddProcessor{
 		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,

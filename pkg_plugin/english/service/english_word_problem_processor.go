@@ -124,16 +124,16 @@ type EnglishWordProblemProcessor interface {
 }
 
 type englishWordProblemProcessor struct {
-	synthesizer                     pluginS.Synthesizer
-	translationClient               pluginS.TranslationClient
+	synthesizerClient               pluginS.SynthesizerClient
+	translatorClient                pluginS.TranslatorClient
 	tatoebaClient                   pluginS.TatoebaClient
 	newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator
 }
 
-func NewEnglishWordProblemProcessor(synthesizer pluginS.Synthesizer, translationClient pluginS.TranslationClient, tatoebaClient pluginS.TatoebaClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
+func NewEnglishWordProblemProcessor(synthesizerClient pluginS.SynthesizerClient, translatorClient pluginS.TranslatorClient, tatoebaClient pluginS.TatoebaClient, newProblemAddParameterCSVReader func(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator) EnglishWordProblemProcessor {
 	return &englishWordProblemProcessor{
-		synthesizer:                     synthesizer,
-		translationClient:               translationClient,
+		synthesizerClient:               synthesizerClient,
+		translatorClient:                translatorClient,
 		tatoebaClient:                   tatoebaClient,
 		newProblemAddParameterCSVReader: newProblemAddParameterCSVReader,
 	}
@@ -169,9 +169,9 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 
 	var converter ToEnglishWordProblemAddParameter
 	if extractedParam.Translated == "" && extractedParam.Pos == plugin.PosOther {
-		converter = NewToMultipleEnglishWordProblemAddParameter(p.translationClient, param.GetWorkbookID(), param.GetNumber(), extractedParam, audioID)
+		converter = NewToMultipleEnglishWordProblemAddParameter(p.translatorClient, param.GetWorkbookID(), param.GetNumber(), extractedParam, audioID)
 	} else {
-		converter = NewToSingleEnglishWordProblemAddParameter(p.translationClient, param.GetWorkbookID(), param.GetNumber(), extractedParam, audioID)
+		converter = NewToSingleEnglishWordProblemAddParameter(p.translatorClient, param.GetWorkbookID(), param.GetNumber(), extractedParam, audioID)
 	}
 
 	toAddParams, err := converter.Run(ctx)
@@ -199,91 +199,6 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 
 	return idsOfAddedProblem, nil
 }
-
-// func (p *englishWordProblemProcessor) addSingleProblem(ctx context.Context, operator app.StudentModel, problemRepo appS.ProblemRepository, param appS.ProblemAddParameter, extractedParam *englishWordProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
-// 	logger := log.FromContext(ctx)
-// 	logger.Infof("AddProblem, text: %s, audio ID: %d", extractedParam.Text, audioID)
-
-// 	if extractedParam.Translated == "" {
-// 		translation, err := p.translateWithPos(ctx, extractedParam.Text, extractedParam.Pos, app.Lang2EN, app.Lang2JA)
-// 		if err != nil {
-// 			if errors.Is(err, pluginS.ErrTranslationNotFound) {
-// 				extractedParam.Translated = ""
-// 			} else {
-// 				logger.Errorf("translate err: %v", err)
-// 			}
-// 		} else {
-// 			extractedParam.Translated = translation.GetTranslated()
-// 		}
-// 	}
-
-// 	properties := extractedParam.toProperties()
-// 	properties[EnglishWordProblemAddPropertyAudioID] = strconv.Itoa(int(uint(audioID)))
-
-// 	newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
-
-// 	if err != nil {
-// 		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
-// 	}
-
-// 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
-// 	if err != nil {
-// 		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
-// 	}
-
-// 	return problemID, nil
-// }
-
-// func (p *englishWordProblemProcessor) addMultipleProblem(ctx context.Context, operator app.StudentModel, problemRepo appS.ProblemRepository, param appS.ProblemAddParameter, extractedParam *englishWordProblemAddParemeter, audioID app.AudioID) (appS.Added, app.ProblemID, error) {
-// 	logger := log.FromContext(ctx)
-// 	logger.Debugf("addMultipleProblem. text: %s, audio ID: %d", extractedParam.Text, audioID)
-
-// 	translated, err := p.translate(ctx, extractedParam.Text, app.Lang2EN, app.Lang2JA)
-// 	if err != nil {
-// 		logger.Errorf("translate err: %v", err)
-
-// 		properties := extractedParam.toProperties()
-// 		properties[EnglishWordProblemAddPropertyAudioID] = strconv.Itoa(int(uint(audioID)))
-
-// 		newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
-
-// 		if err != nil {
-// 			return 0, 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
-// 		}
-
-// 		problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
-// 		if err != nil {
-// 			return 0, 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
-// 		}
-
-// 		return 1, problemID, nil
-// 	}
-
-// 	if len(translated) == 0 {
-// 		return 0, 0, pluginS.ErrTranslationNotFound
-// 	}
-
-// 	logger.Infof("translated: %v", translated)
-// 	for _, t := range translated {
-// 		properties := map[string]string{
-// 			"text":       extractedParam.Text,
-// 			"translated": t.GetTranslated(),
-// 			"pos":        strconv.Itoa(int(t.GetPos())),
-// 			"audioId":    strconv.Itoa(int(audioID)),
-// 			"lang":       app.Lang2JA.String(),
-// 		}
-// 		newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
-// 		if err != nil {
-// 			return 0, 0, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
-// 		}
-
-// 		if _, err := problemRepo.AddProblem(ctx, operator, newParam); err != nil {
-// 			return 0, 0, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
-// 		}
-// 	}
-
-// 	return appS.Added(len(translated)), 0, nil
-// }
 
 func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS.RepositoryFactory, operator app.StudentModel, workbook app.WorkbookModel, id appS.ProblemSelectParameter2, param appS.ProblemUpdateParameter) (appS.Added, appS.Updated, error) {
 	logger := log.FromContext(ctx)
@@ -329,38 +244,24 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 		sentenceID = sentenceIDtmp
 	}
 
+	converter := NewToSingleEnglishWordProblemUpdateParameter(p.translatorClient, param.GetNumber(), extractedParam, audioID, sentenceID)
+	toUpdateParams, err := converter.Run(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	problemRepo, err := rf.NewProblemRepository(ctx, domain.EnglishWordProblemType)
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
-	if err := p.updateSingleProblem(ctx, operator, problemRepo, id, param, extractedParam, audioID, sentenceID); err != nil {
-		return 0, 0, xerrors.Errorf("failed to updateSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+	for _, toUpdateParam := range toUpdateParams {
+		if err := problemRepo.UpdateProblem(ctx, operator, id, toUpdateParam); err != nil {
+			return 0, 0, xerrors.Errorf("failed to problemRepo.UpdateProblem. param: %+v, err: %w", param, err)
+		}
 	}
 
 	return 1, 1, nil
-}
-
-func (p *englishWordProblemProcessor) updateSingleProblem(ctx context.Context, operator app.StudentModel, problemRepo appS.ProblemRepository, id appS.ProblemSelectParameter2, param appS.ProblemUpdateParameter, extractedParam *englishWordProblemUpdateParemeter, audioID app.AudioID, sentenceID1 app.ProblemID) error {
-	logger := log.FromContext(ctx)
-	logger.Infof("updateSingleProblem, text: %s, audio ID: %d", extractedParam.Text, audioID)
-
-	properties := map[string]string{
-		EnglishWordProblemUpdatePropertyText:        extractedParam.Text,
-		EnglishWordProblemUpdatePropertyTranslated:  extractedParam.Translated,
-		EnglishWordProblemUpdatePropertyAudioID:     strconv.Itoa(int(audioID)),
-		EnglishWordProblemUpdatePropertySentenceID1: strconv.Itoa(int(sentenceID1)),
-	}
-	paramToUpdate, err := appS.NewProblemUpdateParameter(param.GetNumber(), properties)
-	if err != nil {
-		return xerrors.Errorf("failed to NewParameter. err: %w", err)
-	}
-
-	if err := problemRepo.UpdateProblem(ctx, operator, id, paramToUpdate); err != nil {
-		return xerrors.Errorf("failed to problemRepo.UpdateProblem. param: %+v, err: %w", param, err)
-	}
-
-	return nil
 }
 
 func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, rf appS.RepositoryFactory, operator app.StudentModel, id appS.ProblemSelectParameter2) error {
@@ -394,7 +295,7 @@ func (p *englishWordProblemProcessor) findOrAddAudio(ctx context.Context, rf app
 		}
 	}
 
-	audioContent, err := p.synthesizer.Synthesize(ctx, app.Lang5ENUS, text)
+	audioContent, err := p.synthesizerClient.Synthesize(ctx, app.Lang5ENUS, text)
 	if err != nil {
 		return 0, err
 	}

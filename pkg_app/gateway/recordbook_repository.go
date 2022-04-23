@@ -10,6 +10,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
@@ -42,20 +43,13 @@ type recordbookRepository struct {
 	studyTypes   []domain.StudyType
 }
 
-func NewRecordbookRepository(ctx context.Context, rf service.RepositoryFactory, db *gorm.DB, problemTypes []domain.ProblemType) (service.RecordbookRepository, error) {
-	studyTypeRepo := rf.NewStudyTypeRepository(ctx)
-	studyTypes, err := studyTypeRepo.FindAllStudyTypes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	logger := log.FromContext(ctx)
-	logger.Infof("study types: %+v", studyTypes)
+func NewRecordbookRepository(ctx context.Context, rf service.RepositoryFactory, db *gorm.DB, problemTypes []domain.ProblemType, studyTypes []domain.StudyType) service.RecordbookRepository {
 	return &recordbookRepository{
 		rf:           rf,
 		db:           db,
 		problemTypes: problemTypes,
 		studyTypes:   studyTypes,
-	}, nil
+	}
 }
 
 // func (r *studyResultRepository) toStudyType(studyTypeID uint) string {
@@ -67,27 +61,40 @@ func NewRecordbookRepository(ctx context.Context, rf service.RepositoryFactory, 
 // 	return ""
 // }
 
-func (r *recordbookRepository) toProblemTypeID(problemType string) uint {
+func (r *recordbookRepository) toProblemTypeID(problemType string) (uint, error) {
 	for _, m := range r.problemTypes {
 		if m.GetName() == problemType {
-			return m.GetID()
+			return m.GetID(), nil
 		}
 	}
-	return 0
+	return 0, libD.ErrInvalidArgument
 }
 
-func (r *recordbookRepository) toStudyTypeID(studyType string) uint {
+func (r *recordbookRepository) toStudyTypeID(studyType string) (uint, error) {
 	for _, m := range r.studyTypes {
 		if m.GetName() == studyType {
-			return m.GetID()
+			return m.GetID(), nil
 		}
 	}
-	return 0
+	return 0, libD.ErrInvalidArgument
+}
+
+func (r *recordbookRepository) toStudyType(studyTypeID uint) (string, error) {
+	for _, m := range r.studyTypes {
+		if m.GetID() == studyTypeID {
+			return m.GetName(), nil
+		}
+	}
+
+	return "", libD.ErrInvalidArgument
 }
 
 func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
-	studyTypeID := r.toStudyTypeID(studyType)
-	if studyTypeID == 0 {
+	_, span := tracer.Start(ctx, "recordbookRepository.FindStudyResults")
+	defer span.End()
+
+	studyTypeID, err := r.toStudyTypeID(studyType)
+	if err != nil {
 		return nil, xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
 	}
 
@@ -111,15 +118,17 @@ func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator do
 }
 
 func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string, problemType string, problemID domain.ProblemID, studyResult, memorized bool) error {
+	ctx, span := tracer.Start(ctx, "recordbookRepository.SetResult")
+	defer span.End()
 
-	studyTypeID := r.toStudyTypeID(studyType)
-	if studyTypeID == 0 {
-		return xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
+	studyTypeID, err := r.toStudyTypeID(studyType)
+	if err != nil {
+		return xerrors.Errorf("unsupported studyType. studyType: %s, err: %w", studyType, err)
 	}
 
-	problemTypeID := r.toProblemTypeID(problemType)
-	if studyTypeID == 0 {
-		return xerrors.Errorf("unsupported problemType. problemType: %s", problemType)
+	problemTypeID, err := r.toProblemTypeID(problemType)
+	if err != nil {
+		return xerrors.Errorf("unsupported problemType. problemType: %s, err:%w", problemType, err)
 	}
 
 	if memorized {
@@ -242,4 +251,46 @@ func (r *recordbookRepository) setMemorized(ctx context.Context, operator domain
 	}
 
 	return nil
+}
+
+func (r *recordbookRepository) CountMemorizedProblem(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID) (map[string]int, error) {
+	_, span := tracer.Start(ctx, "recordbookRepository.CountMemorizedProblem")
+	defer span.End()
+
+	logger := log.FromContext(ctx)
+
+	type studyTypeCountMap struct {
+		StudyTypeID int
+		Count       int
+	}
+
+	var results []studyTypeCountMap
+	if result := r.db.Select("study_type_id, count(*) as count").
+		Model(&recordbookEntity{}).
+		Where("workbook_id = ?", uint(workbookID)).
+		Where("app_user_id = ?", operator.GetID()).
+		Where("memorized = ?", true).
+		Group("study_type_id").Find(&results); result.Error != nil {
+		return nil, result.Error
+	}
+
+	resultMap := make(map[string]int)
+	for _, studyType1 := range r.studyTypes {
+		resultMap[studyType1.GetName()] = 0
+		for _, result := range results {
+			studyType2, err := r.toStudyType(uint(result.StudyTypeID))
+			if err != nil {
+				return nil, err
+			}
+			if studyType1.GetName() == studyType2 {
+				resultMap[studyType2] = result.Count
+				break
+			}
+		}
+
+	}
+
+	logger.Debugf("CountMemorizedProblem. map: %+v", resultMap)
+
+	return resultMap, nil
 }

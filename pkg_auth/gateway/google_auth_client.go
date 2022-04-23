@@ -7,7 +7,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/service"
@@ -15,14 +17,19 @@ import (
 )
 
 type googleAuthClient struct {
+	client       http.Client
 	clientID     string
 	clientSecret string
 	redirectURI  string
 	grantType    string
 }
 
-func NewGoogleAuthClient(clientID, clientSecret, redirectURI string) service.GoogleAuthClient {
+func NewGoogleAuthClient(clientID, clientSecret, redirectURI string, timeout time.Duration) service.GoogleAuthClient {
 	return &googleAuthClient{
+		client: http.Client{
+			Timeout:   timeout,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		redirectURI:  redirectURI,
@@ -32,6 +39,9 @@ func NewGoogleAuthClient(clientID, clientSecret, redirectURI string) service.Goo
 }
 
 func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string) (*service.GoogleAuthResponse, error) {
+	ctx, span := tracer.Start(ctx, "googleAuthClient.RetrieveAccessToken")
+	defer span.End()
+
 	logger := log.FromContext(ctx)
 
 	paramMap := map[string]string{
@@ -54,8 +64,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to retrieve access token.err: %w", err)
 	}
@@ -81,9 +90,12 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 }
 
 func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthResponse *service.GoogleAuthResponse) (*service.GoogleUserInfo, error) {
+	ctx, span := tracer.Start(ctx, "googleAuthClient.RetrieveUserInfo")
+	defer span.End()
+
 	logger := log.FromContext(ctx)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v1/userinfo", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v1/userinfo", http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +105,7 @@ func (c *googleAuthClient) RetrieveUserInfo(ctx context.Context, googleAuthRespo
 	q.Add("access_token", googleAuthResponse.AccessToken)
 	req.URL.RawQuery = q.Encode()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
