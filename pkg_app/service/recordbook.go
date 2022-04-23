@@ -139,6 +139,7 @@ func NewRecordbookSummary(rf RepositoryFactory, student Student, workbookID doma
 	return m, libD.Validator.Struct(m)
 }
 func (m *recordbookSummary) GetCompletionRate(ctx context.Context) (map[string]int, error) {
+	rateMax := 100
 	repo := m.rf.NewRecordbookRepository(ctx)
 
 	numberOfMemorizedProblemsMap, err := repo.CountMemorizedProblem(ctx, m.GetStudent(), m.workbookID)
@@ -161,7 +162,7 @@ func (m *recordbookSummary) GetCompletionRate(ctx context.Context) (map[string]i
 		if numberOfProblems == 0 {
 			completionRateMap[studyType] = 0
 		} else {
-			completionRateMap[studyType] = numberOfMemorizedProblems * 100 / numberOfProblems
+			completionRateMap[studyType] = numberOfMemorizedProblems * rateMax / numberOfProblems
 		}
 	}
 

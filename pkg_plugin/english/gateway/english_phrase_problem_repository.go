@@ -124,6 +124,9 @@ func NewEnglishPhraseProblemRepository(db *gorm.DB, rf appS.AudioRepositoryFacto
 }
 
 func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, operator appD.StudentModel, param appS.ProblemSearchCondition) (appS.ProblemSearchResult, error) {
+	_, span := tracer.Start(ctx, "englishPhraseProblemRepository.FindProblems")
+	defer span.End()
+
 	limit := param.GetPageSize()
 	offset := (param.GetPageNo() - 1) * param.GetPageSize()
 	var problemEntities []englishPhraseProblemEntity
@@ -159,6 +162,9 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 }
 
 func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) (appS.ProblemSearchResult, error) {
+	_, span := tracer.Start(ctx, "englishPhraseProblemRepository.FindAllProblems")
+	defer span.End()
+
 	limit := 1000
 	var problemEntities []englishPhraseProblemEntity
 
@@ -194,6 +200,9 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 }
 
 func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator appD.StudentModel, param appS.ProblemIDsCondition) (appS.ProblemSearchResult, error) {
+	_, span := tracer.Start(ctx, "englishPhraseProblemRepository.FindProblemsByProblemIDs")
+	defer span.End()
+
 	var problemEntities []englishPhraseProblemEntity
 
 	ids := make([]uint, 0)
@@ -223,6 +232,9 @@ func (r *englishPhraseProblemRepository) FindProblemsByProblemIDs(ctx context.Co
 }
 
 func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, operator appD.StudentModel, id appS.ProblemSelectParameter1) (appS.Problem, error) {
+	_, span := tracer.Start(ctx, "englishPhraseProblemRepository.FindProblemByID")
+	defer span.End()
+
 	var problemEntity englishPhraseProblemEntity
 
 	db := r.db.
@@ -241,6 +253,9 @@ func (r *englishPhraseProblemRepository) FindProblemByID(ctx context.Context, op
 }
 
 func (r *englishPhraseProblemRepository) FindProblemIDs(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) ([]appD.ProblemID, error) {
+	_, span := tracer.Start(ctx, "englishPhraseProblemRepository.FindProblemIDs")
+	defer span.End()
+
 	pageNo := 1
 	pageSize := 1000
 	ids := make([]appD.ProblemID, 0)
@@ -277,6 +292,9 @@ func (r *englishPhraseProblemRepository) FindProblemsByCustomCondition(ctx conte
 }
 
 func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operator appD.StudentModel, param appS.ProblemAddParameter) (appD.ProblemID, error) {
+	ctx, span := tracer.Start(ctx, "englishPhraseProblemRepository.AddProblem")
+	defer span.End()
+
 	logger := log.FromContext(ctx)
 
 	problemParam, err := toNewEnglishPhraseProblemParam(param)
@@ -309,6 +327,9 @@ func (r *englishPhraseProblemRepository) UpdateProblem(ctx context.Context, oper
 }
 
 func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, operator appD.StudentModel, id appS.ProblemSelectParameter2) error {
+	ctx, span := tracer.Start(ctx, "englishPhraseProblemRepository.RemoveProblem")
+	defer span.End()
+
 	logger := log.FromContext(ctx)
 
 	logger.Infof("englishPhraseProblemRepository.RemoveProblem. text: %d", id.GetProblemID())
@@ -332,7 +353,7 @@ func (r *englishPhraseProblemRepository) RemoveProblem(ctx context.Context, oper
 }
 
 func (r *englishPhraseProblemRepository) CountProblems(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) (int, error) {
-	ctx, span := tracer.Start(ctx, "englishSentenceProblemRepository.CountProblems")
+	_, span := tracer.Start(ctx, "englishSentenceProblemRepository.CountProblems")
 	defer span.End()
 
 	where := func() *gorm.DB {
