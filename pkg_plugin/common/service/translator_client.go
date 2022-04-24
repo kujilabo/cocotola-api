@@ -1,4 +1,4 @@
-//go:generate mockery --output mock --name TranslationClient
+//go:generate mockery --output mock --name TranslatorClient
 package service
 
 import (

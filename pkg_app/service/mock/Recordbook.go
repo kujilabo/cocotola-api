@@ -19,15 +19,15 @@ type Recordbook struct {
 }
 
 // GetResults provides a mock function with given fields: ctx
-func (_m *Recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyStatus, error) {
+func (_m *Recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyRecord, error) {
 	ret := _m.Called(ctx)
 
-	var r0 map[domain.ProblemID]domain.StudyStatus
-	if rf, ok := ret.Get(0).(func(context.Context) map[domain.ProblemID]domain.StudyStatus); ok {
+	var r0 map[domain.ProblemID]domain.StudyRecord
+	if rf, ok := ret.Get(0).(func(context.Context) map[domain.ProblemID]domain.StudyRecord); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[domain.ProblemID]domain.StudyStatus)
+			r0 = ret.Get(0).(map[domain.ProblemID]domain.StudyRecord)
 		}
 	}
 
@@ -42,15 +42,15 @@ func (_m *Recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]doma
 }
 
 // GetResultsSortedLevel provides a mock function with given fields: ctx
-func (_m *Recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.ProblemWithLevel, error) {
+func (_m *Recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.StudyRecordWithProblemID, error) {
 	ret := _m.Called(ctx)
 
-	var r0 []domain.ProblemWithLevel
-	if rf, ok := ret.Get(0).(func(context.Context) []domain.ProblemWithLevel); ok {
+	var r0 []domain.StudyRecordWithProblemID
+	if rf, ok := ret.Get(0).(func(context.Context) []domain.StudyRecordWithProblemID); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.ProblemWithLevel)
+			r0 = ret.Get(0).([]domain.StudyRecordWithProblemID)
 		}
 	}
 

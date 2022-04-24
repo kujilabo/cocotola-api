@@ -89,7 +89,7 @@ func (r *recordbookRepository) toStudyType(studyTypeID uint) (string, error) {
 	return "", libD.ErrInvalidArgument
 }
 
-func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
+func (r *recordbookRepository) FindStudyRecords(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyRecord, error) {
 	_, span := tracer.Start(ctx, "recordbookRepository.FindStudyResults")
 	defer span.End()
 
@@ -106,9 +106,9 @@ func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator do
 		return nil, result.Error
 	}
 
-	results := make(map[domain.ProblemID]domain.StudyStatus)
+	results := make(map[domain.ProblemID]domain.StudyRecord)
 	for _, e := range entities {
-		results[domain.ProblemID(e.ProblemID)] = domain.StudyStatus{
+		results[domain.ProblemID(e.ProblemID)] = domain.StudyRecord{
 			Level:          e.Level,
 			ResultPrev1:    *e.ResultPrev1,
 			Memorized:      e.Memorized,

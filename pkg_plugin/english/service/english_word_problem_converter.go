@@ -26,11 +26,11 @@ type toSingleEnglishWordProblemAddParameter struct {
 	translatorClient pluginS.TranslatorClient
 	workbookID       app.WorkbookID
 	number           int
-	param            *englishWordProblemAddParemeter
+	param            *EnglishWordProblemAddParemeter
 	audioID          app.AudioID
 }
 
-func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *englishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
+func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
 	return &toSingleEnglishWordProblemAddParameter{
 		translatorClient: translatorClient,
 		workbookID:       workbookID,
@@ -69,11 +69,11 @@ type toMultipleEnglishWordProblemAddParameter struct {
 	translatorClient pluginS.TranslatorClient
 	workbookID       app.WorkbookID
 	number           int
-	param            *englishWordProblemAddParemeter
+	param            *EnglishWordProblemAddParemeter
 	audioID          app.AudioID
 }
 
-func NewToMultipleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *englishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
+func NewToMultipleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
 	return &toMultipleEnglishWordProblemAddParameter{
 		translatorClient: translatorClient,
 		workbookID:       workbookID,
@@ -129,12 +129,12 @@ func (c *toMultipleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]a
 type toSingleEnglishWordProblemUpdateParameter struct {
 	translatorClient pluginS.TranslatorClient
 	number           int
-	param            *englishWordProblemUpdateParemeter
+	param            *EnglishWordProblemUpdateParemeter
 	audioID          app.AudioID
 	sentenceID1      app.ProblemID
 }
 
-func NewToSingleEnglishWordProblemUpdateParameter(translatorClient pluginS.TranslatorClient, number int, param *englishWordProblemUpdateParemeter, audioID app.AudioID, sentenceID1 app.ProblemID) ToEnglishWordProblemUpdateParameter {
+func NewToSingleEnglishWordProblemUpdateParameter(translatorClient pluginS.TranslatorClient, number int, param *EnglishWordProblemUpdateParemeter, audioID app.AudioID, sentenceID1 app.ProblemID) ToEnglishWordProblemUpdateParameter {
 	return &toSingleEnglishWordProblemUpdateParameter{
 		translatorClient: translatorClient,
 		number:           number,

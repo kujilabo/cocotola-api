@@ -1,6 +1,10 @@
 package domain
 
-import "golang.org/x/xerrors"
+import (
+	"golang.org/x/xerrors"
+
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+)
 
 const Lang2Len = 2
 const Lang3Len = 3
@@ -17,7 +21,7 @@ type lang2 struct {
 
 func NewLang2(lang string) (Lang2, error) {
 	if len(lang) != Lang2Len {
-		return nil, xerrors.Errorf("invalid parameter. Lang2: %s", lang)
+		return nil, xerrors.Errorf("invalid parameter. Lang2: %s. err: %w", lang, libD.ErrInvalidArgument)
 	}
 
 	return &lang2{

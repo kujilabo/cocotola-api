@@ -7,7 +7,7 @@ type StudyResultParameter struct {
 	Memorized bool `json:"memorized"`
 }
 
-type ProblemWithLevel struct {
+type StudyRecord struct {
 	ProblemID      uint       `json:"problemId"`
 	Level          int        `json:"level"`
 	ResultPrev1    bool       `json:"resultPrev1"`
@@ -15,8 +15,8 @@ type ProblemWithLevel struct {
 	LastAnsweredAt *time.Time `json:"lastAnsweredAt"`
 }
 
-type ProblemWithLevelList struct {
-	Records []ProblemWithLevel `json:"records"`
+type StudyRecords struct {
+	Records []StudyRecord `json:"records"`
 }
 
 type IntValue struct {

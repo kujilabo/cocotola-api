@@ -101,10 +101,10 @@ func main() {
 
 	synthesizer := pluginCommonGateway.NewSynthesizerClient("", time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
-	translationClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	translatorClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
 	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
 
-	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translationClient, tatoebaClient)
+	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translatorClient, tatoebaClient)
 
 	newIterator := func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error) {
 		processor, ok := problemImportProcessor[problemType]
@@ -202,7 +202,7 @@ func main() {
 		plugin.Use(authMiddleware)
 		{
 			pluginTranslation := plugin.Group("translation")
-			translationHandler := pluginCommonHandler.NewTranslationHandler(translationClient)
+			translationHandler := pluginCommonHandler.NewTranslationHandler(translatorClient)
 			pluginTranslation.POST("find", translationHandler.FindTranslations)
 			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
 			pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)

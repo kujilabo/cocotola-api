@@ -37,14 +37,14 @@ var (
 	EnglishWordProblemAddPropertyPos        = "pos"
 )
 
-type englishWordProblemAddParemeter struct {
+type EnglishWordProblemAddParemeter struct {
 	Lang       app.Lang2      `validate:"required"`
 	Text       string         `validate:"required"`
 	Pos        plugin.WordPos `validate:"required"`
 	Translated string
 }
 
-func (p *englishWordProblemAddParemeter) toProperties() map[string]string {
+func (p *EnglishWordProblemAddParemeter) toProperties() map[string]string {
 	return map[string]string{
 		// EnglishWordProblemAddPropertyAudioID:    strconv.Itoa(int(uint(audioID))),
 		EnglishWordProblemAddPropertyLang:       p.Lang.String(),
@@ -54,11 +54,11 @@ func (p *englishWordProblemAddParemeter) toProperties() map[string]string {
 	}
 }
 
-func toEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
+func NewEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*EnglishWordProblemAddParemeter, error) {
 	posS := param.GetProperties()["pos"]
 	pos, err := strconv.Atoi(posS)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to cast to int. err: %w", err)
+		return nil, xerrors.Errorf("failed to cast to int. err: %w", lib.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
@@ -76,25 +76,24 @@ func toEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*englishW
 
 	lang2, err := app.NewLang2(param.GetProperties()["lang"])
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("lang format is invalid. err: %w", err)
 	}
 
-	m := &englishWordProblemAddParemeter{
+	m := &EnglishWordProblemAddParemeter{
 		Lang:       lang2,
 		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
 		Translated: translated,
 	}
-
 	return m, lib.Validator.Struct(m)
 }
 
-type englishWordProblemUpdateParemeter struct {
+type EnglishWordProblemUpdateParemeter struct {
 	Text       string `validate:"required"`
 	Translated string
 }
 
-func toEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*englishWordProblemUpdateParemeter, error) {
+func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*EnglishWordProblemUpdateParemeter, error) {
 	if _, ok := param.GetProperties()["text"]; !ok {
 		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
 	}
@@ -108,7 +107,7 @@ func toEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*en
 		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
 	}
 
-	m := &englishWordProblemUpdateParemeter{
+	m := &EnglishWordProblemUpdateParemeter{
 		Text:       param.GetProperties()["text"],
 		Translated: translated,
 	}
@@ -146,7 +145,7 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.AddProblem, param: %+v", param)
 
-	extractedParam, err := toEnglishWordProblemAddParemeter(param)
+	extractedParam, err := NewEnglishWordProblemAddParemeter(param)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
 	}
@@ -204,7 +203,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 	logger := log.FromContext(ctx)
 	logger.Debug("englishWordProblemProcessor.UpdateProblem, param: %+v", param)
 
-	extractedParam, err := toEnglishWordProblemUpdateParemeter(param)
+	extractedParam, err := NewEnglishWordProblemUpdateParemeter(param)
 	if err != nil {
 		return 0, 0, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
 	}
