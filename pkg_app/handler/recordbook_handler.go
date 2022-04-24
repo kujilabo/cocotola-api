@@ -48,8 +48,6 @@ func NewRecordbookHandler(studentUsecaseStudy studentU.StudentUsecaseStudy) Reco
 // @Router      /v1/study/workbook/{workbookID}/study_type/{studyType} [get]
 func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	ctx := c.Request.Context()
-	logger := log.FromContext(ctx)
-	logger.Info("FindRecordbook")
 
 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")

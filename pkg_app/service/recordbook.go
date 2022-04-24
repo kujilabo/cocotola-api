@@ -72,8 +72,10 @@ func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domai
 			results[problemID] = status
 		} else {
 			results[problemID] = domain.StudyStatus{
-				Level:     0,
-				Memorized: false,
+				Level:          0,
+				ResultPrev1:    false,
+				Memorized:      false,
+				LastAnsweredAt: nil,
 			}
 		}
 	}
@@ -91,9 +93,11 @@ func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.Proble
 	i := 0
 	for k, v := range problems1 {
 		problems2[i] = domain.ProblemWithLevel{
-			ProblemID: k,
-			Level:     v.Level,
-			Memorized: v.Memorized,
+			ProblemID:      k,
+			Level:          v.Level,
+			ResultPrev1:    v.ResultPrev1,
+			Memorized:      v.Memorized,
+			LastAnsweredAt: v.LastAnsweredAt,
 		}
 		i++
 	}
