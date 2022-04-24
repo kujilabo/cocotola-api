@@ -183,5 +183,6 @@ func (m *workbook) CountProblems(ctx context.Context, operator domain.StudentMod
 	if err != nil {
 		return 0, err
 	}
+
 	return problemRepo.CountProblems(ctx, operator, domain.WorkbookID(m.GetWorkbookModel().GetID()))
 }

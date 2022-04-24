@@ -145,6 +145,7 @@ func main() {
 	v1 := router.Group("v1")
 	{
 		v1.Use(otelgin.Middleware(cfg.App.Name))
+		v1.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
 		v1auth := v1.Group("auth")
 		googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
 		guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
@@ -197,6 +198,7 @@ func main() {
 	plugin := router.Group("plugin")
 	{
 		plugin.Use(otelgin.Middleware(cfg.App.Name))
+		plugin.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
 		plugin.Use(authMiddleware)
 		{
 			pluginTranslation := plugin.Group("translation")

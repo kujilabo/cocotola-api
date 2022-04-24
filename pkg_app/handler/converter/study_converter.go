@@ -34,9 +34,11 @@ func ToProblemWithLevelList(ctx context.Context, problems []domain.ProblemWithLe
 	list := make([]entity.ProblemWithLevel, len(problems))
 	for i, p := range problems {
 		list[i] = entity.ProblemWithLevel{
-			ProblemID: uint(p.ProblemID),
-			Level:     p.Level,
-			Memorized: p.Memorized,
+			ProblemID:      uint(p.ProblemID),
+			Level:          p.Level,
+			ResultPrev1:    p.ResultPrev1,
+			Memorized:      p.Memorized,
+			LastAnsweredAt: p.LastAnsweredAt,
 		}
 	}
 	return &entity.ProblemWithLevelList{

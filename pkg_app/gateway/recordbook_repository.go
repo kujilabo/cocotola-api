@@ -109,8 +109,10 @@ func (r *recordbookRepository) FindStudyResults(ctx context.Context, operator do
 	results := make(map[domain.ProblemID]domain.StudyStatus)
 	for _, e := range entities {
 		results[domain.ProblemID(e.ProblemID)] = domain.StudyStatus{
-			Level:     e.Level,
-			Memorized: e.Memorized,
+			Level:          e.Level,
+			ResultPrev1:    *e.ResultPrev1,
+			Memorized:      e.Memorized,
+			LastAnsweredAt: &e.LastAnsweredAt,
 		}
 	}
 
