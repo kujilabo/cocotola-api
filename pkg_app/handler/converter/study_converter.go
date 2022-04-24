@@ -30,18 +30,18 @@ func ToStudyResult(ctx context.Context, param *entity.StudyResultParameter) (*do
 	}, nil
 }
 
-func ToProblemWithLevelList(ctx context.Context, problems []domain.ProblemWithLevel) (*entity.ProblemWithLevelList, error) {
-	list := make([]entity.ProblemWithLevel, len(problems))
+func ToProblemWithLevelList(ctx context.Context, problems []domain.StudyRecordWithProblemID) (*entity.StudyRecords, error) {
+	list := make([]entity.StudyRecord, len(problems))
 	for i, p := range problems {
-		list[i] = entity.ProblemWithLevel{
+		list[i] = entity.StudyRecord{
 			ProblemID:      uint(p.ProblemID),
-			Level:          p.Level,
-			ResultPrev1:    p.ResultPrev1,
-			Memorized:      p.Memorized,
-			LastAnsweredAt: p.LastAnsweredAt,
+			Level:          p.StudyRecord.Level,
+			ResultPrev1:    p.StudyRecord.ResultPrev1,
+			Memorized:      p.StudyRecord.Memorized,
+			LastAnsweredAt: p.StudyRecord.LastAnsweredAt,
 		}
 	}
-	return &entity.ProblemWithLevelList{
+	return &entity.StudyRecords{
 		Records: list,
 	}, nil
 }

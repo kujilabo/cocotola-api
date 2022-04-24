@@ -15,7 +15,7 @@ import (
 type StudentUsecaseStudy interface {
 
 	// study
-	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error)
+	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error)
 
 	GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error)
 
@@ -39,18 +39,10 @@ func NewStudentUsecaseStudy(db *gorm.DB, pf service.ProcessorFactory, rfFunc ser
 	}
 }
 
-func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.ProblemWithLevel, error) {
-	var results []domain.ProblemWithLevel
+func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error) {
+	var results []domain.StudyRecordWithProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rfFunc, err := s.rfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to rfFunc. err: %w", err)
-		}
-		userRepo, err := s.userRfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to userRepo. err: %w", err)
-		}
-		student, err := usecase.FindStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
+		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -74,15 +66,7 @@ func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID us
 func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error) {
 	var results map[string]int
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rfFunc, err := s.rfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to rfFunc. err: %w", err)
-		}
-		userRepo, err := s.userRfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to userRepo. err: %w", err)
-		}
-		student, err := usecase.FindStudent(ctx, s.pf, rfFunc, userRepo, organizationID, operatorID)
+		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -105,15 +89,7 @@ func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizatio
 
 func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		rf, err := s.rfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to rfFunc. err: %w", err)
-		}
-		userRepo, err := s.userRfFunc(ctx, tx)
-		if err != nil {
-			return xerrors.Errorf("failed to userRepo. err: %w", err)
-		}
-		student, err := usecase.FindStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
+		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
 			return xerrors.Errorf("failed to findStudent. err: %w", err)
 		}
@@ -133,4 +109,20 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 		return err
 	}
 	return nil
+}
+func (s *studentUsecaseStudy) findStudent(ctx context.Context, db *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID) (service.Student, error) {
+	rf, err := s.rfFunc(ctx, db)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to rfFunc. err: %w", err)
+	}
+	userRepo, err := s.userRfFunc(ctx, db)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to userRepo. err: %w", err)
+	}
+	student, err := usecase.FindStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+	}
+
+	return student, nil
 }

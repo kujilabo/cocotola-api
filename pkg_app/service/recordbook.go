@@ -15,9 +15,9 @@ type Recordbook interface {
 
 	GetWorkbookID() domain.WorkbookID
 
-	GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyStatus, error)
+	GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyRecord, error)
 
-	GetResultsSortedLevel(ctx context.Context) ([]domain.ProblemWithLevel, error)
+	GetResultsSortedLevel(ctx context.Context) ([]domain.StudyRecordWithProblemID, error)
 
 	SetResult(ctx context.Context, problemType string, problemID domain.ProblemID, result, memorized bool) error
 }
@@ -48,10 +48,10 @@ func (m *recordbook) GetWorkbookID() domain.WorkbookID {
 	return m.workbookID
 }
 
-func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyStatus, error) {
+func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domain.StudyRecord, error) {
 	repo := m.rf.NewRecordbookRepository(ctx)
 
-	studyResults, err := repo.FindStudyResults(ctx, m.GetStudent(), m.workbookID, m.studyType)
+	studyResults, err := repo.FindStudyRecords(ctx, m.GetStudent(), m.workbookID, m.studyType)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to FindStudyResults. err: %w", err)
 	}
@@ -66,12 +66,12 @@ func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domai
 		return nil, xerrors.Errorf("failed to FindProblemIDs. err: %w", err)
 	}
 
-	results := make(map[domain.ProblemID]domain.StudyStatus)
+	results := make(map[domain.ProblemID]domain.StudyRecord)
 	for _, problemID := range problemIDs {
 		if status, ok := studyResults[problemID]; ok {
 			results[problemID] = status
 		} else {
-			results[problemID] = domain.StudyStatus{
+			results[problemID] = domain.StudyRecord{
 				Level:          0,
 				ResultPrev1:    false,
 				Memorized:      false,
@@ -83,21 +83,23 @@ func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domai
 	return results, nil
 }
 
-func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.ProblemWithLevel, error) {
+func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.StudyRecordWithProblemID, error) {
 	problems1, err := m.GetResults(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to GetResults. err: %w", err)
 	}
 
-	problems2 := make([]domain.ProblemWithLevel, len(problems1))
+	problems2 := make([]domain.StudyRecordWithProblemID, len(problems1))
 	i := 0
 	for k, v := range problems1 {
-		problems2[i] = domain.ProblemWithLevel{
-			ProblemID:      k,
-			Level:          v.Level,
-			ResultPrev1:    v.ResultPrev1,
-			Memorized:      v.Memorized,
-			LastAnsweredAt: v.LastAnsweredAt,
+		problems2[i] = domain.StudyRecordWithProblemID{
+			ProblemID: k,
+			StudyRecord: domain.StudyRecord{
+				Level:          v.Level,
+				ResultPrev1:    v.ResultPrev1,
+				Memorized:      v.Memorized,
+				LastAnsweredAt: v.LastAnsweredAt,
+			},
 		}
 		i++
 	}

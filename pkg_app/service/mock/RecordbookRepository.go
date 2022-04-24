@@ -39,16 +39,16 @@ func (_m *RecordbookRepository) CountMemorizedProblem(ctx context.Context, opera
 	return r0, r1
 }
 
-// FindStudyResults provides a mock function with given fields: ctx, operator, workbookID, studyType
-func (_m *RecordbookRepository) FindStudyResults(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyStatus, error) {
+// FindStudyRecords provides a mock function with given fields: ctx, operator, workbookID, studyType
+func (_m *RecordbookRepository) FindStudyRecords(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, studyType string) (map[domain.ProblemID]domain.StudyRecord, error) {
 	ret := _m.Called(ctx, operator, workbookID, studyType)
 
-	var r0 map[domain.ProblemID]domain.StudyStatus
-	if rf, ok := ret.Get(0).(func(context.Context, domain.StudentModel, domain.WorkbookID, string) map[domain.ProblemID]domain.StudyStatus); ok {
+	var r0 map[domain.ProblemID]domain.StudyRecord
+	if rf, ok := ret.Get(0).(func(context.Context, domain.StudentModel, domain.WorkbookID, string) map[domain.ProblemID]domain.StudyRecord); ok {
 		r0 = rf(ctx, operator, workbookID, studyType)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[domain.ProblemID]domain.StudyStatus)
+			r0 = ret.Get(0).(map[domain.ProblemID]domain.StudyRecord)
 		}
 	}
 

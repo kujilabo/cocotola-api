@@ -9,15 +9,12 @@ type StudyResultParameter struct {
 	Result bool
 }
 
-type ProblemWithLevel struct {
-	ProblemID      ProblemID
-	Level          int
-	ResultPrev1    bool
-	Memorized      bool
-	LastAnsweredAt *time.Time
+type StudyRecordWithProblemID struct {
+	ProblemID   ProblemID
+	StudyRecord StudyRecord
 }
 
-type StudyStatus struct {
+type StudyRecord struct {
 	Level          int
 	ResultPrev1    bool
 	Memorized      bool

@@ -2,27 +2,31 @@ package service_test
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appDM "github.com/kujilabo/cocotola-api/pkg_app/domain/mock"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	appSM "github.com/kujilabo/cocotola-api/pkg_app/service/mock"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	pluginD "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginDM "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain/mock"
 	pluginSM "github.com/kujilabo/cocotola-api/pkg_plugin/common/service/mock"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 var anythingOfContext = mock.MatchedBy(func(_ context.Context) bool { return true })
 
 func englishWordProblemProcessor_Init(t *testing.T) (
 	synthesizerClient *pluginSM.SynthesizerClient,
-	translatorClient *pluginSM.TranslationClient,
+	translatorClient *pluginSM.TranslatorClient,
 	tatoebaClient *pluginSM.TatoebaClient,
 	operator *appDM.StudentModel,
 	workbookModel *appDM.WorkbookModel,
@@ -31,7 +35,7 @@ func englishWordProblemProcessor_Init(t *testing.T) (
 	englishWordProblemProcessor service.EnglishWordProblemProcessor) {
 
 	synthesizerClient = new(pluginSM.SynthesizerClient)
-	translatorClient = new(pluginSM.TranslationClient)
+	translatorClient = new(pluginSM.TranslatorClient)
 	tatoebaClient = new(pluginSM.TatoebaClient)
 	operator = new(appDM.StudentModel)
 	problemRepo = new(appSM.ProblemRepository)
@@ -185,5 +189,109 @@ func Test_englishWordProblemProcessor_UpdateProblem(t *testing.T) {
 		assert.Equal(t, "0", param.GetProperties()["audioId"])
 		assert.Equal(t, "0", param.GetProperties()["sentenceId1"])
 		assert.Len(t, param.GetProperties(), 4)
+	}
+}
+
+func testNewProblemAddParameter_EnglishWord(properties map[string]string) appS.ProblemAddParameter {
+	param := new(appSM.ProblemAddParameter)
+	param.On("GetProperties").Return(properties)
+	return param
+}
+
+func TestNewEnglishWordProblemAddParemeter(t *testing.T) {
+	type args struct {
+		param appS.ProblemAddParameter
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *service.EnglishWordProblemAddParemeter
+		wantErr error
+	}{
+		{
+			name: "pos is not defined",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{}),
+			},
+			wantErr: libD.ErrInvalidArgument,
+		},
+		{
+			name: "text is not defined",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{
+					"pos": "6",
+				}),
+			},
+			wantErr: libD.ErrInvalidArgument,
+		},
+		{
+			name: "lang is not defined",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{
+					"pos":  "6",
+					"text": "pen",
+				}),
+			},
+			wantErr: libD.ErrInvalidArgument,
+		},
+		{
+			name: "lang format is invalid",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{
+					"pos":  "6",
+					"text": "pen",
+					"lang": "jpn",
+				}),
+			},
+			wantErr: libD.ErrInvalidArgument,
+		},
+		{
+			name: "parameter is valid",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{
+					"pos":  "6",
+					"text": "pen",
+					"lang": "ja",
+				}),
+			},
+			want: &service.EnglishWordProblemAddParemeter{
+				Pos:  pluginD.PosNoun,
+				Text: "pen",
+				Lang: appD.Lang2JA,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "parameter is valid, translated is defined",
+			args: args{
+				param: testNewProblemAddParameter_EnglishWord(map[string]string{
+					"pos":        "6",
+					"text":       "pen",
+					"lang":       "ja",
+					"translated": "ペン",
+				}),
+			},
+			want: &service.EnglishWordProblemAddParemeter{
+				Pos:        pluginD.PosNoun,
+				Text:       "pen",
+				Lang:       appD.Lang2JA,
+				Translated: "ペン",
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := service.NewEnglishWordProblemAddParemeter(tt.args.param)
+			if tt.wantErr == nil {
+				assert.NoError(t, err)
+			} else if !errors.Is(err, tt.wantErr) {
+				t.Errorf("NewEnglishWordProblemAddParemeter()Err = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewEnglishWordProblemAddParemeter() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
