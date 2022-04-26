@@ -21,7 +21,6 @@ type synthesizerClient struct {
 	endpoint string
 	username string
 	password string
-	key      string
 	client   http.Client
 }
 
