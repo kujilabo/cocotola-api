@@ -555,7 +555,7 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 				return err
 			}
 
-			paramToAddWorkbook, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishSentenceProblemType, appS.TatoebaWorkbookName, "", map[string]string{})
+			paramToAddWorkbook, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishSentenceProblemType, appS.TatoebaWorkbookName, appD.Lang2JA, "", map[string]string{})
 			if err != nil {
 				return err
 			}

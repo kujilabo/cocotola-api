@@ -4,12 +4,13 @@ import (
 	"context"
 	"strconv"
 
-	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
+	"golang.org/x/xerrors"
 
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
-	"golang.org/x/xerrors"
 )
 
 func CreateDemoWorkbook(ctx context.Context, studentService appS.Student) error {
@@ -370,7 +371,7 @@ func CreateWorkbook(ctx context.Context, student appS.Student, workbookName stri
 	workbookProperties := map[string]string{
 		"audioEnabled": "false",
 	}
-	param, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, "", workbookProperties)
+	param, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, appD.Lang2JA, "", workbookProperties)
 	if err != nil {
 		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
 	}

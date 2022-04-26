@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
 )
@@ -28,7 +29,7 @@ func ToWorkbookSearchResponse(result service.WorkbookSearchResult) (*entity.Work
 }
 
 func ToWorkbookAddParameter(param *entity.WorkbookAddParameter) (service.WorkbookAddParameter, error) {
-	return service.NewWorkbookAddParameter(param.ProblemType, param.Name, param.QuestionText, map[string]string{
+	return service.NewWorkbookAddParameter(param.ProblemType, param.Name, domain.Lang2JA, param.QuestionText, map[string]string{
 		"audioEnabled": "true",
 	})
 }

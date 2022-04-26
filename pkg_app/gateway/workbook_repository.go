@@ -18,7 +18,7 @@ import (
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 	// casbinquery "github.com/pecolynx/casbin-query"
 )
@@ -34,7 +34,7 @@ type workbookEntity struct {
 	SpaceID        uint
 	OwnerID        uint
 	Name           string
-	Lang           string
+	Lang2          string
 	ProblemTypeID  uint `gorm:"column:problem_type_id"`
 	QuestionText   string
 	Properties     string
@@ -61,8 +61,8 @@ func stringMapToJSON(m map[string]string) (string, error) {
 	return string(b), nil
 }
 
-func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf service.ProcessorFactory, operator user.AppUserModel, problemType string, privs user.Privileges) (domain.WorkbookModel, error) {
-	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf service.ProcessorFactory, operator userD.AppUserModel, problemType string, privs userD.Privileges) (domain.WorkbookModel, error) {
+	model, err := userD.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf servic
 		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
-	lang, err := domain.NewLang2(e.Lang)
+	lang, err := domain.NewLang2(e.Lang2)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid lang. lang: %s, err: %w", e.Lang, err)
+		return nil, xerrors.Errorf("invalid lang. lang: %s, err: %w", e.Lang2, err)
 	}
 
-	workbook, err := domain.NewWorkbookModel(model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, lang, problemType, e.QuestionText, properties)
+	workbook, err := domain.NewWorkbookModel(model, userD.SpaceID(e.SpaceID), userD.AppUserID(e.OwnerID), privs, e.Name, lang, problemType, e.QuestionText, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
@@ -151,7 +151,7 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 	}
 
 	results := make([]domain.WorkbookModel, len(workbooks))
-	priv := user.NewPrivileges([]user.RBACAction{domain.PrivilegeRead})
+	priv := userD.NewPrivileges([]userD.RBACAction{domain.PrivilegeRead})
 	for i, e := range workbooks {
 		w, err := e.toWorkbookModel(r.rf, r.pf, operator, r.toProblemType(e.ProblemTypeID), priv)
 		if err != nil {
@@ -182,16 +182,16 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 	return service.NewWorkbookSearchResult(int(count), results)
 }
 
-func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) []user.RBACRole {
-	return []user.RBACRole{domain.NewWorkbookWriter(workbookID), domain.NewWorkbookReader(workbookID)}
+func (r *workbookRepository) getAllWorkbookRoles(workbookID domain.WorkbookID) []userD.RBACRole {
+	return []userD.RBACRole{domain.NewWorkbookWriter(workbookID), domain.NewWorkbookReader(workbookID)}
 }
 
-func (r *workbookRepository) getAllWorkbookPrivileges() []user.RBACAction {
-	return []user.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
+func (r *workbookRepository) getAllWorkbookPrivileges() []userD.RBACAction {
+	return []userD.RBACAction{domain.PrivilegeRead, domain.PrivilegeUpdate, domain.PrivilegeRemove}
 }
 
-func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user.RBACUser, workbookObject user.RBACObject, privs []user.RBACAction) (user.Privileges, error) {
-	actions := make([]user.RBACAction, 0)
+func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject userD.RBACUser, workbookObject userD.RBACObject, privs []userD.RBACAction) (userD.Privileges, error) {
+	actions := make([]userD.RBACAction, 0)
 	for _, priv := range privs {
 		ok, err := e.Enforce(string(userObject), string(workbookObject), string(priv))
 		if err != nil {
@@ -201,10 +201,10 @@ func (r *workbookRepository) checkPrivileges(e *casbin.Enforcer, userObject user
 			actions = append(actions, priv)
 		}
 	}
-	return user.NewPrivileges(actions), nil
+	return userD.NewPrivileges(actions), nil
 }
 
-// func (r *workbookRepository) canReadWorkbook(operator user.AppUser, workbookID domain.WorkbookID) error {
+// func (r *workbookRepository) canReadWorkbook(operator userD.AppUser, workbookID domain.WorkbookID) error {
 // 	objectColumnName := "name"
 // 	object := domain.WorkbookObjectPrefix + strconv.Itoa(int(uint(workbookID)))
 // 	subject := "user_" + strconv.Itoa(int(operator.GetID()))
@@ -255,7 +255,7 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 	return service.NewWorkbook(r.rf, r.pf, workbookModel)
 }
 
-func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, name string) (service.Workbook, error) {
+func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, name string) (service.Workbook, error) {
 	ctx, span := tracer.Start(ctx, "workbookRepository.FindWorkbookByName")
 	defer span.End()
 
@@ -271,9 +271,9 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 		return nil, result.Error
 	}
 
-	var priv user.Privileges
+	var priv userD.Privileges
 	if spaceID == service.GetSystemSpaceID() {
-		priv = user.NewPrivileges([]user.RBACAction{domain.PrivilegeRead})
+		priv = userD.NewPrivileges([]userD.RBACAction{domain.PrivilegeRead})
 	} else {
 		privTmp, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbookEntity.ID))
 		if err != nil {
@@ -295,11 +295,11 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 	return service.NewWorkbook(r.rf, r.pf, workbookModel)
 }
 
-func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.AppUserModel, workbookID domain.WorkbookID) (user.Privileges, error) {
+func (r *workbookRepository) getPrivileges(ctx context.Context, operator userD.AppUserModel, workbookID domain.WorkbookID) (userD.Privileges, error) {
 	rbacRepo := r.userRf.NewRBACRepository()
 	workbookRoles := r.getAllWorkbookRoles(workbookID)
-	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
-	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []user.RBACUser{userObject})
+	userObject := userD.NewUserObject(userD.AppUserID(operator.GetID()))
+	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []userD.RBACUser{userObject})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
 	}
@@ -308,7 +308,7 @@ func (r *workbookRepository) getPrivileges(ctx context.Context, operator user.Ap
 	return r.checkPrivileges(e, userObject, workbookObject, privs)
 }
 
-func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param service.WorkbookAddParameter) (domain.WorkbookID, error) {
+func (r *workbookRepository) AddWorkbook(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, param service.WorkbookAddParameter) (domain.WorkbookID, error) {
 	_, span := tracer.Start(ctx, "workbookRepository.AddWorkbook")
 	defer span.End()
 
@@ -329,6 +329,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 		OwnerID:        operator.GetID(),
 		ProblemTypeID:  problemTypeID,
 		Name:           param.GetName(),
+		Lang2:          param.GetLang().String(),
 		QuestionText:   param.GetQuestionText(),
 		Properties:     propertiesJSON,
 	}
@@ -339,7 +340,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 	workbookID := domain.WorkbookID(workbook.ID)
 
 	rbacRepo := r.userRf.NewRBACRepository()
-	userObject := user.NewUserObject(user.AppUserID(operator.GetID()))
+	userObject := userD.NewUserObject(userD.AppUserID(operator.GetID()))
 	workbookObject := domain.NewWorkbookObject(workbookID)
 	workbookWriter := domain.NewWorkbookWriter(workbookID)
 
@@ -359,7 +360,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator user.AppU
 		return 0, xerrors.Errorf("Failed to AddNamedGroupingPolicy. err: %w", err)
 	}
 
-	// rbacRepo.NewEnforcerWithRolesAndUsers([]user.RBACRole{workbookWriter}, []user.RBACUser{userObject})
+	// rbacRepo.NewEnforcerWithRolesAndUsers([]userD.RBACRole{workbookWriter}, []userD.RBACUser{userObject})
 
 	return workbookID, nil
 }

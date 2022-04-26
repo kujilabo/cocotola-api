@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
@@ -156,10 +157,11 @@ func testNewWorkbookSearchCondition(t *testing.T) appS.WorkbookSearchCondition {
 }
 
 func testNewWorkbookAddParameter(t *testing.T, name string) appS.WorkbookAddParameter {
-	p, err := appS.NewWorkbookAddParameter("english_word_problem", name, "", map[string]string{"audioEnabled": "false"})
+	p, err := appS.NewWorkbookAddParameter("english_word_problem", name, domain.Lang2JA, "", map[string]string{"audioEnabled": "false"})
 	assert.NoError(t, err)
 	return p
 }
+
 func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userS.Owner, loginID, username string) userS.AppUser {
 	appUserRepo := userG.NewAppUserRepository(nil, db)
 	userID1, err := appUserRepo.AddAppUser(ctx, owner, testNewAppUserAddParameter(t, loginID, username))
@@ -169,6 +171,7 @@ func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userS.
 	assert.Equal(t, loginID, user1.GetLoginID())
 	return user1
 }
+
 func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo appS.WorkbookRepository, student appS.Student, spaceID userD.SpaceID, workbookName string) appS.Workbook {
 	workbookID11, err := workbookRepo.AddWorkbook(ctx, student, spaceID, testNewWorkbookAddParameter(t, workbookName))
 	assert.NoError(t, err)
@@ -177,6 +180,7 @@ func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRep
 	assert.NoError(t, err)
 	return workbook
 }
+
 func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	bg := context.Background()
