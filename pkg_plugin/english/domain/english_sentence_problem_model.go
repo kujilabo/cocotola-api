@@ -4,30 +4,30 @@ package domain
 import (
 	"context"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
 const EnglishSentenceProblemType = "english_sentence"
 
 type EnglishSentenceProblemModel interface {
-	app.ProblemModel
+	appD.ProblemModel
 	GetProvider() string
-	GetAudioID() app.AudioID
+	GetAudioID() appD.AudioID
 	GetText() string
 	GetNote() string
 }
 
 type englishSentenceProblemModel struct {
-	app.ProblemModel
+	appD.ProblemModel
 	Provider   string
-	AudioID    app.AudioID
+	AudioID    appD.AudioID
 	Text       string
-	Lang       app.Lang2
+	Lang       appD.Lang2
 	Translated string
 	Note       string
 }
 
-func NewEnglishSentenceProblemModel(problemModel app.ProblemModel, audioID app.AudioID, provider string, text string, lang app.Lang2, translated string, note string) (EnglishSentenceProblemModel, error) {
+func NewEnglishSentenceProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, provider string, text string, lang appD.Lang2, translated string, note string) (EnglishSentenceProblemModel, error) {
 	return &englishSentenceProblemModel{
 		ProblemModel: problemModel,
 		AudioID:      audioID,
@@ -42,7 +42,7 @@ func (m *englishSentenceProblemModel) GetProvider() string {
 	return m.Provider
 }
 
-func (m *englishSentenceProblemModel) GetAudioID() app.AudioID {
+func (m *englishSentenceProblemModel) GetAudioID() appD.AudioID {
 	return m.AudioID
 }
 

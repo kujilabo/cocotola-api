@@ -14,8 +14,8 @@ type AudioModel struct {
 	mock.Mock
 }
 
-// GetAudioContent provides a mock function with given fields:
-func (_m *AudioModel) GetAudioContent() string {
+// GetContent provides a mock function with given fields:
+func (_m *AudioModel) GetContent() string {
 	ret := _m.Called()
 
 	var r0 string
@@ -43,15 +43,15 @@ func (_m *AudioModel) GetID() uint {
 }
 
 // GetLang provides a mock function with given fields:
-func (_m *AudioModel) GetLang() domain.Lang5 {
+func (_m *AudioModel) GetLang() domain.Lang2 {
 	ret := _m.Called()
 
-	var r0 domain.Lang5
-	if rf, ok := ret.Get(0).(func() domain.Lang5); ok {
+	var r0 domain.Lang2
+	if rf, ok := ret.Get(0).(func() domain.Lang2); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(domain.Lang5)
+			r0 = ret.Get(0).(domain.Lang2)
 		}
 	}
 

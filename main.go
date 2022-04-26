@@ -99,7 +99,7 @@ func main() {
 		c.Status(http.StatusOK)
 	})
 
-	synthesizer := pluginCommonGateway.NewSynthesizerClient("", time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
+	synthesizer := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
 	translatorClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
 	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
@@ -114,8 +114,20 @@ func main() {
 		return nil, xerrors.Errorf("processor not found. problemType: %s", problemType)
 	}
 
+	problemTypeRepo := appG.NewProblemTypeRepository(db)
+	problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	studyTypeRepo := appG.NewStudyTypeRepository(db)
+	studyTypes, err := studyTypeRepo.FindAllStudyTypes(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	rfFunc := func(ctx context.Context, db *gorm.DB) (appS.RepositoryFactory, error) {
-		return appG.NewRepositoryFactory(ctx, db, cfg.DB.DriverName, userRfFunc, pf, problemRepositories)
+		return appG.NewRepositoryFactory(ctx, db, cfg.DB.DriverName, userRfFunc, pf, problemTypes, studyTypes, problemRepositories)
 	}
 	appS.RfFunc = rfFunc
 
@@ -255,7 +267,7 @@ func main() {
 	logrus.Info("exited")
 }
 
-func initPf(synthesizerClient pluginCommonS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
+func initPf(synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
 	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizerClient, translatorClient, tatoebaClient, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
 	englishPhraseProblemProcessor := pluginEnglishS.NewEnglishPhraseProblemProcessor(synthesizerClient, translatorClient)
@@ -283,17 +295,14 @@ func initPf(synthesizerClient pluginCommonS.SynthesizerClient, translatorClient 
 
 	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		// fmt.Println("-------Word")
-		rf := appG.NewAudioRepositoryFactory(ctx, db)
-		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, rf, pluginEnglishDomain.EnglishWordProblemType)
+		return pluginEnglishGateway.NewEnglishWordProblemRepository(db, synthesizerClient, pluginEnglishDomain.EnglishWordProblemType)
 	}
 	englishPhraseProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
-		rf := appG.NewAudioRepositoryFactory(ctx, db)
-		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, rf, pluginEnglishDomain.EnglishPhraseProblemType)
+		return pluginEnglishGateway.NewEnglishPhraseProblemRepository(db, synthesizerClient, pluginEnglishDomain.EnglishPhraseProblemType)
 	}
 	englishSentenceProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {
 		// fmt.Println("-------Sentence")
-		rf := appG.NewAudioRepositoryFactory(ctx, db)
-		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, rf, pluginEnglishDomain.EnglishSentenceProblemType)
+		return pluginEnglishGateway.NewEnglishSentenceProblemRepository(db, synthesizerClient, pluginEnglishDomain.EnglishSentenceProblemType)
 	}
 
 	pf := appS.NewProcessorFactory(problemAddProcessor, problemUpdateProcessor, problemRemoveProcessor, problemImportProcessor, problemQuotaProcessor)
@@ -350,7 +359,6 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 
 	router := gin.New()
 	router.Use(cors.New(corsConfig))
-	router.Use(middleware.NewLogMiddleware())
 	router.Use(gin.Recovery())
 
 	if cfg.Debug.GinMode {

@@ -3,13 +3,15 @@ package service
 
 import (
 	"context"
+	"errors"
+	"strconv"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type ProblemFeature interface {
-	FindAudioByID(ctx context.Context, audioID domain.AudioID) (Audio, error)
+	FindAudioByAudioID(ctx context.Context, audioID domain.AudioID) (Audio, error)
 }
 
 type Problem interface {
@@ -19,23 +21,25 @@ type Problem interface {
 
 type problem struct {
 	domain.ProblemModel
-	rf           AudioRepositoryFactory
-	problemModel domain.ProblemModel
+	synthesizerClient SynthesizerClient
 }
 
-func NewProblem(rf AudioRepositoryFactory, problemModel domain.ProblemModel) (Problem, error) {
+func NewProblem(synthesizerClient SynthesizerClient, problemModel domain.ProblemModel) (Problem, error) {
 	s := &problem{
-		ProblemModel: problemModel,
-		rf:           rf,
-		problemModel: problemModel,
+		ProblemModel:      problemModel,
+		synthesizerClient: synthesizerClient,
 	}
 
-	return s, lib.Validator.Struct(s)
+	return s, libD.Validator.Struct(s)
 }
 
-func (s *problem) FindAudioByID(ctx context.Context, audioID domain.AudioID) (Audio, error) {
-	audioRepo := s.rf.NewAudioRepository(ctx)
-	return audioRepo.FindAudioByAudioID(ctx, audioID)
+func (s *problem) FindAudioByAudioID(ctx context.Context, audioID domain.AudioID) (Audio, error) {
+
+	if strconv.Itoa(int(audioID)) != s.GetProperties(ctx)["audioId"] {
+		return nil, errors.New("invalid audio id")
+	}
+
+	return s.synthesizerClient.FindAudioByAudioID(ctx, audioID)
 }
 
 type ProblemWithResults interface {

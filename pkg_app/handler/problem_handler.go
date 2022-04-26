@@ -18,7 +18,7 @@ import (
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
 
@@ -59,7 +59,7 @@ func (h *problemHandler) FindProblems(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindProblems")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -97,7 +97,7 @@ func (h *problemHandler) FindAllProblems(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindAllProblems")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -124,7 +124,7 @@ func (h *problemHandler) FindProblemsByProblemIDs(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindProblemsByProblemIDs")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -162,7 +162,7 @@ func (h *problemHandler) FindProblemByID(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindProblemByID")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		id, err := h.toProblemSelectParameter1(c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -189,7 +189,7 @@ func (h *problemHandler) FindProblemByID(c *gin.Context) {
 // 	logger := log.FromContext(ctx)
 // 	logger.Info("FindProblemIDs")
 
-// 	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+// 	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 // 		workbookID, err := ginhelper.GetUint(c, "workbookID")
 // 		if err != nil {
 // 			c.Status(http.StatusBadRequest)
@@ -217,7 +217,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -250,7 +250,7 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Infof("UpdateProblem")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		id, err := h.toProblemSelectParameter2(c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -281,7 +281,7 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		logger.Infof("RemvoeProblem. organizationID: %d, operatorID: %d", organizationID, operatorID)
 
 		id, err := h.toProblemSelectParameter2(c)
@@ -304,7 +304,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Infof("ImportProblems")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)

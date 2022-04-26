@@ -3,8 +3,8 @@ package entity
 import (
 	"time"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type Model struct {
@@ -16,7 +16,7 @@ type Model struct {
 	UpdatedBy uint      `validate:"required,gte=1" json:"updatedBy"`
 }
 
-func NewModel(model user.Model) (Model, error) {
+func NewModel(model userD.Model) (Model, error) {
 	m := Model{
 		ID:        model.GetID(),
 		Version:   model.GetVersion(),
@@ -26,7 +26,7 @@ func NewModel(model user.Model) (Model, error) {
 		UpdatedBy: model.GetUpdatedBy(),
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 type Workbook struct {

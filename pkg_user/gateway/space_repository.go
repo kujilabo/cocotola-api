@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/service"
 )
@@ -61,7 +60,8 @@ func NewSpaceRepository(db *gorm.DB) service.SpaceRepository {
 }
 
 func (r *spaceRepository) FindDefaultSpace(ctx context.Context, operator domain.AppUserModel) (service.Space, error) {
-	logger := log.FromContext(ctx)
+	_, span := tracer.Start(ctx, "spaceRepository.FindDefaultSpace")
+	defer span.End()
 
 	space := spaceEntity{}
 	result := r.db.Where(&spaceEntity{
@@ -76,13 +76,12 @@ func (r *spaceRepository) FindDefaultSpace(ctx context.Context, operator domain.
 		return nil, result.Error
 	}
 
-	logger.Debugf("%d, %+v", result.RowsAffected, space)
 	return space.toSpace()
 }
 
 func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain.AppUserModel) (service.Space, error) {
-	logger := log.FromContext(ctx)
-	logger.Infof("FindePersonalSpace. Operator ID: %d", operator.GetID())
+	_, span := tracer.Start(ctx, "spaceRepository.FindPersonalSpace")
+	defer span.End()
 
 	space := spaceEntity{}
 	if result := r.db.Where(&spaceEntity{
@@ -100,8 +99,8 @@ func (r *spaceRepository) FindPersonalSpace(ctx context.Context, operator domain
 }
 
 func (r *spaceRepository) FindSystemSpace(ctx context.Context, operator domain.AppUserModel) (service.Space, error) {
-	logger := log.FromContext(ctx)
-	logger.Infof("FindSystemSpace. Operator ID: %d", operator.GetID())
+	_, span := tracer.Start(ctx, "spaceRepository.FindSystemSpace")
+	defer span.End()
 
 	space := spaceEntity{}
 	if result := r.db.Where(&spaceEntity{
@@ -119,6 +118,9 @@ func (r *spaceRepository) FindSystemSpace(ctx context.Context, operator domain.A
 }
 
 func (r *spaceRepository) AddDefaultSpace(ctx context.Context, operator domain.SystemOwnerModel) (uint, error) {
+	_, span := tracer.Start(ctx, "spaceRepository.AddDefaultSpace")
+	defer span.End()
+
 	space := spaceEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -136,7 +138,9 @@ func (r *spaceRepository) AddDefaultSpace(ctx context.Context, operator domain.S
 }
 
 func (r *spaceRepository) AddPersonalSpace(ctx context.Context, operator domain.SystemOwnerModel, appUser domain.AppUserModel) (domain.SpaceID, error) {
-	logger := log.FromContext(ctx)
+	_, span := tracer.Start(ctx, "spaceRepository.AddPersonalSpace")
+	defer span.End()
+
 	space := spaceEntity{
 		Version:        1,
 		CreatedBy:      appUser.GetID(),
@@ -147,7 +151,7 @@ func (r *spaceRepository) AddPersonalSpace(ctx context.Context, operator domain.
 		Name:           "Default",
 		Description:    "",
 	}
-	logger.Infof("space %+v", space)
+
 	if result := r.db.Create(&space); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrSpaceAlreadyExists)
 	}
@@ -155,7 +159,9 @@ func (r *spaceRepository) AddPersonalSpace(ctx context.Context, operator domain.
 }
 
 func (r *spaceRepository) AddSystemSpace(ctx context.Context, operator domain.SystemOwnerModel) (domain.SpaceID, error) {
-	logger := log.FromContext(ctx)
+	_, span := tracer.Start(ctx, "spaceRepository.AddSystemSpace")
+	defer span.End()
+
 	space := spaceEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -166,7 +172,7 @@ func (r *spaceRepository) AddSystemSpace(ctx context.Context, operator domain.Sy
 		Name:           "System",
 		Description:    "",
 	}
-	logger.Infof("space %+v", space)
+
 	if result := r.db.Create(&space); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, service.ErrSpaceAlreadyExists)
 	}

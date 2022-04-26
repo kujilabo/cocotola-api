@@ -4,27 +4,27 @@ package domain
 import (
 	"context"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type ProblemID uint
 
 type ProblemModel interface {
-	user.Model
+	userD.Model
 	GetNumber() int
 	GetProblemType() string
 	GetProperties(ctx context.Context) map[string]interface{}
 }
 
 type problemModel struct {
-	user.Model
+	userD.Model
 	Number      int                    `validate:"required"`
 	ProblemType string                 `validate:"required"`
 	Properties  map[string]interface{} `validate:"required"`
 }
 
-func NewProblemModel(model user.Model, number int, problemType string, properties map[string]interface{}) (ProblemModel, error) {
+func NewProblemModel(model userD.Model, number int, problemType string, properties map[string]interface{}) (ProblemModel, error) {
 	m := &problemModel{
 		Model:       model,
 		Number:      number,
@@ -32,7 +32,7 @@ func NewProblemModel(model user.Model, number int, problemType string, propertie
 		Properties:  properties,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *problemModel) GetNumber() int {

@@ -3,8 +3,9 @@ package service
 import (
 	"testing"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
 func TestNewProlemAddParameter(t *testing.T) {

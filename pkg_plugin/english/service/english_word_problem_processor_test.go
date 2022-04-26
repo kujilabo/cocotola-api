@@ -25,7 +25,7 @@ import (
 var anythingOfContext = mock.MatchedBy(func(_ context.Context) bool { return true })
 
 func englishWordProblemProcessor_Init(t *testing.T) (
-	synthesizerClient *pluginSM.SynthesizerClient,
+	synthesizerClient *appSM.SynthesizerClient,
 	translatorClient *pluginSM.TranslatorClient,
 	tatoebaClient *pluginSM.TatoebaClient,
 	operator *appDM.StudentModel,
@@ -34,7 +34,7 @@ func englishWordProblemProcessor_Init(t *testing.T) (
 	problemRepo *appSM.ProblemRepository,
 	englishWordProblemProcessor service.EnglishWordProblemProcessor) {
 
-	synthesizerClient = new(pluginSM.SynthesizerClient)
+	synthesizerClient = new(appSM.SynthesizerClient)
 	translatorClient = new(pluginSM.TranslatorClient)
 	tatoebaClient = new(pluginSM.TatoebaClient)
 	operator = new(appDM.StudentModel)

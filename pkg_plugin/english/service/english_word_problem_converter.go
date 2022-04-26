@@ -43,7 +43,7 @@ func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.Translat
 func (c *toSingleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]appS.ProblemAddParameter, error) {
 	translated := c.param.Translated
 	if translated == "" {
-		translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, app.Lang2EN, app.Lang2JA, c.param.Text, c.param.Pos)
+		translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, app.Lang2EN, c.param.Lang, c.param.Text, c.param.Pos)
 		if err != nil {
 			if !errors.Is(err, pluginS.ErrTranslationNotFound) {
 				return nil, err

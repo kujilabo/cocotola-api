@@ -2,22 +2,22 @@
 package domain
 
 import (
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type SystemStudentModel interface {
-	user.AppUserModel
+	userD.AppUserModel
 }
 
 type systemStudentModel struct {
-	user.AppUserModel
+	userD.AppUserModel
 }
 
-func NewSystemStudentModel(appUser user.AppUserModel) (SystemStudentModel, error) {
+func NewSystemStudentModel(appUser userD.AppUserModel) (SystemStudentModel, error) {
 	m := &systemStudentModel{
 		AppUserModel: appUser,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }

@@ -40,6 +40,9 @@ func NewGroupUserRepository(db *gorm.DB) service.GroupUserRepository {
 }
 
 func (r *groupUserRepository) AddGroupUser(ctx context.Context, operator domain.AppUserModel, appUserGroupID domain.AppUserGroupID, appUserID domain.AppUserID) error {
+	_, span := tracer.Start(ctx, "groupUserRepository.AddGroupUser")
+	defer span.End()
+
 	groupUser := groupUserEntity{
 		CreatedBy:      operator.GetID(),
 		UpdatedBy:      operator.GetID(),

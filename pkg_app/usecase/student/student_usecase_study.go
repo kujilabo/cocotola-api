@@ -3,24 +3,25 @@ package student
 import (
 	"context"
 
+	"golang.org/x/xerrors"
+	"gorm.io/gorm"
+
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_app/usecase"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
-	"golang.org/x/xerrors"
-	"gorm.io/gorm"
 )
 
 type StudentUsecaseStudy interface {
 
 	// study
-	FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error)
+	FindResults(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error)
 
-	GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error)
+	GetCompletionRate(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID) (map[string]int, error)
 
 	// FindAllProblemsByWorkbookID(ctx context.Context, organizationID, operatorID, workbookID uint, studyTypeID domain.StudyTypeID) (domain.WorkbookWithProblems, error)
-	SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error
+	SetResult(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error
 }
 
 type studentUsecaseStudy struct {
@@ -39,7 +40,7 @@ func NewStudentUsecaseStudy(db *gorm.DB, pf service.ProcessorFactory, rfFunc ser
 	}
 }
 
-func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error) {
+func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, studyType string) ([]domain.StudyRecordWithProblemID, error) {
 	var results []domain.StudyRecordWithProblemID
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
@@ -63,7 +64,7 @@ func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID us
 	return results, nil
 }
 
-func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (map[string]int, error) {
+func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID) (map[string]int, error) {
 	var results map[string]int
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
@@ -87,7 +88,7 @@ func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizatio
 	return results, nil
 }
 
-func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
+func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, studyType string, problemID domain.ProblemID, result, memorized bool) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
@@ -110,7 +111,7 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 	}
 	return nil
 }
-func (s *studentUsecaseStudy) findStudent(ctx context.Context, db *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID) (service.Student, error) {
+func (s *studentUsecaseStudy) findStudent(ctx context.Context, db *gorm.DB, organizationID userD.OrganizationID, operatorID userD.AppUserID) (service.Student, error) {
 	rf, err := s.rfFunc(ctx, db)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to rfFunc. err: %w", err)

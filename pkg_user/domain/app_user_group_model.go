@@ -1,6 +1,6 @@
 package domain
 
-import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type AppUserGroupID uint
 
@@ -30,7 +30,7 @@ func NewAppUserGroup(model Model, organizationID OrganizationID, key, name, desc
 		Description:    description,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (g *appUserGroupModel) GetOrganizationID() OrganizationID {

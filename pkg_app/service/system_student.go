@@ -5,14 +5,15 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"golang.org/x/xerrors"
+
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type SystemStudent interface {
-	user.AppUserModel
+	userD.AppUserModel
 
 	FindWorkbookFromSystemSpace(ctx context.Context, name string) (Workbook, error)
 
@@ -20,17 +21,17 @@ type SystemStudent interface {
 }
 
 type systemStudent struct {
-	user.AppUserModel
+	userD.AppUserModel
 	rf RepositoryFactory
 }
 
-func NewSystemStudent(rf RepositoryFactory, appUser user.AppUserModel) (SystemStudent, error) {
+func NewSystemStudent(rf RepositoryFactory, appUser userD.AppUserModel) (SystemStudent, error) {
 	m := &systemStudent{
 		AppUserModel: appUser,
 		rf:           rf,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (s *systemStudent) FindWorkbookFromSystemSpace(ctx context.Context, name string) (Workbook, error) {

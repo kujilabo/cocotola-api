@@ -34,6 +34,7 @@ type workbookEntity struct {
 	SpaceID        uint
 	OwnerID        uint
 	Name           string
+	Lang           string
 	ProblemTypeID  uint `gorm:"column:problem_type_id"`
 	QuestionText   string
 	Properties     string
@@ -71,8 +72,12 @@ func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf servic
 		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
-	workbook, err := domain.NewWorkbookModel( //rf, pf,
-		model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, problemType, e.QuestionText, properties)
+	lang, err := domain.NewLang2(e.Lang)
+	if err != nil {
+		return nil, xerrors.Errorf("invalid lang. lang: %s, err: %w", e.Lang, err)
+	}
+
+	workbook, err := domain.NewWorkbookModel(model, user.SpaceID(e.SpaceID), user.AppUserID(e.OwnerID), privs, e.Name, lang, problemType, e.QuestionText, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}

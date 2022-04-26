@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"golang.org/x/xerrors"
+
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
 type Workbook interface {
@@ -52,7 +53,7 @@ func NewWorkbook(rf RepositoryFactory, pf ProcessorFactory, workbookModel domain
 		pf:            pf,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *workbook) GetWorkbookModel() domain.WorkbookModel {

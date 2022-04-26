@@ -1,6 +1,6 @@
 package domain
 
-import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type ProblemType interface {
 	GetID() uint
@@ -18,7 +18,7 @@ func NewProblemType(id uint, name string) (ProblemType, error) {
 		Name: name,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *problemType) GetID() uint {

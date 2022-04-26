@@ -4,7 +4,7 @@ package domain
 import (
 	"time"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type Model interface {
@@ -34,7 +34,7 @@ func NewModel(id uint, version int, createdAt, updatedAt time.Time, createdBy, u
 		CreatedBy: createdBy,
 		UpdatedBy: updatedBy,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *model) GetID() uint {

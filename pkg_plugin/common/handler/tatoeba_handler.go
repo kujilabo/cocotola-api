@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/xerrors"
+
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
-	"golang.org/x/xerrors"
 )
 
 type TatoebaHandler interface {
@@ -32,7 +33,7 @@ func NewTatoebaHandler(tatoebaClient service.TatoebaClient) TatoebaHandler {
 
 func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 	ctx := c.Request.Context()
-	handlerhelper.HandleFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.TatoebaSentenceFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.Status(http.StatusBadRequest)
@@ -44,7 +45,7 @@ func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 		}
 		result, err := h.tatoebaClient.FindSentencePairs(ctx, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to FindSentences. err: %w", err)
+			return xerrors.Errorf("failed to FindSentencePairs. err: %w", err)
 		}
 		response, err := converter.ToTatoebaSentenceResponse(ctx, result)
 		if err != nil {
@@ -59,7 +60,7 @@ func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		file, err := c.FormFile("file")
 		if err != nil {
@@ -89,7 +90,7 @@ func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 func (h *tatoebaHandler) ImportLinks(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		file, err := c.FormFile("file")
 		if err != nil {

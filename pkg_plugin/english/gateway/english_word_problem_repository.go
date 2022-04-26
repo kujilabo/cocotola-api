@@ -17,7 +17,7 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 var (
@@ -59,8 +59,8 @@ func (e *englishWordProblemEntity) TableName() string {
 	return "english_word_problem"
 }
 
-func (e *englishWordProblemEntity) toProblem(rf appS.AudioRepositoryFactory) (service.EnglishWordProblem, error) {
-	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+func (e *englishWordProblemEntity) toProblem(synthesizerClient appS.SynthesizerClient) (service.EnglishWordProblem, error) {
+	model, err := userD.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (e *englishWordProblemEntity) toProblem(rf appS.AudioRepositoryFactory) (se
 		return nil, err
 	}
 
-	problem, err := appS.NewProblem(rf, problemModel)
+	problem, err := appS.NewProblem(synthesizerClient, problemModel)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (e *englishWordProblemEntity) toProblem(rf appS.AudioRepositoryFactory) (se
 	phrases := make([]domain.EnglishPhraseProblemModel, 0)
 	sentences := make([]domain.EnglishWordSentenceProblemModel, 0)
 	if e.SentenceID1 != 0 {
-		sentence, err := domain.NewEnglishWordProblemSentenceModel(appD.AudioID(0), e.SentenceText1, appD.Lang2JA, e.SentenceTranslated1, e.SentenceNote1)
+		sentence, err := domain.NewEnglishWordProblemSentenceModel(appD.AudioID(0), e.SentenceText1, lang, e.SentenceTranslated1, e.SentenceNote1)
 		if err != nil {
 			return nil, err
 		}
@@ -197,16 +197,16 @@ func toEnglishWordProblemUpdateParameter(param appS.ProblemUpdateParameter) (*en
 }
 
 type englishWordProblemRepository struct {
-	db          *gorm.DB
-	rf          appS.AudioRepositoryFactory
-	problemType string
+	db                *gorm.DB
+	synthesizerClient appS.SynthesizerClient
+	problemType       string
 }
 
-func NewEnglishWordProblemRepository(db *gorm.DB, rf appS.AudioRepositoryFactory, problemType string) (appS.ProblemRepository, error) {
+func NewEnglishWordProblemRepository(db *gorm.DB, synthesizerClient appS.SynthesizerClient, problemType string) (appS.ProblemRepository, error) {
 	return &englishWordProblemRepository{
-		db:          db,
-		rf:          rf,
-		problemType: problemType,
+		db:                db,
+		synthesizerClient: synthesizerClient,
+		problemType:       problemType,
 	}, nil
 }
 
@@ -224,7 +224,7 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 	}
 
 	var problemEntities []englishWordProblemEntity
-	if result := where().Order("workbook_id, number, created_at").
+	if result := where().Order("text, pos").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -250,7 +250,7 @@ func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, oper
 	}
 
 	var problemEntities []englishWordProblemEntity
-	if result := where().Order("workbook_id, number, created_at").
+	if result := where().Order("text, pos").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -292,7 +292,7 @@ func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Cont
 func (r *englishWordProblemRepository) toProblemSearchResult(count int64, problemEntities []englishWordProblemEntity) (appS.ProblemSearchResult, error) {
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.rf)
+		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +329,7 @@ func (r *englishWordProblemRepository) FindProblemByID(ctx context.Context, oper
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem(r.rf)
+	return problemEntity.toProblem(r.synthesizerClient)
 }
 
 func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) ([]appD.ProblemID, error) {
@@ -349,7 +349,7 @@ func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, opera
 			Where("workbook_id = ?", uint(workbookID))
 
 		var problemEntities []englishWordProblemEntity
-		if result := where.Order("workbook_id, number, created_at").
+		if result := where.Order("text, pos").
 			Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 			return nil, result.Error
 		}

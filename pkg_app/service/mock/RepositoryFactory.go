@@ -16,22 +16,6 @@ type RepositoryFactory struct {
 	mock.Mock
 }
 
-// NewAudioRepository provides a mock function with given fields: ctx
-func (_m *RepositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
-	ret := _m.Called(ctx)
-
-	var r0 service.AudioRepository
-	if rf, ok := ret.Get(0).(func(context.Context) service.AudioRepository); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(service.AudioRepository)
-		}
-	}
-
-	return r0
-}
-
 // NewProblemRepository provides a mock function with given fields: ctx, problemType
 func (_m *RepositoryFactory) NewProblemRepository(ctx context.Context, problemType string) (service.ProblemRepository, error) {
 	ret := _m.Called(ctx, problemType)

@@ -223,6 +223,22 @@ func (_m *Workbook) GetID() uint {
 	return r0
 }
 
+// GetLang provides a mock function with given fields:
+func (_m *Workbook) GetLang() domain.Lang2 {
+	ret := _m.Called()
+
+	var r0 domain.Lang2
+	if rf, ok := ret.Get(0).(func() domain.Lang2); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(domain.Lang2)
+		}
+	}
+
+	return r0
+}
+
 // GetName provides a mock function with given fields:
 func (_m *Workbook) GetName() string {
 	ret := _m.Called()

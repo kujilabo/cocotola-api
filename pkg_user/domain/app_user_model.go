@@ -2,7 +2,7 @@
 package domain
 
 import (
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type AppUserID uint
@@ -35,7 +35,7 @@ func NewAppUserModel(model Model, organizationID OrganizationID, loginID, userna
 		Properties:     properties,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (a *appUserModel) GetOrganizationID() OrganizationID {

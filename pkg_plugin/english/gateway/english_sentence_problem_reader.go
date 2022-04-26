@@ -5,18 +5,18 @@ import (
 	"errors"
 	"io"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 )
 
 type englishSentenceProblemAddParameterCSVReader struct {
-	workbookID app.WorkbookID
+	workbookID appD.WorkbookID
 	// problemType string
 	reader *csv.Reader
 	num    int
 }
 
-func NewEnglishSentenceProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator {
+func NewEnglishSentenceProblemAddParameterCSVReader(workbookID appD.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator {
 	return &englishSentenceProblemAddParameterCSVReader{
 		workbookID: workbookID,
 		// problemType: problemType,

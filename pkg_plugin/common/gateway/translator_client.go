@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -31,7 +31,7 @@ func (r *translationResponse) toModel() (domain.Translation, error) {
 		return nil, err
 	}
 
-	lang, err := app.NewLang2(r.Lang)
+	lang, err := appD.NewLang2(r.Lang)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func NewTranslatorClient(endpoint, username, password string, timeout time.Durat
 	}
 }
 
-func (c *translatorClient) DictionaryLookup(ctx context.Context, fromLang, toLang app.Lang2, text string) ([]domain.Translation, error) {
+func (c *translatorClient) DictionaryLookup(ctx context.Context, fromLang, toLang appD.Lang2, text string) ([]domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.DictionaryLookup")
 	defer span.End()
 
@@ -113,7 +113,7 @@ func (c *translatorClient) DictionaryLookup(ctx context.Context, fromLang, toLan
 	return response.toModel()
 }
 
-func (c *translatorClient) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+func (c *translatorClient) DictionaryLookupWithPos(ctx context.Context, fromLang, toLang appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.DictionaryLookupWithPos")
 	defer span.End()
 
@@ -152,7 +152,7 @@ func (c *translatorClient) DictionaryLookupWithPos(ctx context.Context, fromLang
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang app.Lang2, firstLetter string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang appD.Lang2, firstLetter string) ([]domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByFirstLetter")
 	defer span.End()
 
@@ -195,7 +195,7 @@ func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, la
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationByTextAndPos")
 	defer span.End()
 
@@ -230,7 +230,7 @@ func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationsByText(ctx context.Context, lang app.Lang2, text string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByText(ctx context.Context, lang appD.Lang2, text string) ([]domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByText")
 	defer span.End()
 
@@ -305,7 +305,7 @@ func (c *translatorClient) AddTranslation(ctx context.Context, param service.Tra
 	return nil
 }
 
-func (c *translatorClient) UpdateTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
+func (c *translatorClient) UpdateTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
 	ctx, span := tracer.Start(ctx, "translatorClient.UpdateTranslation")
 	defer span.End()
 
@@ -343,7 +343,7 @@ func (c *translatorClient) UpdateTranslation(ctx context.Context, lang app.Lang2
 	return nil
 }
 
-func (c *translatorClient) RemoveTranslation(ctx context.Context, lang app.Lang2, text string, pos domain.WordPos) error {
+func (c *translatorClient) RemoveTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) error {
 	ctx, span := tracer.Start(ctx, "translatorClient.RemoveTranslation")
 	defer span.End()
 

@@ -2,14 +2,14 @@
 package domain
 
 import (
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type Translation interface {
 	GetText() string
 	GetPos() WordPos
-	GetLang() app.Lang2
+	GetLang() appD.Lang2
 	GetTranslated() string
 	GetProvider() string
 }
@@ -17,12 +17,12 @@ type Translation interface {
 type translation struct {
 	Text       string `validate:"required"`
 	Pos        WordPos
-	Lang2      app.Lang2
+	Lang2      appD.Lang2
 	Translated string
 	Provider   string
 }
 
-func NewTranslation(text string, pos WordPos, lang app.Lang2, translated, provider string) (Translation, error) {
+func NewTranslation(text string, pos WordPos, lang appD.Lang2, translated, provider string) (Translation, error) {
 	m := &translation{
 		Text:       text,
 		Pos:        pos,
@@ -31,7 +31,7 @@ func NewTranslation(text string, pos WordPos, lang app.Lang2, translated, provid
 		Provider:   provider,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (t *translation) GetText() string {
@@ -42,7 +42,7 @@ func (t *translation) GetPos() WordPos {
 	return t.Pos
 }
 
-func (t *translation) GetLang() app.Lang2 {
+func (t *translation) GetLang() appD.Lang2 {
 	return t.Lang2
 }
 

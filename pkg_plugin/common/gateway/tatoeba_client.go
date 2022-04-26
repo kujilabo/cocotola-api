@@ -37,7 +37,7 @@ type tatoebaSentenceResponse struct {
 }
 
 func (s *tatoebaSentenceResponse) toModel() (service.TatoebaSentence, error) {
-	lang, err := domain.NewLang3(s.Lang)
+	lang, err := domain.NewLang2(s.Lang)
 	if err != nil {
 		return nil, err
 	}

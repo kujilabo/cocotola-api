@@ -4,15 +4,16 @@ package service
 import (
 	"context"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
-	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 	"golang.org/x/xerrors"
+
+	"github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type Student interface {
-	// user.AppUser
+	// userD.AppUser
 	domain.StudentModel
 
 	GetDefaultSpace(ctx context.Context) (userS.Space, error)
@@ -42,7 +43,7 @@ type Student interface {
 }
 
 type student struct {
-	// user.AppUser
+	// userD.AppUser
 	domain.StudentModel
 	rf     RepositoryFactory
 	pf     ProcessorFactory
@@ -58,7 +59,7 @@ func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRf userS.Reposito
 		userRf:       userRf,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (s *student) GetDefaultSpace(ctx context.Context) (userS.Space, error) {
@@ -76,7 +77,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 	}
 
 	// specify space
-	newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []user.SpaceID{user.SpaceID(space.GetID())})
+	newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []userD.SpaceID{userD.SpaceID(space.GetID())})
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 	}
@@ -109,7 +110,7 @@ func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook
 		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	return workbookRepo.FindWorkbookByName(ctx, s, user.SpaceID(space.GetID()), name)
+	return workbookRepo.FindWorkbookByName(ctx, s, userD.SpaceID(space.GetID()), name)
 }
 
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (domain.WorkbookID, error) {
@@ -123,7 +124,7 @@ func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter Work
 		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
-	workbookID, err := workbookRepo.AddWorkbook(ctx, s, user.SpaceID(space.GetID()), parameter)
+	workbookID, err := workbookRepo.AddWorkbook(ctx, s, userD.SpaceID(space.GetID()), parameter)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to AddWorkbook. err: %w", err)
 	}

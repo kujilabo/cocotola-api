@@ -1,7 +1,7 @@
 package service
 
 import (
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -19,5 +19,5 @@ func NewAppUserGroup(appUserGroupModel domain.AppUserGroupModel) (AppUserGroup, 
 		appUserGroupModel,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }

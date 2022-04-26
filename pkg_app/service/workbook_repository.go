@@ -7,7 +7,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 var ErrWorkbookNotFound = errors.New("workbook not found")
@@ -17,16 +17,16 @@ var ErrWorkbookPermissionDenied = errors.New("permission denied")
 type WorkbookSearchCondition interface {
 	GetPageNo() int
 	GetPageSize() int
-	GetSpaceIDs() []user.SpaceID
+	GetSpaceIDs() []userD.SpaceID
 }
 
 type workbookSearchCondition struct {
 	PageNo   int
 	PageSize int
-	SpaceIDs []user.SpaceID
+	SpaceIDs []userD.SpaceID
 }
 
-func NewWorkbookSearchCondition(pageNo, pageSize int, spaceIDs []user.SpaceID) (WorkbookSearchCondition, error) {
+func NewWorkbookSearchCondition(pageNo, pageSize int, spaceIDs []userD.SpaceID) (WorkbookSearchCondition, error) {
 	m := &workbookSearchCondition{
 		PageNo:   pageNo,
 		PageSize: pageSize,
@@ -44,7 +44,7 @@ func (p *workbookSearchCondition) GetPageSize() int {
 	return p.PageSize
 }
 
-func (p *workbookSearchCondition) GetSpaceIDs() []user.SpaceID {
+func (p *workbookSearchCondition) GetSpaceIDs() []userD.SpaceID {
 	return p.SpaceIDs
 }
 
@@ -147,9 +147,9 @@ type WorkbookRepository interface {
 
 	FindWorkbookByID(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID) (Workbook, error)
 
-	FindWorkbookByName(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, name string) (Workbook, error)
+	FindWorkbookByName(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, name string) (Workbook, error)
 
-	AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param WorkbookAddParameter) (domain.WorkbookID, error)
+	AddWorkbook(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, param WorkbookAddParameter) (domain.WorkbookID, error)
 
 	UpdateWorkbook(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, version int, param WorkbookUpdateParameter) error
 

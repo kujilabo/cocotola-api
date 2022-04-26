@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
@@ -37,7 +37,7 @@ func NewSystemOwner(rf RepositoryFactory, appUser AppUser) (SystemOwner, error) 
 		AppUser: appUser,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (s *systemOwner) GetOrganization(ctx context.Context) (Organization, error) {

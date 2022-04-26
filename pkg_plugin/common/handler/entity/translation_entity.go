@@ -2,6 +2,7 @@ package entity
 
 type TranslationFindParameter struct {
 	Letter string `json:"letter"`
+	Lang   string `json:"lang"`
 }
 
 type Translation struct {

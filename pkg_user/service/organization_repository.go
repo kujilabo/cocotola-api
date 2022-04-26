@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -29,7 +29,7 @@ func NewFirstOwnerAddParameter(loginID, username, password string) (FirstOwnerAd
 		Username: username,
 		Password: password,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *firstOwnerAddParameter) GetLoginID() string {
@@ -57,7 +57,7 @@ func NewOrganizationAddParameter(name string, firstOwner FirstOwnerAddParameter)
 		Name:       name,
 		FirstOwner: firstOwner,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *organizationAddParameter) GetName() string {

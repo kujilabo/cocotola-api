@@ -12,12 +12,12 @@ import (
 
 	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	libG "github.com/kujilabo/cocotola-api/pkg_lib/gateway"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/service"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type englishSentenceProblemEntity struct {
@@ -41,8 +41,8 @@ func (e *englishSentenceProblemEntity) TableName() string {
 	return "english_sentence_problem"
 }
 
-func (e *englishSentenceProblemEntity) toProblem(rf appS.AudioRepositoryFactory) (service.EnglishSentenceProblem, error) {
-	model, err := user.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
+func (e *englishSentenceProblemEntity) toProblem(synthesizerClient appS.SynthesizerClient) (service.EnglishSentenceProblem, error) {
+	model, err := userD.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (e *englishSentenceProblemEntity) toProblem(rf appS.AudioRepositoryFactory)
 		return nil, err
 	}
 
-	problem, err := appS.NewProblem(rf, problemModel)
+	problem, err := appS.NewProblem(synthesizerClient, problemModel)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func makeTatoebaNote(param appS.ProblemAddParameter) (string, error) {
 			service.EnglishSentenceProblemAddPropertyTatoebaAuthor1,
 			service.EnglishSentenceProblemAddPropertyTatoebaAuthor2} {
 			if _, ok := param.GetProperties()[key]; !ok {
-				return "", xerrors.Errorf("%s is not defined. err: %w", key, lib.ErrInvalidArgument)
+				return "", xerrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
 			}
 			noteMap[key] = param.GetProperties()[key]
 		}
@@ -153,7 +153,7 @@ func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*engl
 		service.EnglishSentenceProblemAddPropertyText} {
 
 		if _, ok := param.GetProperties()[key]; !ok {
-			return nil, xerrors.Errorf("%s is not defined. err: %w", key, lib.ErrInvalidArgument)
+			return nil, xerrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
 		}
 	}
 
@@ -173,20 +173,20 @@ func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*engl
 		Translated: param.GetProperties()[service.EnglishSentenceProblemAddPropertyTranslated],
 		Note:       note,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 type englishSentenceProblemRepository struct {
-	db          *gorm.DB
-	rf          appS.AudioRepositoryFactory
-	problemType string
+	db                *gorm.DB
+	synthesizerClient appS.SynthesizerClient
+	problemType       string
 }
 
-func NewEnglishSentenceProblemRepository(db *gorm.DB, rf appS.AudioRepositoryFactory, problemType string) (appS.ProblemRepository, error) {
+func NewEnglishSentenceProblemRepository(db *gorm.DB, synthesizerClient appS.SynthesizerClient, problemType string) (appS.ProblemRepository, error) {
 	return &englishSentenceProblemRepository{
-		db:          db,
-		rf:          rf,
-		problemType: problemType,
+		db:                db,
+		synthesizerClient: synthesizerClient,
+		problemType:       problemType,
 	}, nil
 }
 
@@ -204,7 +204,7 @@ func (r *englishSentenceProblemRepository) FindProblems(ctx context.Context, ope
 	}
 
 	var problemEntities []englishSentenceProblemEntity
-	if result := where().Order("workbook_id, number, created_at").
+	if result := where().Order("workbook_id, number, text, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -230,7 +230,7 @@ func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, 
 	}
 
 	var problemEntities []englishSentenceProblemEntity
-	if result := where().Order("workbook_id, number, created_at").
+	if result := where().Order("workbook_id, number, text, created_at").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
 		return nil, result.Error
 	}
@@ -264,7 +264,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.
 
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.rf)
+		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
@@ -281,22 +281,22 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 
 	condition1, ok := condition.(map[string]interface{})
 	if !ok {
-		return nil, lib.ErrInvalidArgument
+		return nil, libD.ErrInvalidArgument
 	}
 
 	conditionWorkbookID, ok := condition1["workbookId"].(uint)
 	if !ok {
-		return nil, xerrors.Errorf("workbookId is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("workbookId is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	conditionText, ok := condition1["text"].(string)
 	if !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	conditionTranslated, ok := condition1["translated"].(string)
 	if !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	var problemEntity englishSentenceProblemEntity
@@ -314,7 +314,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 		return nil, result.Error
 	}
 
-	problem, err := problemEntity.toProblem(r.rf)
+	problem, err := problemEntity.toProblem(r.synthesizerClient)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +325,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 func (r *englishSentenceProblemRepository) toProblemSearchResult(count int64, problemEntities []englishSentenceProblemEntity) (appS.ProblemSearchResult, error) {
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.rf)
+		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
 			return nil, err
 		}
@@ -357,7 +357,7 @@ func (r *englishSentenceProblemRepository) FindProblemByID(ctx context.Context, 
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem(r.rf)
+	return problemEntity.toProblem(r.synthesizerClient)
 }
 
 func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) ([]appD.ProblemID, error) {
@@ -377,7 +377,7 @@ func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, o
 			Where("workbook_id = ?", uint(workbookID))
 
 		var problemEntities []englishSentenceProblemEntity
-		if result := where.Order("workbook_id, number, created_at").
+		if result := where.Order("workbook_id, number, text, created_at").
 			Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
 			return nil, result.Error
 		}

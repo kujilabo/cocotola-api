@@ -31,6 +31,9 @@ func NewStudyTypeRepository(db *gorm.DB) service.StudyTypeRepository {
 }
 
 func (r *studyTypeRepository) FindAllStudyTypes(ctx context.Context) ([]domain.StudyType, error) {
+	_, span := tracer.Start(ctx, "studyTypeRepository.FindAllStudyTypes")
+	defer span.End()
+
 	entities := []studyTypeEntity{}
 	if err := r.db.Find(&entities).Error; err != nil {
 		return nil, err
