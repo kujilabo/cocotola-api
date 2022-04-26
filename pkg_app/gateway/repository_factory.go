@@ -73,7 +73,3 @@ func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) service
 func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) service.UserQuotaRepository {
 	return NewUserQuotaRepository(f.db)
 }
-
-type audioRepositoryFactory struct {
-	db *gorm.DB
-}
