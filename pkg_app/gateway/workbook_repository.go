@@ -72,12 +72,12 @@ func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf servic
 		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
-	lang, err := domain.NewLang2(e.Lang2)
+	lang2, err := domain.NewLang2(e.Lang2)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid lang. lang: %s, err: %w", e.Lang2, err)
+		return nil, xerrors.Errorf("invalid lang2. lang2: %s, err: %w", e.Lang2, err)
 	}
 
-	workbook, err := domain.NewWorkbookModel(model, userD.SpaceID(e.SpaceID), userD.AppUserID(e.OwnerID), privs, e.Name, lang, problemType, e.QuestionText, properties)
+	workbook, err := domain.NewWorkbookModel(model, userD.SpaceID(e.SpaceID), userD.AppUserID(e.OwnerID), privs, e.Name, lang2, problemType, e.QuestionText, properties)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
@@ -329,7 +329,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator userD.App
 		OwnerID:        operator.GetID(),
 		ProblemTypeID:  problemTypeID,
 		Name:           param.GetName(),
-		Lang2:          param.GetLang().String(),
+		Lang2:          param.GetLang2().String(),
 		QuestionText:   param.GetQuestionText(),
 		Properties:     propertiesJSON,
 	}

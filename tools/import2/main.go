@@ -206,7 +206,7 @@ package main
 // 		}
 
 // 		properties := map[string]string{
-// 			"lang":       "ja",
+// 			"lang2":       "ja",
 // 			"pos":        strconv.Itoa(int(pos)),
 // 			"text":       line[1],
 // 			"translated": line[2],

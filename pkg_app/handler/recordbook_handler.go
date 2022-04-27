@@ -14,7 +14,7 @@ import (
 	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
 
@@ -49,7 +49,7 @@ func NewRecordbookHandler(studentUsecaseStudy studentU.StudentUsecaseStudy) Reco
 func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -77,7 +77,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("SetStudyResult")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -123,7 +123,7 @@ func (h *recordbookHandler) GetCompletionRate(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindRecordbook")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)

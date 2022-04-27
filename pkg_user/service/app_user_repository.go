@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -34,7 +34,7 @@ func NewAppUserAddParameter(loginID, username string, roles []string, properties
 		Roles:      roles,
 		Properties: properties,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (p *appUserAddParameter) GetLoginID() string {

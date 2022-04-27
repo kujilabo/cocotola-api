@@ -41,13 +41,13 @@ func (_m *SynthesizerClient) FindAudioByAudioID(ctx context.Context, audioID dom
 	return r0, r1
 }
 
-// Synthesize provides a mock function with given fields: ctx, lang, text
-func (_m *SynthesizerClient) Synthesize(ctx context.Context, lang domain.Lang2, text string) (service.Audio, error) {
-	ret := _m.Called(ctx, lang, text)
+// Synthesize provides a mock function with given fields: ctx, lang2, text
+func (_m *SynthesizerClient) Synthesize(ctx context.Context, lang2 domain.Lang2, text string) (service.Audio, error) {
+	ret := _m.Called(ctx, lang2, text)
 
 	var r0 service.Audio
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string) service.Audio); ok {
-		r0 = rf(ctx, lang, text)
+		r0 = rf(ctx, lang2, text)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(service.Audio)
@@ -56,7 +56,7 @@ func (_m *SynthesizerClient) Synthesize(ctx context.Context, lang domain.Lang2, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, domain.Lang2, string) error); ok {
-		r1 = rf(ctx, lang, text)
+		r1 = rf(ctx, lang2, text)
 	} else {
 		r1 = ret.Error(1)
 	}

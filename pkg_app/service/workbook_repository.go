@@ -77,7 +77,7 @@ func (m *workbookSearchResult) GetResults() []domain.WorkbookModel {
 type WorkbookAddParameter interface {
 	GetProblemType() string
 	GetName() string
-	GetLang() domain.Lang2
+	GetLang2() domain.Lang2
 	GetQuestionText() string
 	GetProperties() map[string]string
 }
@@ -85,16 +85,16 @@ type WorkbookAddParameter interface {
 type workbookAddParameter struct {
 	ProblemType  string
 	Name         string
-	Lang         domain.Lang2
+	Lang2        domain.Lang2
 	QuestionText string
 	Properties   map[string]string
 }
 
-func NewWorkbookAddParameter(problemType string, name string, lang domain.Lang2, questionText string, properties map[string]string) (WorkbookAddParameter, error) {
+func NewWorkbookAddParameter(problemType string, name string, lang2 domain.Lang2, questionText string, properties map[string]string) (WorkbookAddParameter, error) {
 	m := &workbookAddParameter{
 		ProblemType:  problemType,
 		Name:         name,
-		Lang:         lang,
+		Lang2:        lang2,
 		QuestionText: questionText,
 		Properties:   properties,
 	}
@@ -110,8 +110,8 @@ func (p *workbookAddParameter) GetName() string {
 	return p.Name
 }
 
-func (p *workbookAddParameter) GetLang() domain.Lang2 {
-	return p.Lang
+func (p *workbookAddParameter) GetLang2() domain.Lang2 {
+	return p.Lang2
 }
 
 func (p *workbookAddParameter) GetQuestionText() string {

@@ -200,7 +200,7 @@ package main
 // 		}
 
 // 		properties := map[string]string{
-// 			"lang":       "ja",
+// 			"lang2":       "ja",
 // 			"text":       line[0],
 // 			"translated": line[1],
 // 		}

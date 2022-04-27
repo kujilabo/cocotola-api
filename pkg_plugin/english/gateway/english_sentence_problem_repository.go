@@ -32,7 +32,7 @@ type englishSentenceProblemEntity struct {
 	Number         int
 	AudioID        uint
 	Text           string
-	Lang           string
+	Lang2          string
 	Translated     string
 	Note           string
 }
@@ -58,12 +58,12 @@ func (e *englishSentenceProblemEntity) toProblem(synthesizerClient appS.Synthesi
 		return nil, err
 	}
 
-	lang, err := appD.NewLang2(e.Lang)
+	lang2, err := appD.NewLang2(e.Lang2)
 	if err != nil {
 		return nil, err
 	}
 
-	englishSentenceProblemModel, err := domain.NewEnglishSentenceProblemModel(problemModel, appD.AudioID(e.AudioID), "", e.Text, lang, e.Translated, e.Note)
+	englishSentenceProblemModel, err := domain.NewEnglishSentenceProblemModel(problemModel, appD.AudioID(e.AudioID), "", e.Text, lang2, e.Translated, e.Note)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (e *englishSentenceProblemEntity) toProblem(synthesizerClient appS.Synthesi
 type englishSentenceProblemAddParameter struct {
 	AudioID    uint
 	Text       string `validate:"required"`
-	Lang       string `validate:"required"`
+	Lang2      string `validate:"required"`
 	Translated string
 	Note       string
 }
@@ -149,7 +149,7 @@ func makeTatoebaNote(param appS.ProblemAddParameter) (string, error) {
 func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*englishSentenceProblemAddParameter, error) {
 	for _, key := range []string{
 		service.EnglishSentenceProblemAddPropertyAudioID,
-		service.EnglishSentenceProblemAddPropertyLang,
+		service.EnglishSentenceProblemAddPropertyLang2,
 		service.EnglishSentenceProblemAddPropertyText} {
 
 		if _, ok := param.GetProperties()[key]; !ok {
@@ -168,7 +168,7 @@ func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*engl
 
 	m := &englishSentenceProblemAddParameter{
 		// AudioID:    uint(audioID),
-		Lang:       param.GetProperties()[service.EnglishSentenceProblemAddPropertyLang],
+		Lang2:      param.GetProperties()[service.EnglishSentenceProblemAddPropertyLang2],
 		Text:       param.GetProperties()[service.EnglishSentenceProblemAddPropertyText],
 		Translated: param.GetProperties()[service.EnglishSentenceProblemAddPropertyTranslated],
 		Note:       note,
@@ -416,7 +416,7 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 		AudioID:        problemParam.AudioID,
 		Number:         param.GetNumber(),
 		Text:           problemParam.Text,
-		Lang:           problemParam.Lang,
+		Lang2:          problemParam.Lang2,
 		Translated:     problemParam.Translated,
 		Note:           problemParam.Note,
 	}

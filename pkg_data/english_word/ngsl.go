@@ -388,9 +388,9 @@ func CreateWorkbook(ctx context.Context, student appS.Student, workbookName stri
 
 	for i, word := range words {
 		properties := map[string]string{
-			"text": word,
-			"lang": "ja",
-			"pos":  strconv.Itoa(int(pos)),
+			"text":  word,
+			"lang2": "ja",
+			"pos":   strconv.Itoa(int(pos)),
 		}
 		param, err := appS.NewProblemAddParameter(workbookID, i+1, properties)
 		if err != nil {

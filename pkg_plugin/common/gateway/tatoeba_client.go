@@ -30,19 +30,19 @@ type tatoebaSentenceFindParameter struct {
 
 type tatoebaSentenceResponse struct {
 	SentenceNumber int       `json:"sentenceNumber"`
-	Lang           string    `json:"lang"`
+	Lang2          string    `json:"lang2"`
 	Text           string    `json:"text"`
 	Author         string    `json:"author"`
 	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 func (s *tatoebaSentenceResponse) toModel() (service.TatoebaSentence, error) {
-	lang, err := domain.NewLang2(s.Lang)
+	lang2, err := domain.NewLang2(s.Lang2)
 	if err != nil {
 		return nil, err
 	}
 
-	return service.NewTatoebaSentence(s.SentenceNumber, lang, s.Text, s.Author, s.UpdatedAt)
+	return service.NewTatoebaSentence(s.SentenceNumber, lang2, s.Text, s.Author, s.UpdatedAt)
 }
 
 type tatoebaSentencePair struct {

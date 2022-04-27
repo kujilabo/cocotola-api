@@ -16,7 +16,7 @@ create table `english_word_problem` (
 ,`present_participle` varchar(30) character set ascii
 ,`past_tense` varchar(30) character set ascii
 ,`past_participle` varchar(30) character set ascii
-,`lang` varchar(2) character set ascii
+,`lang2` varchar(2) character set ascii
 ,`translated` varchar(100)
 ,`phrase_id1` int
 ,`phrase_id2` int

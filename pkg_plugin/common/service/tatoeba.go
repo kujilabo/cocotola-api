@@ -12,7 +12,7 @@ var ErrTatoebaSentenceAlreadyExists = errors.New("tatoebaSentence already exists
 
 type TatoebaSentence interface {
 	GetSentenceNumber() int
-	GetLang() appD.Lang2
+	GetLang2() appD.Lang2
 	GetText() string
 	GetAuthor() string
 	GetUpdatedAt() time.Time
@@ -20,16 +20,16 @@ type TatoebaSentence interface {
 
 type tatoebaSentence struct {
 	SentenceNumber int
-	Lang           appD.Lang2
+	Lang2          appD.Lang2
 	Text           string
 	Author         string
 	UpdatedAt      time.Time
 }
 
-func NewTatoebaSentence(sentenceNumber int, lang appD.Lang2, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
+func NewTatoebaSentence(sentenceNumber int, lang2 appD.Lang2, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
 	m := &tatoebaSentence{
 		SentenceNumber: sentenceNumber,
-		Lang:           lang,
+		Lang2:          lang2,
 		Text:           text,
 		Author:         author,
 		UpdatedAt:      updatedAt,
@@ -42,8 +42,8 @@ func (m *tatoebaSentence) GetSentenceNumber() int {
 	return m.SentenceNumber
 }
 
-func (m *tatoebaSentence) GetLang() appD.Lang2 {
-	return m.Lang
+func (m *tatoebaSentence) GetLang2() appD.Lang2 {
+	return m.Lang2
 }
 
 func (m *tatoebaSentence) GetText() string {

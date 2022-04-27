@@ -7,22 +7,22 @@ type AudioID uint
 
 type AudioModel interface {
 	GetID() uint
-	GetLang() Lang2
+	GetLang2() Lang2
 	GetText() string
 	GetContent() string
 }
 
 type audioModel struct {
 	ID      uint `validate:"required"`
-	Lang    Lang2
+	Lang2   Lang2
 	Text    string `validate:"required"`
 	Content string `validate:"required"`
 }
 
-func NewAudioModel(id uint, lang Lang2, text, content string) (AudioModel, error) {
+func NewAudioModel(id uint, lang2 Lang2, text, content string) (AudioModel, error) {
 	m := &audioModel{
 		ID:      id,
-		Lang:    lang,
+		Lang2:   lang2,
 		Text:    text,
 		Content: content,
 	}
@@ -34,8 +34,8 @@ func (a *audioModel) GetID() uint {
 	return a.ID
 }
 
-func (a *audioModel) GetLang() Lang2 {
-	return a.Lang
+func (a *audioModel) GetLang2() Lang2 {
+	return a.Lang2
 }
 
 func (a *audioModel) GetText() string {

@@ -66,7 +66,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (appS.ProblemAddParame
 	}
 
 	properties := map[string]string{
-		"lang":       "ja",
+		"lang2":      "ja",
 		"text":       line[0],
 		"translated": translated,
 		"pos":        strconv.Itoa(int(pos)),

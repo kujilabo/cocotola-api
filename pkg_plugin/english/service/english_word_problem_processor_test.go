@@ -73,7 +73,7 @@ func Test_englishWordProblemProcessor_AddProblem_singleProblem_audioDisabled(t *
 		"pos":        "6",
 		"text":       "pen",
 		"translated": "ペン",
-		"lang":       "ja",
+		"lang2":      "ja",
 	})
 	problemIDs, err := processor.AddProblem(ctx, rf, operator, workbookModel, param)
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func Test_englishWordProblemProcessor_AddProblem_singleProblem_audioDisabled(t *
 		require.Equal(t, 2, p.GetNumber())
 		require.Equal(t, "ペン", p.GetProperties()["translated"])
 		require.Equal(t, "pen", p.GetProperties()["text"])
-		require.Equal(t, "ja", p.GetProperties()["lang"])
+		require.Equal(t, "ja", p.GetProperties()["lang2"])
 		require.Equal(t, "0", p.GetProperties()["audioId"])
 		require.Equal(t, "6", p.GetProperties()["pos"])
 		require.Len(t, p.GetProperties(), 5)
@@ -120,7 +120,7 @@ func Test_englishWordProblemProcessor_AddProblem_multipleProblem_audioDisabled(t
 		"pos":        "99",
 		"text":       "book",
 		"translated": "",
-		"lang":       "ja",
+		"lang2":      "ja",
 	})
 	problemIDs, err := processor.AddProblem(ctx, rf, operator, workbookModel, param)
 	require.NoError(t, err)
@@ -134,7 +134,7 @@ func Test_englishWordProblemProcessor_AddProblem_multipleProblem_audioDisabled(t
 		assert.Equal(t, 2, param.GetNumber())
 		assert.Equal(t, "本", param.GetProperties()["translated"])
 		assert.Equal(t, "book", param.GetProperties()["text"])
-		assert.Equal(t, "ja", param.GetProperties()["lang"])
+		assert.Equal(t, "ja", param.GetProperties()["lang2"])
 		assert.Equal(t, "0", param.GetProperties()["audioId"])
 		assert.Equal(t, "6", param.GetProperties()["pos"])
 	}
@@ -144,7 +144,7 @@ func Test_englishWordProblemProcessor_AddProblem_multipleProblem_audioDisabled(t
 		assert.Equal(t, 2, param.GetNumber())
 		assert.Equal(t, "予約する", param.GetProperties()["translated"])
 		assert.Equal(t, "book", param.GetProperties()["text"])
-		assert.Equal(t, "ja", param.GetProperties()["lang"])
+		assert.Equal(t, "ja", param.GetProperties()["lang2"])
 		assert.Equal(t, "0", param.GetProperties()["audioId"])
 		assert.Equal(t, "9", param.GetProperties()["pos"])
 	}
@@ -173,7 +173,7 @@ func Test_englishWordProblemProcessor_UpdateProblem(t *testing.T) {
 		"pos":        "6",
 		"text":       "pen",
 		"translated": "ペン",
-		"lang":       "ja",
+		"lang2":      "ja",
 	})
 	added, updated, err := processor.UpdateProblem(ctx, rf, operator, workbookModel, paramSelect, param)
 	require.NoError(t, err)
@@ -225,7 +225,7 @@ func TestNewEnglishWordProblemAddParemeter(t *testing.T) {
 			wantErr: libD.ErrInvalidArgument,
 		},
 		{
-			name: "lang is not defined",
+			name: "lang2 is not defined",
 			args: args{
 				param: testNewProblemAddParameter_EnglishWord(map[string]string{
 					"pos":  "6",
@@ -235,12 +235,12 @@ func TestNewEnglishWordProblemAddParemeter(t *testing.T) {
 			wantErr: libD.ErrInvalidArgument,
 		},
 		{
-			name: "lang format is invalid",
+			name: "lang2 format is invalid",
 			args: args{
 				param: testNewProblemAddParameter_EnglishWord(map[string]string{
-					"pos":  "6",
-					"text": "pen",
-					"lang": "jpn",
+					"pos":   "6",
+					"text":  "pen",
+					"lang2": "jpn",
 				}),
 			},
 			wantErr: libD.ErrInvalidArgument,
@@ -249,15 +249,15 @@ func TestNewEnglishWordProblemAddParemeter(t *testing.T) {
 			name: "parameter is valid",
 			args: args{
 				param: testNewProblemAddParameter_EnglishWord(map[string]string{
-					"pos":  "6",
-					"text": "pen",
-					"lang": "ja",
+					"pos":   "6",
+					"text":  "pen",
+					"lang2": "ja",
 				}),
 			},
 			want: &service.EnglishWordProblemAddParemeter{
-				Pos:  pluginD.PosNoun,
-				Text: "pen",
-				Lang: appD.Lang2JA,
+				Pos:   pluginD.PosNoun,
+				Text:  "pen",
+				Lang2: appD.Lang2JA,
 			},
 			wantErr: nil,
 		},
@@ -267,14 +267,14 @@ func TestNewEnglishWordProblemAddParemeter(t *testing.T) {
 				param: testNewProblemAddParameter_EnglishWord(map[string]string{
 					"pos":        "6",
 					"text":       "pen",
-					"lang":       "ja",
+					"lang2":      "ja",
 					"translated": "ペン",
 				}),
 			},
 			want: &service.EnglishWordProblemAddParemeter{
 				Pos:        pluginD.PosNoun,
 				Text:       "pen",
-				Lang:       appD.Lang2JA,
+				Lang2:      appD.Lang2JA,
 				Translated: "ペン",
 			},
 			wantErr: nil,

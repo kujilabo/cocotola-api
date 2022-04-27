@@ -37,7 +37,7 @@ func (r *englishSentenceProblemAddParameterCSVReader) Next() (appS.ProblemAddPar
 	}
 
 	properties := map[string]string{
-		"lang":       "ja",
+		"lang2":      "ja",
 		"text":       line[1],
 		"translated": line[2],
 	}

@@ -22,17 +22,17 @@ type englishSentenceProblemModel struct {
 	Provider   string
 	AudioID    appD.AudioID
 	Text       string
-	Lang       appD.Lang2
+	Lang2      appD.Lang2
 	Translated string
 	Note       string
 }
 
-func NewEnglishSentenceProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, provider string, text string, lang appD.Lang2, translated string, note string) (EnglishSentenceProblemModel, error) {
+func NewEnglishSentenceProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, provider string, text string, lang2 appD.Lang2, translated string, note string) (EnglishSentenceProblemModel, error) {
 	return &englishSentenceProblemModel{
 		ProblemModel: problemModel,
 		AudioID:      audioID,
 		Text:         text,
-		Lang:         lang,
+		Lang2:        lang2,
 		Translated:   translated,
 		Note:         note,
 	}, nil
@@ -58,7 +58,7 @@ func (m *englishSentenceProblemModel) Properties(ctx context.Context) map[string
 	return map[string]interface{}{
 		"audioId":    uint(m.AudioID),
 		"text":       m.Text,
-		"lang":       m.Lang,
+		"lang2":      m.Lang2,
 		"translated": m.Translated,
 		"note":       m.Note,
 	}

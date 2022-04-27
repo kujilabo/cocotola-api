@@ -32,7 +32,7 @@ type englishPhraseProblemEntity struct {
 	Number         int
 	AudioID        uint
 	Text           string
-	Lang           string
+	Lang2          string
 	Translated     string
 }
 
@@ -47,7 +47,7 @@ func (e *englishPhraseProblemEntity) toProblem(synthesizerClient appS.Synthesize
 	}
 
 	properties := make(map[string]interface{})
-	for k, v := range toEnglishPhraseProblemProperties(e.Lang, e.Text, e.Translated) {
+	for k, v := range toEnglishPhraseProblemProperties(e.Lang2, e.Text, e.Translated) {
 		properties[k] = v
 	}
 
@@ -61,12 +61,12 @@ func (e *englishPhraseProblemEntity) toProblem(synthesizerClient appS.Synthesize
 		return nil, err
 	}
 
-	lang, err := appD.NewLang2(e.Lang)
+	lang2, err := appD.NewLang2(e.Lang2)
 	if err != nil {
 		return nil, err
 	}
 
-	englishPhraseProblemModel, err := domain.NewEnglishPhraseProblemModel(problemModel, appD.AudioID(e.AudioID), e.Text, lang, e.Translated)
+	englishPhraseProblemModel, err := domain.NewEnglishPhraseProblemModel(problemModel, appD.AudioID(e.AudioID), e.Text, lang2, e.Translated)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +75,12 @@ func (e *englishPhraseProblemEntity) toProblem(synthesizerClient appS.Synthesize
 }
 
 func fromEnglishPhraseProblemProperties(properties map[string]string) (string, string, string) {
-	return properties["lang"], properties["text"], properties["translated"]
+	return properties["lang2"], properties["text"], properties["translated"]
 }
 
-func toEnglishPhraseProblemProperties(lang, text, translated string) map[string]string {
+func toEnglishPhraseProblemProperties(lang2, text, translated string) map[string]string {
 	return map[string]string{
-		"lang":       lang,
+		"lang2":      lang2,
 		"text":       text,
 		"translated": translated,
 	}
@@ -88,7 +88,7 @@ func toEnglishPhraseProblemProperties(lang, text, translated string) map[string]
 
 type newEnglishPhraseProblemParam struct {
 	AudioID    uint
-	Lang       string
+	Lang2      string
 	Text       string
 	Translated string
 }
@@ -99,10 +99,10 @@ func toNewEnglishPhraseProblemParam(param appS.ProblemAddParameter) (*newEnglish
 		return nil, err
 	}
 
-	lang, text, translated := fromEnglishPhraseProblemProperties(param.GetProperties())
+	lang2, text, translated := fromEnglishPhraseProblemProperties(param.GetProperties())
 	m := &newEnglishPhraseProblemParam{
 		AudioID:    uint(audioID),
-		Lang:       lang,
+		Lang2:      lang2,
 		Text:       text,
 		Translated: translated,
 	}
@@ -310,11 +310,11 @@ func (r *englishPhraseProblemRepository) AddProblem(ctx context.Context, operato
 		AudioID:        problemParam.AudioID,
 		Number:         param.GetNumber(),
 		Text:           problemParam.Text,
-		Lang:           problemParam.Lang,
+		Lang2:          problemParam.Lang2,
 		Translated:     problemParam.Translated,
 	}
 
-	logger.Infof("englishPhraseProblemRepository.AddProblem. lang: %s, text: %s", problemParam.Lang, problemParam.Text)
+	logger.Infof("englishPhraseProblemRepository.AddProblem. lang2: %s, text: %s", problemParam.Lang2, problemParam.Text)
 	if result := r.db.Create(&englishPhraseProblem); result.Error != nil {
 		return 0, libG.ConvertDuplicatedError(result.Error, appS.ErrProblemAlreadyExists)
 	}

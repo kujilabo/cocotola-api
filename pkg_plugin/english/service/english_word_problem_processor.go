@@ -31,14 +31,14 @@ var (
 	EnglishWordProblemUpdatePropertySentenceID1 = "sentenceId1"
 
 	EnglishWordProblemAddPropertyAudioID    = "audioId"
-	EnglishWordProblemAddPropertyLang       = "lang"
+	EnglishWordProblemAddPropertyLang2      = "lang2"
 	EnglishWordProblemAddPropertyText       = "text"
 	EnglishWordProblemAddPropertyTranslated = "translated"
 	EnglishWordProblemAddPropertyPos        = "pos"
 )
 
 type EnglishWordProblemAddParemeter struct {
-	Lang       appD.Lang2     `validate:"required"`
+	Lang2      appD.Lang2     `validate:"required"`
 	Text       string         `validate:"required"`
 	Pos        plugin.WordPos `validate:"required"`
 	Translated string
@@ -47,7 +47,7 @@ type EnglishWordProblemAddParemeter struct {
 func (p *EnglishWordProblemAddParemeter) toProperties() map[string]string {
 	return map[string]string{
 		// EnglishWordProblemAddPropertyAudioID:    strconv.Itoa(int(uint(audioID))),
-		EnglishWordProblemAddPropertyLang:       p.Lang.String(),
+		EnglishWordProblemAddPropertyLang2:      p.Lang2.String(),
 		EnglishWordProblemAddPropertyText:       p.Text,
 		EnglishWordProblemAddPropertyTranslated: p.Translated,
 		EnglishWordProblemAddPropertyPos:        strconv.Itoa(int(p.Pos)),
@@ -70,17 +70,17 @@ func NewEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*English
 		translated = param.GetProperties()["translated"]
 	}
 
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
+	if _, ok := param.GetProperties()["lang2"]; !ok {
+		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
-	lang2, err := appD.NewLang2(param.GetProperties()["lang"])
+	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
 	if err != nil {
-		return nil, xerrors.Errorf("lang format is invalid. err: %w", err)
+		return nil, xerrors.Errorf("lang2 format is invalid. err: %w", err)
 	}
 
 	m := &EnglishWordProblemAddParemeter{
-		Lang:       lang2,
+		Lang2:      lang2,
 		Text:       param.GetProperties()["text"],
 		Pos:        plugin.WordPos(pos),
 		Translated: translated,
@@ -89,7 +89,7 @@ func NewEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*English
 }
 
 type EnglishWordProblemUpdateParemeter struct {
-	Lang                      appD.Lang2 `validate:"required"`
+	Lang2                     appD.Lang2 `validate:"required"`
 	Text                      string     `validate:"required"`
 	Translated                string
 	SentenceProvider          string
@@ -110,13 +110,13 @@ func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*E
 		translated = param.GetProperties()["translated"]
 	}
 
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
+	if _, ok := param.GetProperties()["lang2"]; !ok {
+		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
-	lang2, err := appD.NewLang2(param.GetProperties()["lang"])
+	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
 	if err != nil {
-		return nil, xerrors.Errorf("lang format is invalid. err: %w", err)
+		return nil, xerrors.Errorf("lang2 format is invalid. err: %w", err)
 	}
 
 	tatoebaSentenceNumberFrom := 0
@@ -141,7 +141,7 @@ func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*E
 	}
 
 	m := &EnglishWordProblemUpdateParemeter{
-		Lang:                      lang2,
+		Lang2:                     lang2,
 		Text:                      param.GetProperties()["text"],
 		Translated:                translated,
 		SentenceProvider:          sentenceProvider,
@@ -253,7 +253,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 
 	sentenceID := appD.ProblemID(0)
 	if extractedParam.SentenceProvider == "tatoeba" {
-		sentenceIDtmp, err := p.findOrAddSentenceFromTatoeba(ctx, rf, operator, extractedParam.TatoebaSentenceNumberFrom, extractedParam.TatoebaSentenceNumberTo, extractedParam.Lang)
+		sentenceIDtmp, err := p.findOrAddSentenceFromTatoeba(ctx, rf, operator, extractedParam.TatoebaSentenceNumberFrom, extractedParam.TatoebaSentenceNumberTo, extractedParam.Lang2)
 		if err != nil {
 			return 0, 0, xerrors.Errorf("failed to findOrAddSentenceFromTatoeba. err: %w", err)
 		}
@@ -313,7 +313,7 @@ func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
 	return quotaUpdateLimit
 }
 
-func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.Context, rf appS.RepositoryFactory, operator appD.StudentModel, tatoebaSentenceNumberFrom, tatoebaSentenceNumberTo int, lang appD.Lang2) (appD.ProblemID, error) {
+func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.Context, rf appS.RepositoryFactory, operator appD.StudentModel, tatoebaSentenceNumberFrom, tatoebaSentenceNumberTo int, lang2 appD.Lang2) (appD.ProblemID, error) {
 	systemSpaceID := appS.GetSystemSpaceID()
 	workbookRepo, err := rf.NewWorkbookRepository(ctx)
 	if err != nil {
@@ -354,7 +354,7 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 	}
 
 	sentenceAddParam := englishSentenceProblemAddParemeter{
-		Lang:                   lang,
+		Lang2:                  lang2,
 		Text:                   tatoebaSentenceFrom.GetText(),
 		Translated:             tatoebaSentenceTo.GetText(),
 		Provider:               "tatoeba",

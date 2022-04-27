@@ -10,7 +10,7 @@ create table `english_phrase_problem` (
 ,`audio_id` int not null
 ,`number` int not null
 ,`text` varchar(100) character set ascii not null
-,`lang` varchar(2) character set ascii
+,`lang2` varchar(2) character set ascii
 ,`translated` varchar(100)
 ,primary key(`id`)
 ,unique(`organization_id`, `workbook_id`, `text`)

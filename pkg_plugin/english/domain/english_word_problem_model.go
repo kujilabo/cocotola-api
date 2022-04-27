@@ -22,16 +22,16 @@ type englishWordSentenceProblemModel struct {
 	Provider   string
 	AudioID    appD.AudioID
 	Text       string
-	Lang       appD.Lang2
+	Lang2      appD.Lang2
 	Translated string
 	Note       string
 }
 
-func NewEnglishWordProblemSentenceModel(audioID appD.AudioID, text string, lang appD.Lang2, translated, note string) (EnglishWordSentenceProblemModel, error) {
+func NewEnglishWordProblemSentenceModel(audioID appD.AudioID, text string, lang2 appD.Lang2, translated, note string) (EnglishWordSentenceProblemModel, error) {
 	return &englishWordSentenceProblemModel{
 		AudioID:    audioID,
 		Text:       text,
-		Lang:       lang,
+		Lang2:      lang2,
 		Translated: translated,
 		Note:       note,
 	}, nil
@@ -58,7 +58,7 @@ func (m *englishWordSentenceProblemModel) GetNote() string {
 }
 
 func (m *englishWordSentenceProblemModel) GetLang2() appD.Lang2 {
-	return m.Lang
+	return m.Lang2
 }
 
 type EnglishWordProblemModel interface {
@@ -87,13 +87,13 @@ type englishWordProblemModel struct {
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              appD.Lang2
+	Lang2             appD.Lang2
 	Translated        string
 	Phrases           []EnglishPhraseProblemModel
 	Sentences         []EnglishWordSentenceProblemModel
 }
 
-func NewEnglishWordProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang appD.Lang2, translated string, phrases []EnglishPhraseProblemModel, sentences []EnglishWordSentenceProblemModel) (EnglishWordProblemModel, error) {
+func NewEnglishWordProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang2 appD.Lang2, translated string, phrases []EnglishPhraseProblemModel, sentences []EnglishWordSentenceProblemModel) (EnglishWordProblemModel, error) {
 	return &englishWordProblemModel{
 		ProblemModel:      problemModel,
 		AudioID:           audioID,
@@ -104,7 +104,7 @@ func NewEnglishWordProblemModel(problemModel appD.ProblemModel, audioID appD.Aud
 		PresentParticiple: presentParticiple,
 		PastTense:         pastTense,
 		PastParticiple:    pastParticiple,
-		Lang:              lang,
+		Lang2:             lang2,
 		Translated:        translated,
 		Phrases:           phrases,
 		Sentences:         sentences,
@@ -144,7 +144,7 @@ func (m *englishWordProblemModel) GetPastParticiple() string {
 }
 
 func (m *englishWordProblemModel) GetLang2() appD.Lang2 {
-	return m.Lang
+	return m.Lang2
 }
 
 func (m *englishWordProblemModel) GetTranslated() string {
@@ -169,7 +169,7 @@ func (m *englishWordProblemModel) GetProperties(cxt context.Context) map[string]
 		sentence := map[string]interface{}{
 			"text":       s.GetText(),
 			"translated": s.GetTranslated(),
-			"lang":       s.GetLang2().String(),
+			"lang2":      s.GetLang2().String(),
 			"note":       s.GetNote(),
 		}
 		sentences = append(sentences, sentence)
@@ -178,7 +178,7 @@ func (m *englishWordProblemModel) GetProperties(cxt context.Context) map[string]
 	return map[string]interface{}{
 		"text":       m.Text,
 		"pos":        m.Pos,
-		"lang":       m.Lang.String(),
+		"lang2":      m.Lang2.String(),
 		"translated": m.Translated,
 		"audioId":    m.AudioID,
 		"sentences":  sentences,

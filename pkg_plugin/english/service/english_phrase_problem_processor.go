@@ -15,13 +15,13 @@ import (
 
 type englishPhraseProblemAddParemeter struct {
 	Text       string `validate:"required"`
-	Lang       string `validate:"required"`
+	Lang2      string `validate:"required"`
 	Translated string `validate:"required"`
 }
 
 func toEnglishPhraseProblemAddParemeter(param appS.ProblemAddParameter) (*englishPhraseProblemAddParemeter, error) {
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
+	if _, ok := param.GetProperties()["lang2"]; !ok {
+		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
@@ -33,7 +33,7 @@ func toEnglishPhraseProblemAddParemeter(param appS.ProblemAddParameter) (*englis
 	}
 
 	m := &englishPhraseProblemAddParemeter{
-		Lang:       param.GetProperties()["lang"],
+		Lang2:      param.GetProperties()["lang2"],
 		Text:       param.GetProperties()["text"],
 		Translated: param.GetProperties()["translated"],
 	}
@@ -94,7 +94,7 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 	properties := map[string]string{
 		"text":       extractedParam.Text,
 		"translated": extractedParam.Translated,
-		"lang":       extractedParam.Lang,
+		"lang2":      extractedParam.Lang2,
 		"audioId":    strconv.Itoa(int(audioID)),
 	}
 	newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)

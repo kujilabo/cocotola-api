@@ -11,7 +11,7 @@ import (
 var ErrAudioNotFound = errors.New("audio not found")
 
 type SynthesizerClient interface {
-	Synthesize(ctx context.Context, lang domain.Lang2, text string) (Audio, error)
+	Synthesize(ctx context.Context, lang2 domain.Lang2, text string) (Audio, error)
 
 	FindAudioByAudioID(ctx context.Context, audioID domain.AudioID) (Audio, error)
 }

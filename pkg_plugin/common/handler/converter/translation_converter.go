@@ -14,7 +14,7 @@ func ToTranslationFindResposne(ctx context.Context, translations []domain.Transl
 	results := make([]entity.Translation, len(translations))
 	for i, t := range translations {
 		results[i] = entity.Translation{
-			Lang:       t.GetLang().String(),
+			Lang2:      t.GetLang2().String(),
 			Text:       t.GetText(),
 			Pos:        int(t.GetPos()),
 			Translated: t.GetTranslated(),
@@ -29,7 +29,7 @@ func ToTranslationFindResposne(ctx context.Context, translations []domain.Transl
 
 func ToTranslationResposne(context context.Context, translation domain.Translation) (*entity.Translation, error) {
 	return &entity.Translation{
-		Lang:       translation.GetLang().String(),
+		Lang2:      translation.GetLang2().String(),
 		Text:       translation.GetText(),
 		Pos:        int(translation.GetPos()),
 		Translated: translation.GetTranslated(),
@@ -41,7 +41,7 @@ func ToTranslationListResposne(context context.Context, translations []domain.Tr
 	results := make([]*entity.Translation, 0)
 	for _, t := range translations {
 		e := &entity.Translation{
-			Lang:       t.GetLang().String(),
+			Lang2:      t.GetLang2().String(),
 			Text:       t.GetText(),
 			Pos:        int(t.GetPos()),
 			Translated: t.GetTranslated(),
@@ -58,11 +58,11 @@ func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAdd
 		return nil, err
 	}
 
-	lang, err := appD.NewLang2(param.Lang)
+	lang2, err := appD.NewLang2(param.Lang2)
 	if err != nil {
 		return nil, err
 	}
-	return service.NewTransalationAddParameter(param.Text, pos, lang, param.Translated)
+	return service.NewTransalationAddParameter(param.Text, pos, lang2, param.Translated)
 }
 
 func ToTranslationUpdateParameter(ctx context.Context, param *entity.TranslationUpdateParameter) (service.TranslationUpdateParameter, error) {

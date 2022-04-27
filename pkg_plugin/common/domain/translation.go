@@ -9,7 +9,7 @@ import (
 type Translation interface {
 	GetText() string
 	GetPos() WordPos
-	GetLang() appD.Lang2
+	GetLang2() appD.Lang2
 	GetTranslated() string
 	GetProvider() string
 }
@@ -22,11 +22,11 @@ type translation struct {
 	Provider   string
 }
 
-func NewTranslation(text string, pos WordPos, lang appD.Lang2, translated, provider string) (Translation, error) {
+func NewTranslation(text string, pos WordPos, lang2 appD.Lang2, translated, provider string) (Translation, error) {
 	m := &translation{
 		Text:       text,
 		Pos:        pos,
-		Lang2:      lang,
+		Lang2:      lang2,
 		Translated: translated,
 		Provider:   provider,
 	}
@@ -42,7 +42,7 @@ func (t *translation) GetPos() WordPos {
 	return t.Pos
 }
 
-func (t *translation) GetLang() appD.Lang2 {
+func (t *translation) GetLang2() appD.Lang2 {
 	return t.Lang2
 }
 

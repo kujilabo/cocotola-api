@@ -26,18 +26,18 @@ type synthesizerClient struct {
 
 type audioResponse struct {
 	ID      int    `json:"id"`
-	Lang    string `json:"lang"`
+	Lang2   string `json:"lang2"`
 	Text    string `json:"text"`
 	Content string `json:"content"`
 }
 
 func (r *audioResponse) toModel() (service.Audio, error) {
-	lang, err := domain.NewLang2(r.Lang)
+	lang2, err := domain.NewLang2(r.Lang2)
 	if err != nil {
 		return nil, err
 	}
 
-	audioModel, err := domain.NewAudioModel(uint(r.ID), lang, r.Text, r.Content)
+	audioModel, err := domain.NewAudioModel(uint(r.ID), lang2, r.Text, r.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func NewSynthesizerClient(endpoint, username, password string, timeout time.Dura
 	}
 }
 
-func (c *synthesizerClient) Synthesize(ctx context.Context, lang domain.Lang2, text string) (service.Audio, error) {
+func (c *synthesizerClient) Synthesize(ctx context.Context, lang2 domain.Lang2, text string) (service.Audio, error) {
 	ctx, span := tracer.Start(ctx, "synthesizerClient.Synthesize")
 	defer span.End()
 
@@ -68,8 +68,8 @@ func (c *synthesizerClient) Synthesize(ctx context.Context, lang domain.Lang2, t
 
 	u.Path = path.Join(u.Path, "v1", "user", "synthesize")
 	paramMap := map[string]string{
-		"lang": lang.String(),
-		"text": text,
+		"lang2": lang2.String(),
+		"text":  text,
 	}
 
 	paramBytes, err := json.Marshal(paramMap)

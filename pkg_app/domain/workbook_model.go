@@ -32,7 +32,7 @@ type workbookModel struct {
 	Properties   map[string]string
 }
 
-func NewWorkbookModel(model userD.Model, spaceID userD.SpaceID, ownerID userD.AppUserID, privileges userD.Privileges, name string, lang Lang2, problemType string, questsionText string, properties map[string]string) (WorkbookModel, error) {
+func NewWorkbookModel(model userD.Model, spaceID userD.SpaceID, ownerID userD.AppUserID, privileges userD.Privileges, name string, lang2 Lang2, problemType string, questsionText string, properties map[string]string) (WorkbookModel, error) {
 	m := &workbookModel{
 		privileges: privileges,
 		Model:      model,
@@ -45,7 +45,7 @@ func NewWorkbookModel(model userD.Model, spaceID userD.SpaceID, ownerID userD.Ap
 		// },
 
 		Name:         name,
-		Lang2:        lang,
+		Lang2:        lang2,
 		ProblemType:  problemType,
 		QuestionText: questsionText,
 		Properties:   properties,
