@@ -10,9 +10,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/gateway"
-	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
+	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userG "github.com/kujilabo/cocotola-api/pkg_user/gateway"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
@@ -52,7 +51,7 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 		assert.Equal(t, "LOGIN_ID_2", user2.GetLoginID())
 
 		englishWord := testNewProblemType(t, "english_word_problem")
-		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []domain.ProblemType{englishWord})
 		spaceRepo := userG.NewSpaceRepository(db)
 
 		// user1 has two workbooks
@@ -73,11 +72,11 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 		assert.GreaterOrEqual(t, uint(workbookID21), uint(1))
 
 		type args struct {
-			operator appS.Student
-			param    appS.WorkbookSearchCondition
+			operator service.Student
+			param    service.WorkbookSearchCondition
 		}
 		type want struct {
-			workbookID   appD.WorkbookID
+			workbookID   domain.WorkbookID
 			workbookName string
 		}
 		tests := []struct {
@@ -138,26 +137,26 @@ func Test_workbookRepository_FindPersonalWorkbooks(t *testing.T) {
 	}
 }
 
-func testNewProblemType(t *testing.T, name string) appD.ProblemType {
-	p, err := appD.NewProblemType(1, name)
+func testNewProblemType(t *testing.T, name string) domain.ProblemType {
+	p, err := domain.NewProblemType(1, name)
 	assert.NoError(t, err)
 	return p
 }
 
-func testNewStudent(t *testing.T, appUser userS.AppUser) appS.Student {
-	s, err := appS.NewStudent(nil, nil, nil, appUser)
+func testNewStudent(t *testing.T, appUser userS.AppUser) service.Student {
+	s, err := service.NewStudent(nil, nil, nil, appUser)
 	assert.NoError(t, err)
 	return s
 }
 
-func testNewWorkbookSearchCondition(t *testing.T) appS.WorkbookSearchCondition {
-	p, err := appS.NewWorkbookSearchCondition(1, 10, []userD.SpaceID{})
+func testNewWorkbookSearchCondition(t *testing.T) service.WorkbookSearchCondition {
+	p, err := service.NewWorkbookSearchCondition(1, 10, []userD.SpaceID{})
 	assert.NoError(t, err)
 	return p
 }
 
-func testNewWorkbookAddParameter(t *testing.T, name string) appS.WorkbookAddParameter {
-	p, err := appS.NewWorkbookAddParameter("english_word_problem", name, domain.Lang2JA, "", map[string]string{"audioEnabled": "false"})
+func testNewWorkbookAddParameter(t *testing.T, name string) service.WorkbookAddParameter {
+	p, err := service.NewWorkbookAddParameter("english_word_problem", name, domain.Lang2JA, "", map[string]string{"audioEnabled": "false"})
 	assert.NoError(t, err)
 	return p
 }
@@ -172,7 +171,7 @@ func testNewAppUser(t *testing.T, ctx context.Context, db *gorm.DB, owner userS.
 	return user1
 }
 
-func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo appS.WorkbookRepository, student appS.Student, spaceID userD.SpaceID, workbookName string) appS.Workbook {
+func testNewWorkbook(t *testing.T, ctx context.Context, db *gorm.DB, workbookRepo service.WorkbookRepository, student service.Student, spaceID userD.SpaceID, workbookName string) service.Workbook {
 	workbookID11, err := workbookRepo.AddWorkbook(ctx, student, spaceID, testNewWorkbookAddParameter(t, workbookName))
 	assert.NoError(t, err)
 	assert.Greater(t, int(workbookID11), 0)
@@ -207,7 +206,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		testNewAppUser(t, bg, db, owner, "LOGIN_ID_2", "USERNAME_2")
 
 		englishWord := testNewProblemType(t, "english_word_problem")
-		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []domain.ProblemType{englishWord})
 		spaceRepo := userG.NewSpaceRepository(db)
 
 		// user1 has two workbooks
@@ -219,11 +218,11 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 		testNewWorkbook(t, bg, db, workbookRepo, student1, spaceID1, "WB12")
 
 		type args struct {
-			operator appS.Student
+			operator service.Student
 			param    string
 		}
 		type want struct {
-			workbookID   appD.WorkbookID
+			workbookID   domain.WorkbookID
 			workbookName string
 			audioEnabled string
 		}
@@ -240,7 +239,7 @@ func Test_workbookRepository_FindWorkbookByName(t *testing.T) {
 					param:    "WB11",
 				},
 				want: want{
-					workbookID:   appD.WorkbookID(workbook11.GetID()),
+					workbookID:   domain.WorkbookID(workbook11.GetID()),
 					workbookName: "WB11",
 					audioEnabled: "false",
 				},
@@ -291,7 +290,7 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 		user2 := testNewAppUser(t, bg, db, owner, "LOGIN_ID_2", "USERNAME_2")
 
 		englishWord := testNewProblemType(t, "english_word_problem")
-		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []appD.ProblemType{englishWord})
+		workbookRepo := gateway.NewWorkbookRepository(bg, driverName, nil, userRepo, nil, db, []domain.ProblemType{englishWord})
 		spaceRepo := userG.NewSpaceRepository(db)
 
 		// user1 has two workbooks(WB11, WB12)
@@ -311,21 +310,21 @@ func Test_workbookRepository_FindWorkbookByID_priv(t *testing.T) {
 		workbook22 := testNewWorkbook(t, bg, db, workbookRepo, student2, spaceID2, "WB22")
 
 		// user1 can read user1's workbooks(WB11, WB12)
-		workbook11Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook11.GetID()))
+		workbook11Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, domain.WorkbookID(workbook11.GetID()))
 		assert.NoError(t, err)
 		assert.Equal(t, workbook11Tmp.GetID(), workbook11.GetID())
-		workbook12Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook12.GetID()))
+		workbook12Tmp, err := workbookRepo.FindWorkbookByID(bg, student1, domain.WorkbookID(workbook12.GetID()))
 		assert.NoError(t, err)
 		assert.Equal(t, workbook12Tmp.GetID(), workbook12.GetID())
 
 		// user1 cannot read user2's workbooks(WB21, WB22)
-		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook21.GetID())); err != nil {
-			assert.True(t, errors.Is(err, appS.ErrWorkbookPermissionDenied))
+		if _, err := workbookRepo.FindWorkbookByID(bg, student1, domain.WorkbookID(workbook21.GetID())); err != nil {
+			assert.True(t, errors.Is(err, service.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}
-		if _, err := workbookRepo.FindWorkbookByID(bg, student1, appD.WorkbookID(workbook22.GetID())); err != nil {
-			assert.True(t, errors.Is(err, appS.ErrWorkbookPermissionDenied))
+		if _, err := workbookRepo.FindWorkbookByID(bg, student1, domain.WorkbookID(workbook22.GetID())); err != nil {
+			assert.True(t, errors.Is(err, service.ErrWorkbookPermissionDenied))
 		} else {
 			assert.Fail(t, "err is nil")
 		}
