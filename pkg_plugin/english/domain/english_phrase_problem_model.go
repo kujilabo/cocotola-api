@@ -14,7 +14,7 @@ type EnglishPhraseProblemModel interface {
 	appD.ProblemModel
 	GetAudioID() appD.AudioID
 	GetText() string
-	GetLang() appD.Lang2
+	GetLang2() appD.Lang2
 	GetTranslated() string
 }
 
@@ -22,16 +22,16 @@ type englishPhraseProblemModel struct {
 	appD.ProblemModel
 	AudioID    appD.AudioID
 	Text       string
-	Lang       appD.Lang2
+	Lang2      appD.Lang2
 	Translated string
 }
 
-func NewEnglishPhraseProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, lang appD.Lang2, translated string) (EnglishPhraseProblemModel, error) {
+func NewEnglishPhraseProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, lang2 appD.Lang2, translated string) (EnglishPhraseProblemModel, error) {
 	m := &englishPhraseProblemModel{
 		ProblemModel: problemModel,
 		AudioID:      audioID,
 		Text:         text,
-		Lang:         lang,
+		Lang2:        lang2,
 		Translated:   translated,
 	}
 
@@ -46,9 +46,10 @@ func (m *englishPhraseProblemModel) GetText() string {
 	return m.Text
 }
 
-func (m *englishPhraseProblemModel) GetLang() appD.Lang2 {
-	return m.Lang
+func (m *englishPhraseProblemModel) GetLang2() appD.Lang2 {
+	return m.Lang2
 }
+
 func (m *englishPhraseProblemModel) GetTranslated() string {
 	return m.Translated
 }
@@ -57,7 +58,7 @@ func (m *englishPhraseProblemModel) Properties(ctx context.Context) map[string]i
 	return map[string]interface{}{
 		"audioId":    uint(m.AudioID),
 		"text":       m.Text,
-		"lang":       m.Lang,
+		"lang2":      m.Lang2,
 		"translated": m.Translated,
 	}
 }

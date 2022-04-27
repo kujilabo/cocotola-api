@@ -13,7 +13,6 @@ import (
 )
 
 type Student interface {
-	// userD.AppUser
 	domain.StudentModel
 
 	GetDefaultSpace(ctx context.Context) (userS.Space, error)
@@ -43,15 +42,13 @@ type Student interface {
 }
 
 type student struct {
-	// userD.AppUser
 	domain.StudentModel
 	rf     RepositoryFactory
 	pf     ProcessorFactory
 	userRf userS.RepositoryFactory
 }
 
-func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRf userS.RepositoryFactory,
-	studentModel domain.StudentModel) (Student, error) {
+func NewStudent(pf ProcessorFactory, rf RepositoryFactory, userRf userS.RepositoryFactory, studentModel domain.StudentModel) (Student, error) {
 	m := &student{
 		StudentModel: studentModel,
 		pf:           pf,

@@ -1,6 +1,6 @@
 package domain
 
-import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type OrganizationID uint
 
@@ -19,7 +19,7 @@ func NewOrganizationModel(model Model, name string) (OrganizationModel, error) {
 		Model: model,
 		Name:  name,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *organizationModel) GetName() string {

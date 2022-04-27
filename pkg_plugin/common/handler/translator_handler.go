@@ -47,13 +47,13 @@ func (h *translationHandler) FindTranslations(c *gin.Context) {
 			return nil
 		}
 
-		lang, err := appD.NewLang2(param.Lang)
+		lang2, err := appD.NewLang2(param.Lang2)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
 
-		result, err := h.translatorClient.FindTranslationsByFirstLetter(ctx, lang, param.Letter)
+		result, err := h.translatorClient.FindTranslationsByFirstLetter(ctx, lang2, param.Letter)
 		if err != nil {
 			return err
 		}

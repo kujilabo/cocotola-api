@@ -20,7 +20,7 @@ import (
 type translationResponse struct {
 	Text       string `json:"text"`
 	Pos        int    `json:"pos"`
-	Lang       string `json:"lang"`
+	Lang2      string `json:"lang2"`
 	Translated string `json:"translated"`
 	Provider   string `json:"provider"`
 }
@@ -31,12 +31,12 @@ func (r *translationResponse) toModel() (domain.Translation, error) {
 		return nil, err
 	}
 
-	lang, err := appD.NewLang2(r.Lang)
+	lang2, err := appD.NewLang2(r.Lang2)
 	if err != nil {
 		return nil, err
 	}
 
-	return domain.NewTranslation(r.Text, pos, lang, r.Translated, r.Provider)
+	return domain.NewTranslation(r.Text, pos, lang2, r.Translated, r.Provider)
 }
 
 type translationFindResponse struct {
@@ -152,7 +152,7 @@ func (c *translatorClient) DictionaryLookupWithPos(ctx context.Context, fromLang
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang appD.Lang2, firstLetter string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang2 appD.Lang2, firstLetter string) ([]domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByFirstLetter")
 	defer span.End()
 
@@ -195,7 +195,7 @@ func (c *translatorClient) FindTranslationsByFirstLetter(ctx context.Context, la
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
+func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationByTextAndPos")
 	defer span.End()
 
@@ -230,7 +230,7 @@ func (c *translatorClient) FindTranslationByTextAndPos(ctx context.Context, lang
 	return response.toModel()
 }
 
-func (c *translatorClient) FindTranslationsByText(ctx context.Context, lang appD.Lang2, text string) ([]domain.Translation, error) {
+func (c *translatorClient) FindTranslationsByText(ctx context.Context, lang2 appD.Lang2, text string) ([]domain.Translation, error) {
 	ctx, span := tracer.Start(ctx, "translatorClient.FindTranslationsByText")
 	defer span.End()
 
@@ -275,7 +275,7 @@ func (c *translatorClient) AddTranslation(ctx context.Context, param service.Tra
 	}
 
 	paramMap := map[string]interface{}{
-		"lang":       param.GetLang(),
+		"lang2":      param.GetLang2(),
 		"text":       param.GetText(),
 		"pos":        param.GetPos(),
 		"translated": param.GetTranslated(),
@@ -305,7 +305,7 @@ func (c *translatorClient) AddTranslation(ctx context.Context, param service.Tra
 	return nil
 }
 
-func (c *translatorClient) UpdateTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
+func (c *translatorClient) UpdateTranslation(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos, param service.TranslationUpdateParameter) error {
 	ctx, span := tracer.Start(ctx, "translatorClient.UpdateTranslation")
 	defer span.End()
 
@@ -343,7 +343,7 @@ func (c *translatorClient) UpdateTranslation(ctx context.Context, lang appD.Lang
 	return nil
 }
 
-func (c *translatorClient) RemoveTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) error {
+func (c *translatorClient) RemoveTranslation(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos) error {
 	ctx, span := tracer.Start(ctx, "translatorClient.RemoveTranslation")
 	defer span.End()
 

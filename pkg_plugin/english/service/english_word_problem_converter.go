@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/xerrors"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginS "github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
@@ -24,13 +24,13 @@ type ToEnglishWordProblemUpdateParameter interface {
 
 type toSingleEnglishWordProblemAddParameter struct {
 	translatorClient pluginS.TranslatorClient
-	workbookID       app.WorkbookID
+	workbookID       appD.WorkbookID
 	number           int
 	param            *EnglishWordProblemAddParemeter
-	audioID          app.AudioID
+	audioID          appD.AudioID
 }
 
-func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
+func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID appD.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID appD.AudioID) ToEnglishWordProblemAddParameter {
 	return &toSingleEnglishWordProblemAddParameter{
 		translatorClient: translatorClient,
 		workbookID:       workbookID,
@@ -43,7 +43,7 @@ func NewToSingleEnglishWordProblemAddParameter(translatorClient pluginS.Translat
 func (c *toSingleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]appS.ProblemAddParameter, error) {
 	translated := c.param.Translated
 	if translated == "" {
-		translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, app.Lang2EN, c.param.Lang, c.param.Text, c.param.Pos)
+		translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, appD.Lang2EN, c.param.Lang2, c.param.Text, c.param.Pos)
 		if err != nil {
 			if !errors.Is(err, pluginS.ErrTranslationNotFound) {
 				return nil, err
@@ -67,13 +67,13 @@ func (c *toSingleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]app
 
 type toMultipleEnglishWordProblemAddParameter struct {
 	translatorClient pluginS.TranslatorClient
-	workbookID       app.WorkbookID
+	workbookID       appD.WorkbookID
 	number           int
 	param            *EnglishWordProblemAddParemeter
-	audioID          app.AudioID
+	audioID          appD.AudioID
 }
 
-func NewToMultipleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID app.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID app.AudioID) ToEnglishWordProblemAddParameter {
+func NewToMultipleEnglishWordProblemAddParameter(translatorClient pluginS.TranslatorClient, workbookID appD.WorkbookID, number int, param *EnglishWordProblemAddParemeter, audioID appD.AudioID) ToEnglishWordProblemAddParameter {
 	return &toMultipleEnglishWordProblemAddParameter{
 		translatorClient: translatorClient,
 		workbookID:       workbookID,
@@ -86,7 +86,7 @@ func NewToMultipleEnglishWordProblemAddParameter(translatorClient pluginS.Transl
 func (c *toMultipleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]appS.ProblemAddParameter, error) {
 	logger := log.FromContext(ctx)
 
-	translated, err := c.translatorClient.DictionaryLookup(ctx, app.Lang2EN, c.param.Lang, c.param.Text)
+	translated, err := c.translatorClient.DictionaryLookup(ctx, appD.Lang2EN, c.param.Lang2, c.param.Text)
 	if errors.Is(err, pluginS.ErrTranslationNotFound) {
 		return nil, err
 	}
@@ -130,11 +130,11 @@ type toSingleEnglishWordProblemUpdateParameter struct {
 	translatorClient pluginS.TranslatorClient
 	number           int
 	param            *EnglishWordProblemUpdateParemeter
-	audioID          app.AudioID
-	sentenceID1      app.ProblemID
+	audioID          appD.AudioID
+	sentenceID1      appD.ProblemID
 }
 
-func NewToSingleEnglishWordProblemUpdateParameter(translatorClient pluginS.TranslatorClient, number int, param *EnglishWordProblemUpdateParemeter, audioID app.AudioID, sentenceID1 app.ProblemID) ToEnglishWordProblemUpdateParameter {
+func NewToSingleEnglishWordProblemUpdateParameter(translatorClient pluginS.TranslatorClient, number int, param *EnglishWordProblemUpdateParemeter, audioID appD.AudioID, sentenceID1 appD.ProblemID) ToEnglishWordProblemUpdateParameter {
 	return &toSingleEnglishWordProblemUpdateParameter{
 		translatorClient: translatorClient,
 		number:           number,
@@ -147,7 +147,7 @@ func NewToSingleEnglishWordProblemUpdateParameter(translatorClient pluginS.Trans
 func (c *toSingleEnglishWordProblemUpdateParameter) Run(ctx context.Context) ([]appS.ProblemUpdateParameter, error) {
 	// translated := c.param.Translated
 	// if translated == "" {
-	// 	translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, app.Lang2EN, app.Lang2JA, c.param.Text, c.param.Pos)
+	// 	translation, err := c.translatorClient.DictionaryLookupWithPos(ctx, appD.Lang2EN, appD.Lang2JA, c.param.Text, c.param.Pos)
 	// 	if err != nil {
 	// 		if !errors.Is(err, pluginS.ErrTranslationNotFound) {
 	// 			return nil, err

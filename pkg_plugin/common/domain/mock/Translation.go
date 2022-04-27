@@ -16,8 +16,8 @@ type Translation struct {
 	mock.Mock
 }
 
-// GetLang provides a mock function with given fields:
-func (_m *Translation) GetLang() domain.Lang2 {
+// GetLang2 provides a mock function with given fields:
+func (_m *Translation) GetLang2() domain.Lang2 {
 	ret := _m.Called()
 
 	var r0 domain.Lang2

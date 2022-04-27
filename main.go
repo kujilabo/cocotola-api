@@ -415,15 +415,15 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 
 func initApp2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 	if err := initApp2_1(ctx, db, rfFunc, userRfFunc); err != nil {
-		return err
+		return xerrors.Errorf("failed to initApp2_1. err: %w", err)
 	}
 
 	if err := initApp2_2(ctx, db, rfFunc, userRfFunc); err != nil {
-		return err
+		return xerrors.Errorf("failed to initApp2_2. err: %w", err)
 	}
 
 	if err := initApp2_3(ctx, db, rfFunc, userRfFunc); err != nil {
-		return err
+		return xerrors.Errorf("failed to initApp2_3. err: %w", err)
 	}
 
 	return nil

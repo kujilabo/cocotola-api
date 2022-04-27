@@ -10,6 +10,7 @@ create table `workbook` (
 ,`space_id` int not null
 ,`problem_type_id` int not null
 ,`name` varchar(40) not null
+,`lang2` varchar(2) not null
 ,`question_text` varchar(100)
 ,`properties` json not null
 ,unique(`organization_id`, `owner_id`, `name`)

@@ -16,18 +16,18 @@ var ErrTranslationAlreadyExists = errors.New("custsomtranslation already exists"
 type TranslatorClient interface {
 	DictionaryLookup(ctx context.Context, fromLang, toLang appD.Lang2, text string) ([]domain.Translation, error)
 	DictionaryLookupWithPos(ctx context.Context, fromLang, toLang appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
-	FindTranslationsByFirstLetter(ctx context.Context, lang appD.Lang2, firstLetter string) ([]domain.Translation, error)
-	FindTranslationByTextAndPos(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
-	FindTranslationsByText(ctx context.Context, lang appD.Lang2, text string) ([]domain.Translation, error)
+	FindTranslationsByFirstLetter(ctx context.Context, lang2 appD.Lang2, firstLetter string) ([]domain.Translation, error)
+	FindTranslationByTextAndPos(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos) (domain.Translation, error)
+	FindTranslationsByText(ctx context.Context, lang2 appD.Lang2, text string) ([]domain.Translation, error)
 	AddTranslation(ctx context.Context, param TranslationAddParameter) error
-	UpdateTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos, param TranslationUpdateParameter) error
-	RemoveTranslation(ctx context.Context, lang appD.Lang2, text string, pos domain.WordPos) error
+	UpdateTranslation(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos, param TranslationUpdateParameter) error
+	RemoveTranslation(ctx context.Context, lang2 appD.Lang2, text string, pos domain.WordPos) error
 }
 
 type TranslationAddParameter interface {
 	GetText() string
 	GetPos() domain.WordPos
-	GetLang() appD.Lang2
+	GetLang2() appD.Lang2
 	GetTranslated() string
 }
 
@@ -38,11 +38,11 @@ type translationAddParameter struct {
 	Translated string
 }
 
-func NewTransalationAddParameter(text string, pos domain.WordPos, lang appD.Lang2, translated string) (TranslationAddParameter, error) {
+func NewTransalationAddParameter(text string, pos domain.WordPos, lang2 appD.Lang2, translated string) (TranslationAddParameter, error) {
 	m := &translationAddParameter{
 		Text:       text,
 		Pos:        pos,
-		Lang2:      lang,
+		Lang2:      lang2,
 		Translated: translated,
 	}
 
@@ -57,7 +57,7 @@ func (p *translationAddParameter) GetPos() domain.WordPos {
 	return p.Pos
 }
 
-func (p *translationAddParameter) GetLang() appD.Lang2 {
+func (p *translationAddParameter) GetLang2() appD.Lang2 {
 	return p.Lang2
 }
 

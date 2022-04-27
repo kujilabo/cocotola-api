@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -27,7 +27,7 @@ func NewAppUser(rf RepositoryFactory, appUserModel domain.AppUserModel) (AppUser
 		AppUserModel: appUserModel,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (a *appUser) GetDefaultSpace(ctx context.Context) (Space, error) {

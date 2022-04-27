@@ -81,13 +81,13 @@ func (_m *TranslatorClient) DictionaryLookupWithPos(ctx context.Context, fromLan
 	return r0, r1
 }
 
-// FindTranslationByTextAndPos provides a mock function with given fields: ctx, lang, text, pos
-func (_m *TranslatorClient) FindTranslationByTextAndPos(ctx context.Context, lang domain.Lang2, text string, pos commondomain.WordPos) (commondomain.Translation, error) {
-	ret := _m.Called(ctx, lang, text, pos)
+// FindTranslationByTextAndPos provides a mock function with given fields: ctx, lang2, text, pos
+func (_m *TranslatorClient) FindTranslationByTextAndPos(ctx context.Context, lang2 domain.Lang2, text string, pos commondomain.WordPos) (commondomain.Translation, error) {
+	ret := _m.Called(ctx, lang2, text, pos)
 
 	var r0 commondomain.Translation
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string, commondomain.WordPos) commondomain.Translation); ok {
-		r0 = rf(ctx, lang, text, pos)
+		r0 = rf(ctx, lang2, text, pos)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(commondomain.Translation)
@@ -96,7 +96,7 @@ func (_m *TranslatorClient) FindTranslationByTextAndPos(ctx context.Context, lan
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, domain.Lang2, string, commondomain.WordPos) error); ok {
-		r1 = rf(ctx, lang, text, pos)
+		r1 = rf(ctx, lang2, text, pos)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -104,13 +104,13 @@ func (_m *TranslatorClient) FindTranslationByTextAndPos(ctx context.Context, lan
 	return r0, r1
 }
 
-// FindTranslationsByFirstLetter provides a mock function with given fields: ctx, lang, firstLetter
-func (_m *TranslatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang domain.Lang2, firstLetter string) ([]commondomain.Translation, error) {
-	ret := _m.Called(ctx, lang, firstLetter)
+// FindTranslationsByFirstLetter provides a mock function with given fields: ctx, lang2, firstLetter
+func (_m *TranslatorClient) FindTranslationsByFirstLetter(ctx context.Context, lang2 domain.Lang2, firstLetter string) ([]commondomain.Translation, error) {
+	ret := _m.Called(ctx, lang2, firstLetter)
 
 	var r0 []commondomain.Translation
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string) []commondomain.Translation); ok {
-		r0 = rf(ctx, lang, firstLetter)
+		r0 = rf(ctx, lang2, firstLetter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]commondomain.Translation)
@@ -119,7 +119,7 @@ func (_m *TranslatorClient) FindTranslationsByFirstLetter(ctx context.Context, l
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, domain.Lang2, string) error); ok {
-		r1 = rf(ctx, lang, firstLetter)
+		r1 = rf(ctx, lang2, firstLetter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -127,13 +127,13 @@ func (_m *TranslatorClient) FindTranslationsByFirstLetter(ctx context.Context, l
 	return r0, r1
 }
 
-// FindTranslationsByText provides a mock function with given fields: ctx, lang, text
-func (_m *TranslatorClient) FindTranslationsByText(ctx context.Context, lang domain.Lang2, text string) ([]commondomain.Translation, error) {
-	ret := _m.Called(ctx, lang, text)
+// FindTranslationsByText provides a mock function with given fields: ctx, lang2, text
+func (_m *TranslatorClient) FindTranslationsByText(ctx context.Context, lang2 domain.Lang2, text string) ([]commondomain.Translation, error) {
+	ret := _m.Called(ctx, lang2, text)
 
 	var r0 []commondomain.Translation
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string) []commondomain.Translation); ok {
-		r0 = rf(ctx, lang, text)
+		r0 = rf(ctx, lang2, text)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]commondomain.Translation)
@@ -142,7 +142,7 @@ func (_m *TranslatorClient) FindTranslationsByText(ctx context.Context, lang dom
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, domain.Lang2, string) error); ok {
-		r1 = rf(ctx, lang, text)
+		r1 = rf(ctx, lang2, text)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -150,13 +150,13 @@ func (_m *TranslatorClient) FindTranslationsByText(ctx context.Context, lang dom
 	return r0, r1
 }
 
-// RemoveTranslation provides a mock function with given fields: ctx, lang, text, pos
-func (_m *TranslatorClient) RemoveTranslation(ctx context.Context, lang domain.Lang2, text string, pos commondomain.WordPos) error {
-	ret := _m.Called(ctx, lang, text, pos)
+// RemoveTranslation provides a mock function with given fields: ctx, lang2, text, pos
+func (_m *TranslatorClient) RemoveTranslation(ctx context.Context, lang2 domain.Lang2, text string, pos commondomain.WordPos) error {
+	ret := _m.Called(ctx, lang2, text, pos)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string, commondomain.WordPos) error); ok {
-		r0 = rf(ctx, lang, text, pos)
+		r0 = rf(ctx, lang2, text, pos)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -164,13 +164,13 @@ func (_m *TranslatorClient) RemoveTranslation(ctx context.Context, lang domain.L
 	return r0
 }
 
-// UpdateTranslation provides a mock function with given fields: ctx, lang, text, pos, param
-func (_m *TranslatorClient) UpdateTranslation(ctx context.Context, lang domain.Lang2, text string, pos commondomain.WordPos, param service.TranslationUpdateParameter) error {
-	ret := _m.Called(ctx, lang, text, pos, param)
+// UpdateTranslation provides a mock function with given fields: ctx, lang2, text, pos, param
+func (_m *TranslatorClient) UpdateTranslation(ctx context.Context, lang2 domain.Lang2, text string, pos commondomain.WordPos, param service.TranslationUpdateParameter) error {
+	ret := _m.Called(ctx, lang2, text, pos, param)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, domain.Lang2, string, commondomain.WordPos, service.TranslationUpdateParameter) error); ok {
-		r0 = rf(ctx, lang, text, pos, param)
+		r0 = rf(ctx, lang2, text, pos, param)
 	} else {
 		r0 = ret.Error(0)
 	}

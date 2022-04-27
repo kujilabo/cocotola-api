@@ -10,7 +10,7 @@ create table `english_phrase_problem` (
 ,`audio_id` int not null
 ,`number` int not null
 ,`text` varchar(100) not null
-,`lang` varchar(2) not null
+,`lang2` varchar(2) not null
 ,`translated` varchar(100)
 ,unique(`organization_id`, `workbook_id`, `text`)
 ,foreign key(`created_by`) references `app_user`(`id`)

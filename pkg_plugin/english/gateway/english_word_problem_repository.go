@@ -43,7 +43,7 @@ type englishWordProblemEntity struct {
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              string
+	Lang2             string
 	Translated        string
 	PhraseID1         uint
 	PhraseID2         uint
@@ -76,7 +76,7 @@ func (e *englishWordProblemEntity) toProblem(synthesizerClient appS.SynthesizerC
 		return nil, err
 	}
 
-	lang, err := appD.NewLang2(e.Lang)
+	lang2, err := appD.NewLang2(e.Lang2)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +84,13 @@ func (e *englishWordProblemEntity) toProblem(synthesizerClient appS.SynthesizerC
 	phrases := make([]domain.EnglishPhraseProblemModel, 0)
 	sentences := make([]domain.EnglishWordSentenceProblemModel, 0)
 	if e.SentenceID1 != 0 {
-		sentence, err := domain.NewEnglishWordProblemSentenceModel(appD.AudioID(0), e.SentenceText1, lang, e.SentenceTranslated1, e.SentenceNote1)
+		sentence, err := domain.NewEnglishWordProblemSentenceModel(appD.AudioID(0), e.SentenceText1, lang2, e.SentenceTranslated1, e.SentenceNote1)
 		if err != nil {
 			return nil, err
 		}
 		sentences = append(sentences, sentence)
 	}
-	englishWordProblemModel, err := domain.NewEnglishWordProblemModel(problemModel, appD.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, lang, e.Translated, phrases, sentences)
+	englishWordProblemModel, err := domain.NewEnglishWordProblemModel(problemModel, appD.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, lang2, e.Translated, phrases, sentences)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ type englishWordProblemAddParemeter struct {
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              string `validate:"required"`
+	Lang2             string `validate:"required"`
 	Translated        string
 	PhraseID1         uint
 	PhraseID2         uint
@@ -124,8 +124,8 @@ func toEnglishWordProblemAddParameter(param appS.ProblemAddParameter) (*englishW
 		return nil, xerrors.Errorf("pos is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
+	if _, ok := param.GetProperties()["lang2"]; !ok {
+		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
@@ -144,7 +144,7 @@ func toEnglishWordProblemAddParameter(param appS.ProblemAddParameter) (*englishW
 
 	m := &englishWordProblemAddParemeter{
 		AudioID:    uint(audioID),
-		Lang:       param.GetProperties()["lang"],
+		Lang2:      param.GetProperties()["lang2"],
 		Text:       param.GetProperties()["text"],
 		Pos:        pos,
 		Translated: param.GetProperties()["translated"],
@@ -398,7 +398,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 		PresentParticiple: problemParam.PresentParticiple,
 		PastTense:         problemParam.PastTense,
 		PastParticiple:    problemParam.PastParticiple,
-		Lang:              problemParam.Lang,
+		Lang2:             problemParam.Lang2,
 		Translated:        problemParam.Translated,
 	}
 

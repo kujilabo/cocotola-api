@@ -17,7 +17,7 @@ import (
 
 var (
 	EnglishSentenceProblemAddPropertyAudioID                = "audioId"
-	EnglishSentenceProblemAddPropertyLang                   = "lang"
+	EnglishSentenceProblemAddPropertyLang2                  = "lang2"
 	EnglishSentenceProblemAddPropertyText                   = "text"
 	EnglishSentenceProblemAddPropertyTranslated             = "translated"
 	EnglishSentenceProblemAddPropertyProvider               = "provider"
@@ -28,7 +28,7 @@ var (
 )
 
 type englishSentenceProblemAddParemeter struct {
-	Lang                   appD.Lang2 `validate:"required"`
+	Lang2                  appD.Lang2 `validate:"required"`
 	Text                   string     `validate:"required"`
 	Translated             string
 	Provider               string
@@ -41,7 +41,7 @@ type englishSentenceProblemAddParemeter struct {
 func (p *englishSentenceProblemAddParemeter) toProperties(audioID appD.AudioID) map[string]string {
 	return map[string]string{
 		EnglishSentenceProblemAddPropertyAudioID:                strconv.Itoa(int(uint(audioID))),
-		EnglishSentenceProblemAddPropertyLang:                   p.Lang.String(),
+		EnglishSentenceProblemAddPropertyLang2:                  p.Lang2.String(),
 		EnglishSentenceProblemAddPropertyText:                   p.Text,
 		EnglishSentenceProblemAddPropertyTranslated:             p.Translated,
 		EnglishSentenceProblemAddPropertyProvider:               p.Provider,
@@ -60,17 +60,17 @@ func toEnglishSentenceProblemAddParemeter(param appS.ProblemAddParameter) (*engl
 	if _, ok := param.GetProperties()["translated"]; !ok {
 		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
-	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
+	if _, ok := param.GetProperties()["lang2"]; !ok {
+		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
-	lang2, err := appD.NewLang2(param.GetProperties()["lang"])
+	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
 	if err != nil {
 		return nil, err
 	}
 
 	m := &englishSentenceProblemAddParemeter{
-		Lang:       lang2,
+		Lang2:      lang2,
 		Text:       param.GetProperties()["text"],
 		Translated: param.GetProperties()["translated"],
 	}
