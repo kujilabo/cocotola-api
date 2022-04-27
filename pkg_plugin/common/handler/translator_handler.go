@@ -7,14 +7,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/converter"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
 
@@ -38,10 +38,8 @@ func NewTranslationHandler(translatorClient service.TranslatorClient) Translatio
 
 func (h *translationHandler) FindTranslations(c *gin.Context) {
 	ctx := c.Request.Context()
-	logger := log.FromContext(ctx)
-	logger.Infof("FindTranslations")
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		param := entity.TranslationFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
@@ -49,7 +47,13 @@ func (h *translationHandler) FindTranslations(c *gin.Context) {
 			return nil
 		}
 
-		result, err := h.translatorClient.FindTranslationsByFirstLetter(ctx, app.Lang2JA, param.Letter)
+		lang, err := appD.NewLang2(param.Lang)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return nil
+		}
+
+		result, err := h.translatorClient.FindTranslationsByFirstLetter(ctx, lang, param.Letter)
 		if err != nil {
 			return err
 		}
@@ -69,7 +73,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Infof("FindTranslationByTextAndPos")
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		text := ginhelper.GetStringFromPath(c, "text")
 
@@ -82,7 +86,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 		if err != nil {
 			return err
 		}
-		result, err := h.translatorClient.FindTranslationByTextAndPos(ctx, app.Lang2JA, text, wordPos)
+		result, err := h.translatorClient.FindTranslationByTextAndPos(ctx, appD.Lang2JA, text, wordPos)
 		if err != nil {
 			return err
 		}
@@ -100,10 +104,10 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		text := ginhelper.GetStringFromPath(c, "text")
-		results, err := h.translatorClient.FindTranslationsByText(ctx, app.Lang2JA, text)
+		results, err := h.translatorClient.FindTranslationsByText(ctx, appD.Lang2JA, text)
 		if err != nil {
 			return err
 		}
@@ -121,7 +125,7 @@ func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 func (h *translationHandler) AddTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.TranslationAddParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.Status(http.StatusBadRequest)
@@ -144,7 +148,7 @@ func (h *translationHandler) AddTranslation(c *gin.Context) {
 func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		text := ginhelper.GetStringFromPath(c, "text")
 
 		pos, err := ginhelper.GetIntFromPath(c, "pos")
@@ -166,7 +170,7 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translatorClient.UpdateTranslation(ctx, app.Lang2JA, text, wordPos, parameter); err != nil {
+		if err := h.translatorClient.UpdateTranslation(ctx, appD.Lang2JA, text, wordPos, parameter); err != nil {
 			return err
 		}
 
@@ -178,7 +182,7 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		text := ginhelper.GetStringFromPath(c, "text")
 
 		pos, err := ginhelper.GetIntFromPath(c, "pos")
@@ -190,7 +194,7 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 			return err
 		}
 
-		if err := h.translatorClient.RemoveTranslation(ctx, app.Lang2JA, text, wordPos); err != nil {
+		if err := h.translatorClient.RemoveTranslation(ctx, appD.Lang2JA, text, wordPos); err != nil {
 			return err
 		}
 
@@ -200,7 +204,7 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 }
 
 func (h *translationHandler) ExportTranslations(c *gin.Context) {
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		csvStruct := [][]string{
 			{"name", "address", "phone"},
 			{"Ram", "Tokyo", "1236524"},

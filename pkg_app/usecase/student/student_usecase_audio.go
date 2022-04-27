@@ -2,8 +2,6 @@ package student
 
 import (
 	"context"
-	"errors"
-	"strconv"
 
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -11,12 +9,12 @@ import (
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
 	"github.com/kujilabo/cocotola-api/pkg_app/usecase"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type StudentUsecaseAudio interface {
-	FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error)
+	FindAudioByID(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (service.Audio, error)
 }
 
 type studentUsecaseAudio struct {
@@ -35,8 +33,8 @@ func NewStudentUsecaseAudio(db *gorm.DB, pf service.ProcessorFactory, rfFunc ser
 	}
 }
 
-func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (domain.AudioModel, error) {
-	var result domain.AudioModel
+func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (service.Audio, error) {
+	var result service.Audio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbookService, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
@@ -48,25 +46,12 @@ func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID 
 			return err
 		}
 
-		if strconv.Itoa(int(audioID)) != problem.GetProperties(ctx)["audioId"] {
-			return errors.New("invalid audio id")
-		}
-		// tmpResult, err := problem.FindAudioByID(ctx, audioID)
-		// if err != nil {
-		// 	return err
-		// }
-		rf, err := s.rfFunc(ctx, tx)
+		tmpResult, err := problem.FindAudioByAudioID(ctx, audioID)
 		if err != nil {
 			return err
 		}
 
-		audioRepo := rf.NewAudioRepository(ctx)
-		tmpResult, err := audioRepo.FindAudioByAudioID(ctx, audioID)
-		if err != nil {
-			return err
-		}
-
-		result = tmpResult.GetAudioModel()
+		result = tmpResult
 		return nil
 	}); err != nil {
 		return nil, err
@@ -75,7 +60,7 @@ func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID 
 	return result, nil
 }
 
-func (s *studentUsecaseAudio) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID user.OrganizationID, operatorID user.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
+func (s *studentUsecaseAudio) findStudentAndWorkbook(ctx context.Context, tx *gorm.DB, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID) (service.Student, service.Workbook, error) {
 	repo, err := s.rfFunc(ctx, tx)
 	if err != nil {
 		return nil, nil, err

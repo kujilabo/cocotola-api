@@ -23,21 +23,9 @@ type repositoryFactory struct {
 	studyTypes          []domain.StudyType
 }
 
-func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc userS.RepositoryFactoryFunc, pf service.ProcessorFactory, problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)) (service.RepositoryFactory, error) {
+func NewRepositoryFactory(ctx context.Context, db *gorm.DB, driverName string, userRfFunc userS.RepositoryFactoryFunc, pf service.ProcessorFactory, problemTypes []domain.ProblemType, studyTypes []domain.StudyType, problemRepositories map[string]func(context.Context, *gorm.DB) (service.ProblemRepository, error)) (service.RepositoryFactory, error) {
 	if db == nil {
 		return nil, libD.ErrInvalidArgument
-	}
-
-	problemTypeRepo := NewProblemTypeRepository(db)
-	problemTypes, err := problemTypeRepo.FindAllProblemTypes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	studyTypeRepo := NewStudyTypeRepository(db)
-	studyTypes, err := studyTypeRepo.FindAllStudyTypes(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	return &repositoryFactory{
@@ -82,22 +70,6 @@ func (f *repositoryFactory) NewRecordbookRepository(ctx context.Context) service
 	return NewRecordbookRepository(ctx, f, f.db, f.problemTypes, f.studyTypes)
 }
 
-func (f *repositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
-	return NewAudioRepository(f.db)
-}
-
 func (f *repositoryFactory) NewUserQuotaRepository(ctx context.Context) service.UserQuotaRepository {
 	return NewUserQuotaRepository(f.db)
-}
-
-type audioRepositoryFactory struct {
-	db *gorm.DB
-}
-
-func NewAudioRepositoryFactory(ctx context.Context, db *gorm.DB) service.AudioRepositoryFactory {
-	return &audioRepositoryFactory{db: db}
-}
-
-func (f *audioRepositoryFactory) NewAudioRepository(ctx context.Context) service.AudioRepository {
-	return NewAudioRepository(f.db)
 }

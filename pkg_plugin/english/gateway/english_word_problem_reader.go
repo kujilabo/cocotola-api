@@ -6,7 +6,7 @@ import (
 	"io"
 	"strconv"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
 	common "github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"golang.org/x/xerrors"
@@ -20,13 +20,13 @@ var (
 )
 
 type engliushWordProblemAddParameterCSVReader struct {
-	workbookID app.WorkbookID
+	workbookID appD.WorkbookID
 	// problemType string
 	reader *csv.Reader
 	num    int
 }
 
-func NewEnglishWordProblemAddParameterCSVReader(workbookID app.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator {
+func NewEnglishWordProblemAddParameterCSVReader(workbookID appD.WorkbookID, reader io.Reader) appS.ProblemAddParameterIterator {
 	return &engliushWordProblemAddParameterCSVReader{
 		workbookID: workbookID,
 		// problemType: problemType,

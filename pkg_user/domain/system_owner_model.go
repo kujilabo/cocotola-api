@@ -1,7 +1,7 @@
 package domain
 
 import (
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 const SystemOwnerID = 2
@@ -19,5 +19,5 @@ func NewSystemOwnerModel(appUser AppUserModel) (SystemOwnerModel, error) {
 		AppUserModel: appUser,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }

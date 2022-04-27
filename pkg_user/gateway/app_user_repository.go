@@ -158,6 +158,9 @@ func NewAppUserRepository(rf service.RepositoryFactory, db *gorm.DB) service.App
 }
 
 func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context, operator domain.SystemAdminModel, organizationID domain.OrganizationID) (service.SystemOwner, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.FindSystemOwnerByOrganizationID")
+	defer span.End()
+
 	appUser := appUserEntity{}
 	if result := r.db.Where("organization_id = ? and removed = 0", organizationID).
 		Where("login_id = ?", SystemOwnerLoginID).
@@ -171,6 +174,9 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context,
 }
 
 func (r *appUserRepository) FindSystemOwnerByOrganizationName(ctx context.Context, operator domain.SystemAdminModel, organizationName string) (service.SystemOwner, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.FindSystemOwnerByOrganizationName")
+	defer span.End()
+
 	appUser := appUserEntity{}
 	if result := r.db.Table("organization").Select("app_user.*").
 		Where("organization.name = ? and app_user.removed = 0", organizationName).
@@ -187,6 +193,9 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationName(ctx context.Contex
 }
 
 func (r *appUserRepository) FindAppUserByID(ctx context.Context, operator domain.AppUserModel, id domain.AppUserID) (service.AppUser, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.FindAppUserByID")
+	defer span.End()
+
 	appUser := appUserEntity{}
 	if result := r.db.Where(&appUserEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
@@ -206,6 +215,9 @@ func (r *appUserRepository) FindAppUserByID(ctx context.Context, operator domain
 }
 
 func (r *appUserRepository) FindAppUserByLoginID(ctx context.Context, operator domain.AppUserModel, loginID string) (service.AppUser, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.FindAppUserByLoginID")
+	defer span.End()
+
 	if loginID == "" {
 		return nil, errors.New("invalid parameter")
 	}
@@ -228,6 +240,9 @@ func (r *appUserRepository) FindAppUserByLoginID(ctx context.Context, operator d
 }
 
 func (r *appUserRepository) FindOwnerByLoginID(ctx context.Context, operator domain.SystemOwnerModel, loginID string) (service.Owner, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.FindOwnerByLoginID")
+	defer span.End()
+
 	appUser := appUserEntity{}
 	if result := r.db.Where(&appUserEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
@@ -254,6 +269,9 @@ func (r *appUserRepository) addAppUser(ctx context.Context, appUserEntity *appUs
 }
 
 func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.OwnerModel, param service.AppUserAddParameter) (domain.AppUserID, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.AddAppUser")
+	defer span.End()
+
 	hashedPassword := ""
 	password, ok := param.GetProperties()["password"]
 	if ok {
@@ -279,6 +297,9 @@ func (r *appUserRepository) AddAppUser(ctx context.Context, operator domain.Owne
 }
 
 func (r *appUserRepository) AddSystemOwner(ctx context.Context, operator domain.SystemAdminModel, organizationID domain.OrganizationID) (domain.AppUserID, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.AddSystemOwner")
+	defer span.End()
+
 	appUserEntity := appUserEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -292,6 +313,9 @@ func (r *appUserRepository) AddSystemOwner(ctx context.Context, operator domain.
 }
 
 func (r *appUserRepository) AddFirstOwner(ctx context.Context, operator domain.SystemOwnerModel, param service.FirstOwnerAddParameter) (domain.AppUserID, error) {
+	_, span := tracer.Start(ctx, "appUserRepository.AddFirstOwner")
+	defer span.End()
+
 	hashedPassword, err := passwordhelper.HashPassword(param.GetPassword())
 	if err != nil {
 		return 0, err

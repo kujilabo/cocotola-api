@@ -12,7 +12,7 @@ var ErrTatoebaSentenceAlreadyExists = errors.New("tatoebaSentence already exists
 
 type TatoebaSentence interface {
 	GetSentenceNumber() int
-	GetLang() appD.Lang3
+	GetLang() appD.Lang2
 	GetText() string
 	GetAuthor() string
 	GetUpdatedAt() time.Time
@@ -20,13 +20,13 @@ type TatoebaSentence interface {
 
 type tatoebaSentence struct {
 	SentenceNumber int
-	Lang           appD.Lang3
+	Lang           appD.Lang2
 	Text           string
 	Author         string
 	UpdatedAt      time.Time
 }
 
-func NewTatoebaSentence(sentenceNumber int, lang appD.Lang3, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
+func NewTatoebaSentence(sentenceNumber int, lang appD.Lang2, text, author string, updatedAt time.Time) (TatoebaSentence, error) {
 	m := &tatoebaSentence{
 		SentenceNumber: sentenceNumber,
 		Lang:           lang,
@@ -42,7 +42,7 @@ func (m *tatoebaSentence) GetSentenceNumber() int {
 	return m.SentenceNumber
 }
 
-func (m *tatoebaSentence) GetLang() appD.Lang3 {
+func (m *tatoebaSentence) GetLang() appD.Lang2 {
 	return m.Lang
 }
 
@@ -83,54 +83,6 @@ func (m *tatoebaSentencePair) GetSrc() TatoebaSentence {
 
 func (m *tatoebaSentencePair) GetDst() TatoebaSentence {
 	return m.Dst
-}
-
-type TatoebaSentenceAddParameter interface {
-	GetSentenceNumber() int
-	GetLang() appD.Lang3
-	GetText() string
-	GetAuthor() string
-	GetUpdatedAt() time.Time
-}
-
-type tatoebaSentenceAddParameter struct {
-	SentenceNumber int `validate:"required"`
-	Lang           appD.Lang3
-	Text           string `validate:"required"`
-	Author         string `validate:"required"`
-	UpdatedAt      time.Time
-}
-
-func NewTatoebaSentenceAddParameter(sentenceNumber int, lang appD.Lang3, text, author string, updatedAt time.Time) (TatoebaSentenceAddParameter, error) {
-	m := &tatoebaSentenceAddParameter{
-		SentenceNumber: sentenceNumber,
-		Lang:           lang,
-		Text:           text,
-		Author:         author,
-		UpdatedAt:      updatedAt,
-	}
-
-	return m, libD.Validator.Struct(m)
-}
-
-func (p *tatoebaSentenceAddParameter) GetSentenceNumber() int {
-	return p.SentenceNumber
-}
-
-func (p *tatoebaSentenceAddParameter) GetLang() appD.Lang3 {
-	return p.Lang
-}
-
-func (p *tatoebaSentenceAddParameter) GetText() string {
-	return p.Text
-}
-
-func (p *tatoebaSentenceAddParameter) GetAuthor() string {
-	return p.Author
-}
-
-func (p *tatoebaSentenceAddParameter) GetUpdatedAt() time.Time {
-	return p.UpdatedAt
 }
 
 type TatoebaSentenceSearchCondition interface {

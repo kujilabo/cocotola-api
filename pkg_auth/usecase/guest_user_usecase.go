@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/service"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
@@ -50,12 +50,12 @@ func (s *guestUserUsecase) RetrieveGuestToken(ctx context.Context, organizationN
 			return xerrors.Errorf("failed to GetOrganization. err: %w", err)
 		}
 
-		model, err := user.NewModel(0, 1, time.Now(), time.Now(), 0, 0)
+		model, err := userD.NewModel(0, 1, time.Now(), time.Now(), 0, 0)
 		if err != nil {
 			return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 		}
 
-		guest, err := user.NewAppUserModel(model, user.OrganizationID(organization.GetID()), "guest", "Guest", []string{}, map[string]string{})
+		guest, err := userD.NewAppUserModel(model, userD.OrganizationID(organization.GetID()), "guest", "Guest", []string{}, map[string]string{})
 		if err != nil {
 			return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 		}

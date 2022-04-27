@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/kujilabo/cocotola-api/pkg_app/service"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
 )
 
@@ -22,5 +22,5 @@ func NewEnglishPhraseProblem(problemModel domain.EnglishPhraseProblemModel, prob
 		ProblemFeature:            problem,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }

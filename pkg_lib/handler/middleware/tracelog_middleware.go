@@ -2,22 +2,28 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 )
 
 func NewTraceLogMiddleware(appName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requestID := c.GetString("request_id")
+		sc := trace.SpanFromContext(c.Request.Context()).SpanContext()
+		if !sc.TraceID().IsValid() || !sc.SpanID().IsValid() {
+			return
+		}
+		otTraceID := sc.TraceID().String()
 
-		savedCtx := c.Request.Context()
+		ctx := log.With(c.Request.Context(), log.Str("request_id", otTraceID))
+
+		savedCtx := ctx
 		defer func() {
 			c.Request = c.Request.WithContext(savedCtx)
 		}()
 
-		ctx, span := tracer.Start(c.Request.Context(), "TraceLog")
+		ctx, span := tracer.Start(ctx, "TraceLog")
 		defer span.End()
-
-		span.SetAttributes(attribute.String(appName+".request_id", requestID))
 
 		c.Request = c.Request.WithContext(ctx)
 

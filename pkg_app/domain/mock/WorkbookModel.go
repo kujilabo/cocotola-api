@@ -3,10 +3,12 @@
 package mocks
 
 import (
-	testing "testing"
+	domain "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	mock "github.com/stretchr/testify/mock"
 
 	pkg_userdomain "github.com/kujilabo/cocotola-api/pkg_user/domain"
-	mock "github.com/stretchr/testify/mock"
+
+	testing "testing"
 
 	time "time"
 )
@@ -53,6 +55,22 @@ func (_m *WorkbookModel) GetID() uint {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(uint)
+	}
+
+	return r0
+}
+
+// GetLang provides a mock function with given fields:
+func (_m *WorkbookModel) GetLang() domain.Lang2 {
+	ret := _m.Called()
+
+	var r0 domain.Lang2
+	if rf, ok := ret.Get(0).(func() domain.Lang2); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(domain.Lang2)
+		}
 	}
 
 	return r0

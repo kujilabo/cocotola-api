@@ -7,24 +7,24 @@ type AudioID uint
 
 type AudioModel interface {
 	GetID() uint
-	GetLang() Lang5
+	GetLang() Lang2
 	GetText() string
-	GetAudioContent() string
+	GetContent() string
 }
 
 type audioModel struct {
-	ID           uint   `validate:"required"`
-	Lang         Lang5  `validate:"required,len=5"`
-	Text         string `validate:"required"`
-	AudioContent string `validate:"required"`
+	ID      uint `validate:"required"`
+	Lang    Lang2
+	Text    string `validate:"required"`
+	Content string `validate:"required"`
 }
 
-func NewAudioModel(id uint, lang Lang5, text, audioContent string) (AudioModel, error) {
+func NewAudioModel(id uint, lang Lang2, text, content string) (AudioModel, error) {
 	m := &audioModel{
-		ID:           id,
-		Lang:         lang,
-		Text:         text,
-		AudioContent: audioContent,
+		ID:      id,
+		Lang:    lang,
+		Text:    text,
+		Content: content,
 	}
 
 	return m, libD.Validator.Struct(m)
@@ -34,7 +34,7 @@ func (a *audioModel) GetID() uint {
 	return a.ID
 }
 
-func (a *audioModel) GetLang() Lang5 {
+func (a *audioModel) GetLang() Lang2 {
 	return a.Lang
 }
 
@@ -42,6 +42,6 @@ func (a *audioModel) GetText() string {
 	return a.Text
 }
 
-func (a *audioModel) GetAudioContent() string {
-	return a.AudioContent
+func (a *audioModel) GetContent() string {
+	return a.Content
 }

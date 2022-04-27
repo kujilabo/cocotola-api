@@ -16,7 +16,7 @@ import (
 	studentU "github.com/kujilabo/cocotola-api/pkg_app/usecase/student"
 	"github.com/kujilabo/cocotola-api/pkg_lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/handlerhelper"
 )
 
@@ -56,7 +56,7 @@ func (h *privateWorkbookHandler) FindWorkbooks(c *gin.Context) {
 		return
 	}
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		result, err := h.studentUsecaseWorkbook.FindWorkbooks(ctx, organizationID, operatorID)
 		if err != nil {
 			return err
@@ -76,7 +76,7 @@ func (h *privateWorkbookHandler) FindWorkbookByID(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindWorkbookByID")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		id := c.Param("workbookID")
 		workbookID, err := strconv.Atoi(id)
 		if err != nil {
@@ -117,7 +117,7 @@ func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("AddWokrbook")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.WorkbookAddParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -156,7 +156,7 @@ func (h *privateWorkbookHandler) UpdateWorkbook(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("UpdateWorkbook")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.WorkbookUpdateParameter{}
 		if err := c.BindJSON(&param); err != nil {
 			logger.Warnf("failed to BindJSON. err: %v", err)
@@ -194,7 +194,7 @@ func (h *privateWorkbookHandler) RemoveWorkbook(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("RemoveWorkbook")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID user.OrganizationID, operatorID user.AppUserID) error {
+	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)

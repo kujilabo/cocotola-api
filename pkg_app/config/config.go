@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 type AppConfig struct {
@@ -127,7 +127,7 @@ func LoadConfig(env string) (*Config, error) {
 		return nil, err
 	}
 
-	if err := lib.Validator.Struct(conf); err != nil {
+	if err := libD.Validator.Struct(conf); err != nil {
 		return nil, err
 	}
 

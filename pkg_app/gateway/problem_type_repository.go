@@ -31,6 +31,9 @@ func NewProblemTypeRepository(db *gorm.DB) service.ProblemTypeRepository {
 }
 
 func (r *problemTypeRepository) FindAllProblemTypes(ctx context.Context) ([]domain.ProblemType, error) {
+	_, span := tracer.Start(ctx, "problemTypeRepository.FindAllProblemTypes")
+	defer span.End()
+
 	entities := []problemTypeEntity{}
 	if err := r.db.Find(&entities).Error; err != nil {
 		return nil, err

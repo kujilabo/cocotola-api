@@ -51,6 +51,9 @@ func NewOrganizationRepository(db *gorm.DB) service.OrganizationRepository {
 }
 
 func (r *organizationRepository) GetOrganization(ctx context.Context, operator domain.AppUserModel) (service.Organization, error) {
+	_, span := tracer.Start(ctx, "organizationRepository.GetOrganization")
+	defer span.End()
+
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
@@ -66,6 +69,9 @@ func (r *organizationRepository) GetOrganization(ctx context.Context, operator d
 }
 
 func (r *organizationRepository) FindOrganizationByName(ctx context.Context, operator domain.SystemAdminModel, name string) (service.Organization, error) {
+	_, span := tracer.Start(ctx, "organizationRepository.FindOrganizationByName")
+	defer span.End()
+
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
@@ -81,6 +87,9 @@ func (r *organizationRepository) FindOrganizationByName(ctx context.Context, ope
 }
 
 func (r *organizationRepository) FindOrganizationByID(ctx context.Context, operator domain.SystemAdminModel, id domain.OrganizationID) (service.Organization, error) {
+	_, span := tracer.Start(ctx, "organizationRepository.FindOrganizationByID")
+	defer span.End()
+
 	organization := organizationEntity{}
 
 	if result := r.db.Where(organizationEntity{
@@ -96,6 +105,9 @@ func (r *organizationRepository) FindOrganizationByID(ctx context.Context, opera
 }
 
 func (r *organizationRepository) AddOrganization(ctx context.Context, operator domain.SystemAdminModel, param service.OrganizationAddParameter) (domain.OrganizationID, error) {
+	_, span := tracer.Start(ctx, "organizationRepository.AddOrganization")
+	defer span.End()
+
 	organization := organizationEntity{
 		Version:   1,
 		CreatedBy: operator.GetID(),

@@ -6,15 +6,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
 type RepositoryFactoryFunc func(ctx context.Context, db *gorm.DB) (RepositoryFactory, error)
 
 var (
-	appPropertiesSystemSpaceID     = user.SpaceID(0)
-	appPropertiesSystemStudentID   = user.AppUserID(0)
+	appPropertiesSystemSpaceID     = userD.SpaceID(0)
+	appPropertiesSystemStudentID   = userD.AppUserID(0)
 	appPropertiesTatoebaWorkbookID = domain.WorkbookID(0)
 	SystemStudentLoginID           = "system-student"
 	TatoebaWorkbookName            = "tatoeba"
@@ -23,23 +23,23 @@ var (
 	RfFunc                         RepositoryFactoryFunc
 )
 
-func InitAppProperties(systemSpaceID user.SpaceID, systemStudentID user.AppUserID, tatoebaWorkbookID domain.WorkbookID) {
+func InitAppProperties(systemSpaceID userD.SpaceID, systemStudentID userD.AppUserID, tatoebaWorkbookID domain.WorkbookID) {
 	appPropertiesSystemSpaceID = systemSpaceID
 	appPropertiesSystemStudentID = systemStudentID
 	appPropertiesTatoebaWorkbookID = tatoebaWorkbookID
 }
 
-func GetSystemSpaceID() user.SpaceID {
+func GetSystemSpaceID() userD.SpaceID {
 	return appPropertiesSystemSpaceID
 }
-func SetSystemSpaceID(propertiesSystemSpaceID user.SpaceID) {
+func SetSystemSpaceID(propertiesSystemSpaceID userD.SpaceID) {
 	appPropertiesSystemSpaceID = propertiesSystemSpaceID
 }
 
-func GetSystemStudentID() user.AppUserID {
+func GetSystemStudentID() userD.AppUserID {
 	return appPropertiesSystemStudentID
 }
-func SetSystemStudentID(propertiesSystemStudentID user.AppUserID) {
+func SetSystemStudentID(propertiesSystemStudentID userD.AppUserID) {
 	appPropertiesSystemStudentID = propertiesSystemStudentID
 }
 

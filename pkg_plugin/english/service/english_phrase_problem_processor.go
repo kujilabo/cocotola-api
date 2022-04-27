@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	appS "github.com/kujilabo/cocotola-api/pkg_app/service"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
 	pluginS "github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/english/domain"
@@ -22,15 +21,15 @@ type englishPhraseProblemAddParemeter struct {
 
 func toEnglishPhraseProblemAddParemeter(param appS.ProblemAddParameter) (*englishPhraseProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["lang"]; !ok {
-		return nil, xerrors.Errorf("lang is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("lang is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["translated"]; !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", lib.ErrInvalidArgument)
+		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	m := &englishPhraseProblemAddParemeter{
@@ -39,7 +38,7 @@ func toEnglishPhraseProblemAddParemeter(param appS.ProblemAddParameter) (*englis
 		Translated: param.GetProperties()["translated"],
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 type EnglishPhraseProblemProcessor interface {
@@ -48,18 +47,18 @@ type EnglishPhraseProblemProcessor interface {
 }
 
 type englishPhraseProblemProcessor struct {
-	synthesizerClient pluginS.SynthesizerClient
+	synthesizerClient appS.SynthesizerClient
 	translatorClient  pluginS.TranslatorClient
 }
 
-func NewEnglishPhraseProblemProcessor(synthesizerClient pluginS.SynthesizerClient, translatorClient pluginS.TranslatorClient) EnglishPhraseProblemProcessor {
+func NewEnglishPhraseProblemProcessor(synthesizerClient appS.SynthesizerClient, translatorClient pluginS.TranslatorClient) EnglishPhraseProblemProcessor {
 	return &englishPhraseProblemProcessor{
 		synthesizerClient: synthesizerClient,
 		translatorClient:  translatorClient,
 	}
 }
 
-func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo appS.RepositoryFactory, operator app.StudentModel, workbook app.WorkbookModel, param appS.ProblemAddParameter) ([]app.ProblemID, error) {
+func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo appS.RepositoryFactory, operator appD.StudentModel, workbook appD.WorkbookModel, param appS.ProblemAddParameter) ([]appD.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
@@ -73,24 +72,20 @@ func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app
 		return nil, xerrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
 	}
 
-	audioID, err := p.findOrAddAudio(ctx, repo, extractedParam.Text)
+	audio, err := p.synthesizerClient.Synthesize(ctx, appD.Lang2EN, extractedParam.Text)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to p.findOrAddAudio. err: %w", err)
+		return nil, err
 	}
 
-	if audioID == 0 {
-		return nil, xerrors.Errorf("audio ID is zero. text: %s", extractedParam.Text)
-	}
-
-	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
+	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, appD.AudioID(audio.GetAudioModel().GetID()))
 	if err != nil {
 		return nil, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
-	return []app.ProblemID{problemID}, err
+	return []appD.ProblemID{problemID}, err
 }
 
-func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, operator app.StudentModel, problemRepo appS.ProblemRepository, param appS.ProblemAddParameter, extractedParam *englishPhraseProblemAddParemeter, audioID app.AudioID) (app.ProblemID, error) {
+func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, operator appD.StudentModel, problemRepo appS.ProblemRepository, param appS.ProblemAddParameter, extractedParam *englishPhraseProblemAddParemeter, audioID appD.AudioID) (appD.ProblemID, error) {
 	logger := log.FromContext(ctx)
 	logger.Infof("AddProblem1")
 
@@ -116,7 +111,7 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 
 }
 
-func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo appS.RepositoryFactory, operator app.StudentModel, id appS.ProblemSelectParameter2) error {
+func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo appS.RepositoryFactory, operator appD.StudentModel, id appS.ProblemSelectParameter2) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishPhraseProblemType)
 	if err != nil {
 		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
@@ -127,31 +122,4 @@ func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo 
 	}
 
 	return nil
-}
-
-func (p *englishPhraseProblemProcessor) findOrAddAudio(ctx context.Context, repo appS.RepositoryFactory, text string) (app.AudioID, error) {
-	audioRepo := repo.NewAudioRepository(ctx)
-
-	{
-		id, err := audioRepo.FindAudioIDByText(ctx, app.Lang5ENUS, text)
-		if err != nil {
-			if !errors.Is(err, appS.ErrAudioNotFound) {
-				return 0, xerrors.Errorf("failed to FindAudioID. err: %w", err)
-			}
-		} else {
-			return id, nil
-		}
-	}
-
-	audioContent, err := p.synthesizerClient.Synthesize(ctx, app.Lang5ENUS, text)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := audioRepo.AddAudio(ctx, app.Lang5ENUS, text, audioContent)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, err
 }

@@ -20,8 +20,8 @@ type Problem struct {
 	mock.Mock
 }
 
-// FindAudioByID provides a mock function with given fields: ctx, audioID
-func (_m *Problem) FindAudioByID(ctx context.Context, audioID domain.AudioID) (service.Audio, error) {
+// FindAudioByAudioID provides a mock function with given fields: ctx, audioID
+func (_m *Problem) FindAudioByAudioID(ctx context.Context, audioID domain.AudioID) (service.Audio, error) {
 	ret := _m.Called(ctx, audioID)
 
 	var r0 service.Audio

@@ -1,5 +1,4 @@
 //go:generate mockery --output mock --name RepositoryFactory
-//go:generate mockery --output mock --name AudioRepositoryFactory
 package service
 
 import (
@@ -15,13 +14,7 @@ type RepositoryFactory interface {
 
 	NewStudyTypeRepository(ctx context.Context) StudyTypeRepository
 
-	NewAudioRepository(ctx context.Context) AudioRepository
-
 	NewRecordbookRepository(ctx context.Context) RecordbookRepository
 
 	NewUserQuotaRepository(ctx context.Context) UserQuotaRepository
-}
-
-type AudioRepositoryFactory interface {
-	NewAudioRepository(ctx context.Context) AudioRepository
 }

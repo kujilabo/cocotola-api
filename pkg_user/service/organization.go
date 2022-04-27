@@ -1,7 +1,7 @@
 package service
 
 import (
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 	"github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
@@ -17,5 +17,5 @@ func NewOrganization(organizationModel domain.OrganizationModel) (Organization, 
 	m := &organization{
 		organizationModel,
 	}
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }

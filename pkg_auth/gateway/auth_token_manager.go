@@ -9,7 +9,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 type AppUserClaims struct {
@@ -39,7 +39,7 @@ func NewAuthTokenManager(signingKey []byte, signingMethod jwt.SigningMethod, tok
 	}
 }
 
-func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser user.AppUserModel, organization user.OrganizationModel) (*service.TokenSet, error) {
+func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser userD.AppUserModel, organization userD.OrganizationModel) (*service.TokenSet, error) {
 	accessToken, err := m.createJWT(ctx, appUser, organization, m.tokenTimeout, "access")
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (m *authTokenManager) CreateTokenSet(ctx context.Context, appUser user.AppU
 	}, nil
 }
 
-func (m *authTokenManager) createJWT(ctx context.Context, appUser user.AppUserModel, organization user.OrganizationModel, duration time.Duration, tokenType string) (string, error) {
+func (m *authTokenManager) createJWT(ctx context.Context, appUser userD.AppUserModel, organization userD.OrganizationModel, duration time.Duration, tokenType string) (string, error) {
 	logger := log.FromContext(ctx)
 	now := time.Now()
 	claims := AppUserClaims{
@@ -102,22 +102,22 @@ func (m *authTokenManager) RefreshToken(ctx context.Context, tokenString string)
 
 	now := time.Now()
 	tmpID := uint(1)
-	userModel, err := user.NewModel(currentClaims.AppUserID, 1, now, now, tmpID, tmpID)
+	userModel, err := userD.NewModel(currentClaims.AppUserID, 1, now, now, tmpID, tmpID)
 	if err != nil {
 		return "", err
 	}
 
-	appUser, err := user.NewAppUserModel(userModel, user.OrganizationID(currentClaims.OrganizationID), currentClaims.LoginID, currentClaims.Username, []string{currentClaims.Role}, map[string]string{})
+	appUser, err := userD.NewAppUserModel(userModel, userD.OrganizationID(currentClaims.OrganizationID), currentClaims.LoginID, currentClaims.Username, []string{currentClaims.Role}, map[string]string{})
 	if err != nil {
 		return "", err
 	}
 
-	orgModel, err := user.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID)
+	orgModel, err := userD.NewModel(currentClaims.OrganizationID, 1, now, now, tmpID, tmpID)
 	if err != nil {
 		return "", err
 	}
 
-	organization, err := user.NewOrganizationModel(orgModel, currentClaims.OrganizationName)
+	organization, err := userD.NewOrganizationModel(orgModel, currentClaims.OrganizationName)
 	if err != nil {
 		return "", err
 	}

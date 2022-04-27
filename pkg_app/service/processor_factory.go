@@ -40,6 +40,7 @@ func (f *processorFactrory) NewProblemAddProcessor(processorType string) (Proble
 	}
 	return processor, nil
 }
+
 func (f *processorFactrory) NewProblemUpdateProcessor(processorType string) (ProblemUpdateProcessor, error) {
 	processor, ok := f.updateProcessors[processorType]
 	if !ok {

@@ -1,7 +1,7 @@
 //go:generate mockery --output mock --name SpaceModel
 package domain
 
-import lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+import libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 
 type SpaceID uint
 type SpaceTypeID int
@@ -33,7 +33,7 @@ func NewSpaceModel(model Model, organizationID OrganizationID, spaceType int, ke
 		Description:    description,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
 func (m *spaceModel) GetOrganizationID() OrganizationID {

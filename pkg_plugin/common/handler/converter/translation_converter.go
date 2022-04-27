@@ -3,7 +3,7 @@ package converter
 import (
 	"context"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/domain"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/pkg_plugin/common/service"
@@ -58,7 +58,7 @@ func ToTranslationAddParameter(ctx context.Context, param *entity.TranslationAdd
 		return nil, err
 	}
 
-	lang, err := app.NewLang2(param.Lang)
+	lang, err := appD.NewLang2(param.Lang)
 	if err != nil {
 		return nil, err
 	}

@@ -4,29 +4,29 @@ package domain
 import (
 	"context"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
-	lib "github.com/kujilabo/cocotola-api/pkg_lib/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
 )
 
 const EnglishPhraseProblemType = "english_phrase"
 
 type EnglishPhraseProblemModel interface {
-	app.ProblemModel
-	GetAudioID() app.AudioID
+	appD.ProblemModel
+	GetAudioID() appD.AudioID
 	GetText() string
-	GetLang() app.Lang2
+	GetLang() appD.Lang2
 	GetTranslated() string
 }
 
 type englishPhraseProblemModel struct {
-	app.ProblemModel
-	AudioID    app.AudioID
+	appD.ProblemModel
+	AudioID    appD.AudioID
 	Text       string
-	Lang       app.Lang2
+	Lang       appD.Lang2
 	Translated string
 }
 
-func NewEnglishPhraseProblemModel(problemModel app.ProblemModel, audioID app.AudioID, text string, lang app.Lang2, translated string) (EnglishPhraseProblemModel, error) {
+func NewEnglishPhraseProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, lang appD.Lang2, translated string) (EnglishPhraseProblemModel, error) {
 	m := &englishPhraseProblemModel{
 		ProblemModel: problemModel,
 		AudioID:      audioID,
@@ -35,10 +35,10 @@ func NewEnglishPhraseProblemModel(problemModel app.ProblemModel, audioID app.Aud
 		Translated:   translated,
 	}
 
-	return m, lib.Validator.Struct(m)
+	return m, libD.Validator.Struct(m)
 }
 
-func (m *englishPhraseProblemModel) GetAudioID() app.AudioID {
+func (m *englishPhraseProblemModel) GetAudioID() appD.AudioID {
 	return m.AudioID
 }
 
@@ -46,7 +46,7 @@ func (m *englishPhraseProblemModel) GetText() string {
 	return m.Text
 }
 
-func (m *englishPhraseProblemModel) GetLang() app.Lang2 {
+func (m *englishPhraseProblemModel) GetLang() appD.Lang2 {
 	return m.Lang
 }
 func (m *englishPhraseProblemModel) GetTranslated() string {

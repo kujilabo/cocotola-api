@@ -9,7 +9,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_auth/service"
 	"github.com/kujilabo/cocotola-api/pkg_lib/log"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 	userS "github.com/kujilabo/cocotola-api/pkg_user/service"
 )
 
@@ -25,10 +25,10 @@ type googleUserUsecase struct {
 	db                      *gorm.DB
 	googleAuthClient        service.GoogleAuthClient
 	authTokenManager        service.AuthTokenManager
-	registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser user.AppUserModel) error
+	registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error
 }
 
-func NewGoogleUserUsecase(db *gorm.DB, googleAuthClient service.GoogleAuthClient, authTokenManager service.AuthTokenManager, registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser user.AppUserModel) error) GoogleUserUsecase {
+func NewGoogleUserUsecase(db *gorm.DB, googleAuthClient service.GoogleAuthClient, authTokenManager service.AuthTokenManager, registerAppUserCallback func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error) GoogleUserUsecase {
 	return &googleUserUsecase{
 		db:                      db,
 		googleAuthClient:        googleAuthClient,

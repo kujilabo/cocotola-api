@@ -4,30 +4,30 @@ package domain
 import (
 	"context"
 
-	app "github.com/kujilabo/cocotola-api/pkg_app/domain"
+	appD "github.com/kujilabo/cocotola-api/pkg_app/domain"
 )
 
 const EnglishWordProblemType = "english_word"
 
 type EnglishWordSentenceProblemModel interface {
 	GetProvider() string
-	GetAudioID() app.AudioID
+	GetAudioID() appD.AudioID
 	GetText() string
 	GetTranslated() string
 	GetNote() string
-	GetLang2() app.Lang2
+	GetLang2() appD.Lang2
 }
 
 type englishWordSentenceProblemModel struct {
 	Provider   string
-	AudioID    app.AudioID
+	AudioID    appD.AudioID
 	Text       string
-	Lang       app.Lang2
+	Lang       appD.Lang2
 	Translated string
 	Note       string
 }
 
-func NewEnglishWordProblemSentenceModel(audioID app.AudioID, text string, lang app.Lang2, translated, note string) (EnglishWordSentenceProblemModel, error) {
+func NewEnglishWordProblemSentenceModel(audioID appD.AudioID, text string, lang appD.Lang2, translated, note string) (EnglishWordSentenceProblemModel, error) {
 	return &englishWordSentenceProblemModel{
 		AudioID:    audioID,
 		Text:       text,
@@ -41,7 +41,7 @@ func (m *englishWordSentenceProblemModel) GetProvider() string {
 	return m.Provider
 }
 
-func (m *englishWordSentenceProblemModel) GetAudioID() app.AudioID {
+func (m *englishWordSentenceProblemModel) GetAudioID() appD.AudioID {
 	return m.AudioID
 }
 
@@ -57,13 +57,13 @@ func (m *englishWordSentenceProblemModel) GetNote() string {
 	return m.Note
 }
 
-func (m *englishWordSentenceProblemModel) GetLang2() app.Lang2 {
+func (m *englishWordSentenceProblemModel) GetLang2() appD.Lang2 {
 	return m.Lang
 }
 
 type EnglishWordProblemModel interface {
-	app.ProblemModel
-	GetAudioID() app.AudioID
+	appD.ProblemModel
+	GetAudioID() appD.AudioID
 	GetText() string
 	GetPos() int
 	GetPhonetic() string
@@ -71,15 +71,15 @@ type EnglishWordProblemModel interface {
 	GetPresentParticiple() string
 	GetPastTense() string
 	GetPastParticiple() string
-	GetLang2() app.Lang2
+	GetLang2() appD.Lang2
 	GetTranslated() string
 	GetPhrases() []EnglishPhraseProblemModel
 	GetSentences() []EnglishWordSentenceProblemModel
 }
 
 type englishWordProblemModel struct {
-	app.ProblemModel
-	AudioID           app.AudioID
+	appD.ProblemModel
+	AudioID           appD.AudioID
 	Text              string
 	Pos               int
 	Phonetic          string
@@ -87,13 +87,13 @@ type englishWordProblemModel struct {
 	PresentParticiple string
 	PastTense         string
 	PastParticiple    string
-	Lang              app.Lang2
+	Lang              appD.Lang2
 	Translated        string
 	Phrases           []EnglishPhraseProblemModel
 	Sentences         []EnglishWordSentenceProblemModel
 }
 
-func NewEnglishWordProblemModel(problemModel app.ProblemModel, audioID app.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang app.Lang2, translated string, phrases []EnglishPhraseProblemModel, sentences []EnglishWordSentenceProblemModel) (EnglishWordProblemModel, error) {
+func NewEnglishWordProblemModel(problemModel appD.ProblemModel, audioID appD.AudioID, text string, pos int, phonetic string, presentThird, presentParticiple, pastTense, pastParticiple string, lang appD.Lang2, translated string, phrases []EnglishPhraseProblemModel, sentences []EnglishWordSentenceProblemModel) (EnglishWordProblemModel, error) {
 	return &englishWordProblemModel{
 		ProblemModel:      problemModel,
 		AudioID:           audioID,
@@ -111,7 +111,7 @@ func NewEnglishWordProblemModel(problemModel app.ProblemModel, audioID app.Audio
 	}, nil
 }
 
-func (m *englishWordProblemModel) GetAudioID() app.AudioID {
+func (m *englishWordProblemModel) GetAudioID() appD.AudioID {
 	return m.AudioID
 }
 
@@ -143,7 +143,7 @@ func (m *englishWordProblemModel) GetPastParticiple() string {
 	return m.PastParticiple
 }
 
-func (m *englishWordProblemModel) GetLang2() app.Lang2 {
+func (m *englishWordProblemModel) GetLang2() appD.Lang2 {
 	return m.Lang
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/pkg_app/domain"
 	libD "github.com/kujilabo/cocotola-api/pkg_lib/domain"
-	user "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
 )
 
 var ErrWorkbookNotFound = errors.New("workbook not found")
@@ -17,16 +17,16 @@ var ErrWorkbookPermissionDenied = errors.New("permission denied")
 type WorkbookSearchCondition interface {
 	GetPageNo() int
 	GetPageSize() int
-	GetSpaceIDs() []user.SpaceID
+	GetSpaceIDs() []userD.SpaceID
 }
 
 type workbookSearchCondition struct {
 	PageNo   int
 	PageSize int
-	SpaceIDs []user.SpaceID
+	SpaceIDs []userD.SpaceID
 }
 
-func NewWorkbookSearchCondition(pageNo, pageSize int, spaceIDs []user.SpaceID) (WorkbookSearchCondition, error) {
+func NewWorkbookSearchCondition(pageNo, pageSize int, spaceIDs []userD.SpaceID) (WorkbookSearchCondition, error) {
 	m := &workbookSearchCondition{
 		PageNo:   pageNo,
 		PageSize: pageSize,
@@ -44,7 +44,7 @@ func (p *workbookSearchCondition) GetPageSize() int {
 	return p.PageSize
 }
 
-func (p *workbookSearchCondition) GetSpaceIDs() []user.SpaceID {
+func (p *workbookSearchCondition) GetSpaceIDs() []userD.SpaceID {
 	return p.SpaceIDs
 }
 
@@ -77,6 +77,7 @@ func (m *workbookSearchResult) GetResults() []domain.WorkbookModel {
 type WorkbookAddParameter interface {
 	GetProblemType() string
 	GetName() string
+	GetLang() domain.Lang2
 	GetQuestionText() string
 	GetProperties() map[string]string
 }
@@ -84,14 +85,16 @@ type WorkbookAddParameter interface {
 type workbookAddParameter struct {
 	ProblemType  string
 	Name         string
+	Lang         domain.Lang2
 	QuestionText string
 	Properties   map[string]string
 }
 
-func NewWorkbookAddParameter(problemType string, name, questionText string, properties map[string]string) (WorkbookAddParameter, error) {
+func NewWorkbookAddParameter(problemType string, name string, lang domain.Lang2, questionText string, properties map[string]string) (WorkbookAddParameter, error) {
 	m := &workbookAddParameter{
 		ProblemType:  problemType,
 		Name:         name,
+		Lang:         lang,
 		QuestionText: questionText,
 		Properties:   properties,
 	}
@@ -105,6 +108,10 @@ func (p *workbookAddParameter) GetProblemType() string {
 
 func (p *workbookAddParameter) GetName() string {
 	return p.Name
+}
+
+func (p *workbookAddParameter) GetLang() domain.Lang2 {
+	return p.Lang
 }
 
 func (p *workbookAddParameter) GetQuestionText() string {
@@ -147,9 +154,9 @@ type WorkbookRepository interface {
 
 	FindWorkbookByID(ctx context.Context, operator domain.StudentModel, id domain.WorkbookID) (Workbook, error)
 
-	FindWorkbookByName(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, name string) (Workbook, error)
+	FindWorkbookByName(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, name string) (Workbook, error)
 
-	AddWorkbook(ctx context.Context, operator user.AppUserModel, spaceID user.SpaceID, param WorkbookAddParameter) (domain.WorkbookID, error)
+	AddWorkbook(ctx context.Context, operator userD.AppUserModel, spaceID userD.SpaceID, param WorkbookAddParameter) (domain.WorkbookID, error)
 
 	UpdateWorkbook(ctx context.Context, operator domain.StudentModel, workbookID domain.WorkbookID, version int, param WorkbookUpdateParameter) error
 

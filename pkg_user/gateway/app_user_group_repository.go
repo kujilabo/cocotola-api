@@ -57,6 +57,9 @@ func NewAppUserGroupRepository(db *gorm.DB) service.AppUserGroupRepository {
 }
 
 func (r *appUserGroupRepository) FindPublicGroup(ctx context.Context, operator domain.SystemOwnerModel) (service.AppUserGroup, error) {
+	_, span := tracer.Start(ctx, "appUserGroupRepository.FindPublicGroup")
+	defer span.End()
+
 	appUserGroup := appUserGroupEntity{}
 	if result := r.db.Where(&appUserGroupEntity{
 		OrganizationID: uint(operator.GetOrganizationID()),
@@ -68,6 +71,9 @@ func (r *appUserGroupRepository) FindPublicGroup(ctx context.Context, operator d
 }
 
 func (r *appUserGroupRepository) AddPublicGroup(ctx context.Context, operator domain.SystemOwnerModel) (domain.AppUserGroupID, error) {
+	_, span := tracer.Start(ctx, "appUserGroupRepository.AddPublicGroup")
+	defer span.End()
+
 	appUserGroup := appUserGroupEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
@@ -83,6 +89,9 @@ func (r *appUserGroupRepository) AddPublicGroup(ctx context.Context, operator do
 }
 
 func (r *appUserGroupRepository) AddPersonalGroup(ctx context.Context, operator domain.AppUserModel) (uint, error) {
+	_, span := tracer.Start(ctx, "appUserGroupRepository.AddPersonalGroup")
+	defer span.End()
+
 	appUserGroup := appUserGroupEntity{
 		Version:        1,
 		CreatedBy:      operator.GetID(),
