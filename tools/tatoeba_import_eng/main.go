@@ -12,9 +12,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/config"
-	authG "github.com/kujilabo/cocotola-api/pkg_auth/gateway"
-	userD "github.com/kujilabo/cocotola-api/pkg_user/domain"
+	"github.com/kujilabo/cocotola-api/src/app/config"
+	authG "github.com/kujilabo/cocotola-api/src/auth/gateway"
+	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 )
 
 var timeoutImportMin = 20
