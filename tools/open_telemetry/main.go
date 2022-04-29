@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/kujilabo/cocotola-api/pkg_app/config"
-	"github.com/kujilabo/cocotola-api/pkg_plugin/common/gateway"
+	"github.com/kujilabo/cocotola-api/src/app/config"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/gateway"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
