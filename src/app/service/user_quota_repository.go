@@ -22,5 +22,6 @@ var (
 
 type UserQuotaRepository interface {
 	IsExceeded(ctx context.Context, operator domain.StudentModel, name string, unit QuotaUnit, limit int) (bool, error)
+
 	Increment(ctx context.Context, operator domain.StudentModel, name string, unit QuotaUnit, limit int, count int) (bool, error)
 }

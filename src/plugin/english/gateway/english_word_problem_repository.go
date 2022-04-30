@@ -59,7 +59,7 @@ func (e *englishWordProblemEntity) TableName() string {
 	return "english_word_problem"
 }
 
-func (e *englishWordProblemEntity) toProblem(synthesizerClient appS.SynthesizerClient) (service.EnglishWordProblem, error) {
+func (e *englishWordProblemEntity) toProblem(ctx context.Context, synthesizerClient appS.SynthesizerClient) (service.EnglishWordProblem, error) {
 	model, err := userD.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
@@ -90,12 +90,21 @@ func (e *englishWordProblemEntity) toProblem(synthesizerClient appS.SynthesizerC
 		}
 		sentences = append(sentences, sentence)
 	}
+
 	englishWordProblemModel, err := domain.NewEnglishWordProblemModel(problemModel, appD.AudioID(e.AudioID), e.Text, e.Pos, e.Phonetic, e.PresentThird, e.PresentParticiple, e.PastTense, e.PastParticiple, lang2, e.Translated, phrases, sentences)
 	if err != nil {
 		return nil, err
 	}
 
-	return service.NewEnglishWordProblem(englishWordProblemModel, problem)
+	englishWordProblem, err := service.NewEnglishWordProblem(englishWordProblemModel, problem)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := log.FromContext(ctx)
+	logger.Infof("properties: %+v", englishWordProblem.GetProperties(ctx))
+
+	return englishWordProblem, nil
 }
 
 type englishWordProblemAddParemeter struct {
@@ -234,7 +243,7 @@ func (r *englishWordProblemRepository) FindProblems(ctx context.Context, operato
 		return nil, result.Error
 	}
 
-	return r.toProblemSearchResult(count, problemEntities)
+	return r.toProblemSearchResult(ctx, count, problemEntities)
 }
 
 func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) (appS.ProblemSearchResult, error) {
@@ -260,7 +269,7 @@ func (r *englishWordProblemRepository) FindAllProblems(ctx context.Context, oper
 		return nil, result.Error
 	}
 
-	return r.toProblemSearchResult(count, problemEntities)
+	return r.toProblemSearchResult(ctx, count, problemEntities)
 }
 
 func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator appD.StudentModel, param appS.ProblemIDsCondition) (appS.ProblemSearchResult, error) {
@@ -286,13 +295,13 @@ func (r *englishWordProblemRepository) FindProblemsByProblemIDs(ctx context.Cont
 		return nil, result.Error
 	}
 
-	return r.toProblemSearchResult(0, problemEntities)
+	return r.toProblemSearchResult(ctx, 0, problemEntities)
 }
 
-func (r *englishWordProblemRepository) toProblemSearchResult(count int64, problemEntities []englishWordProblemEntity) (appS.ProblemSearchResult, error) {
+func (r *englishWordProblemRepository) toProblemSearchResult(ctx context.Context, count int64, problemEntities []englishWordProblemEntity) (appS.ProblemSearchResult, error) {
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.synthesizerClient)
+		p, err := e.toProblem(ctx, r.synthesizerClient)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
 		}
@@ -329,7 +338,7 @@ func (r *englishWordProblemRepository) FindProblemByID(ctx context.Context, oper
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem(r.synthesizerClient)
+	return problemEntity.toProblem(ctx, r.synthesizerClient)
 }
 
 func (r *englishWordProblemRepository) FindProblemIDs(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) ([]appD.ProblemID, error) {

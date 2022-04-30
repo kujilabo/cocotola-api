@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -47,14 +46,13 @@ func (h *audioHandler) FindAudioByID(c *gin.Context) {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
-		id := c.Param("audioID")
-		audioID, err := strconv.Atoi(id)
+		audioID, err := ginhelper.GetUintFromPath(c, "audioID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return nil
 		}
 
-		result, err := h.studentUsecaseAudio.FindAudioByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), domain.AudioID(uint(audioID)))
+		result, err := h.studentUsecaseAudio.FindAudioByID(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), domain.ProblemID(problemID), domain.AudioID(audioID))
 		if err != nil {
 			return err
 		}

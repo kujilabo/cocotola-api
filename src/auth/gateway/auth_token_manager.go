@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 
 	"github.com/kujilabo/cocotola-api/src/auth/service"
 	"github.com/kujilabo/cocotola-api/src/lib/log"

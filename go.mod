@@ -6,7 +6,6 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.4.0
 	github.com/casbin/casbin/v2 v2.34.1
 	github.com/casbin/gorm-adapter/v3 v3.3.2
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-openapi/spec v0.20.4 // indirect
