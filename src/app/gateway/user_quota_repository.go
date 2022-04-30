@@ -73,11 +73,11 @@ func (r *userQuotaRepository) Increment(ctx context.Context, operator domain.Stu
 	now := time.Now()
 	var date time.Time
 	if unit == "month" {
-		date = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, jst)
+		date = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	} else if unit == "day" {
-		date = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+		date = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	} else {
-		date = time.Date(1900, 1, 1, 0, 0, 0, 0, jst)
+		date = time.Date(1900, 1, 1, 0, 0, 0, 0, now.Location())
 	}
 	entity := userQuotaEntity{}
 	if result := r.db.Where(&userQuotaEntity{

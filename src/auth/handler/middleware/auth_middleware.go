@@ -3,8 +3,8 @@ package middleware
 import (
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 
 	"github.com/kujilabo/cocotola-api/src/auth/gateway"
 	"github.com/kujilabo/cocotola-api/src/lib/log"

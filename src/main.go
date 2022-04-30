@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -201,7 +201,7 @@ func main() {
 		v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
 
 		v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
-		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc)
+		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizer)
 		audioHandler := appH.NewAudioHandler(studentUsecaseAudio)
 		v1Audio.Use(authMiddleware)
 		v1Audio.GET(":audioID", audioHandler.FindAudioByID)

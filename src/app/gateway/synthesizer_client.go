@@ -113,7 +113,7 @@ func (c *synthesizerClient) FindAudioByAudioID(ctx context.Context, audioID doma
 
 	u.Path = path.Join(u.Path, "v1", "user", "audio", strconv.Itoa(int(audioID)))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), http.NoBody)
 	if err != nil {
 		return nil, err
 

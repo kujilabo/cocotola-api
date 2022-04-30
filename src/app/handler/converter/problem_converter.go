@@ -8,6 +8,7 @@ import (
 	"github.com/kujilabo/cocotola-api/src/app/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	"github.com/kujilabo/cocotola-api/src/lib/log"
 )
 
 func ToProblemSearchCondition(ctx context.Context, param *entity.ProblemFindParameter, workbookID domain.WorkbookID) (service.ProblemSearchCondition, error) {
@@ -71,6 +72,9 @@ func ToProblemFindAllResponse(ctx context.Context, result service.ProblemSearchR
 }
 
 func ToProblemResponse(ctx context.Context, problem domain.ProblemModel) (*entity.Problem, error) {
+	logger := log.FromContext(ctx)
+	logger.Infof("------properties: %+v", problem.GetProperties(ctx))
+
 	bytes, err := json.Marshal(problem.GetProperties(ctx))
 	if err != nil {
 		return nil, err

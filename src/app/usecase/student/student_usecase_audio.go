@@ -2,6 +2,7 @@ package student
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/xerrors"
 	"gorm.io/gorm"
@@ -9,6 +10,8 @@ import (
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	"github.com/kujilabo/cocotola-api/src/app/usecase"
+	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
@@ -18,35 +21,50 @@ type StudentUsecaseAudio interface {
 }
 
 type studentUsecaseAudio struct {
-	db         *gorm.DB
-	pf         service.ProcessorFactory
-	rfFunc     service.RepositoryFactoryFunc
-	userRfFunc userS.RepositoryFactoryFunc
+	db                *gorm.DB
+	pf                service.ProcessorFactory
+	rfFunc            service.RepositoryFactoryFunc
+	userRfFunc        userS.RepositoryFactoryFunc
+	synthesizerClient service.SynthesizerClient
 }
 
-func NewStudentUsecaseAudio(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) StudentUsecaseAudio {
+func NewStudentUsecaseAudio(db *gorm.DB, pf service.ProcessorFactory, rfFunc service.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient service.SynthesizerClient) StudentUsecaseAudio {
 	return &studentUsecaseAudio{
-		db:         db,
-		pf:         pf,
-		rfFunc:     rfFunc,
-		userRfFunc: userRfFunc,
+		db:                db,
+		pf:                pf,
+		rfFunc:            rfFunc,
+		userRfFunc:        userRfFunc,
+		synthesizerClient: synthesizerClient,
 	}
 }
 
 func (s *studentUsecaseAudio) FindAudioByID(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, workbookID domain.WorkbookID, problemID domain.ProblemID, audioID domain.AudioID) (service.Audio, error) {
 	var result service.Audio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		student, workbookService, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
 			return err
 		}
 
-		problem, err := workbookService.FindProblemByID(ctx, student, problemID)
+		problem, err := workbook.FindProblemByID(ctx, student, problemID)
 		if err != nil {
 			return err
 		}
 
-		tmpResult, err := problem.FindAudioByAudioID(ctx, audioID)
+		savedAudioID, ok := (problem.GetProperties(ctx)["audioId"]).(domain.AudioID)
+		if !ok {
+			return errors.New("mismatch")
+		}
+
+		logger := log.FromContext(ctx)
+		if audioID != savedAudioID {
+			logger.Debugf("properties: %+v", problem.GetProperties(ctx))
+			logger.Warnf("audioID: %d, %s", audioID, problem.GetProperties(ctx)["audioId"])
+			message := "invalid audio id"
+			return domain.NewPluginError(domain.ErrorType(domain.ErrorTypeClient), message, []string{message}, libD.ErrInvalidArgument)
+		}
+
+		tmpResult, err := s.synthesizerClient.FindAudioByAudioID(ctx, audioID)
 		if err != nil {
 			return err
 		}

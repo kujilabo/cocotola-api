@@ -113,11 +113,11 @@ func (s *studentUsecaseProblem) FindProblemsByProblemIDs(ctx context.Context, or
 func (s *studentUsecaseProblem) FindProblemByID(ctx context.Context, organizationID userD.OrganizationID, operatorID userD.AppUserID, id service.ProblemSelectParameter1) (domain.ProblemModel, error) {
 	var result domain.ProblemModel
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		studentService, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
+		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
 			return err
 		}
-		tmpResult, err := workbook.FindProblemByID(ctx, studentService, id.GetProblemID())
+		tmpResult, err := workbook.FindProblemByID(ctx, student, id.GetProblemID())
 		if err != nil {
 			return err
 		}
@@ -298,10 +298,10 @@ func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.
 		return nil, err
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", len(addedIDs)); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to IncrementQuotaUsage(Size). err: %w", err)
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", len(addedIDs)); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("failed to IncrementQuotaUsage(Update). err: %w", err)
 	}
 	return addedIDs, nil
 }

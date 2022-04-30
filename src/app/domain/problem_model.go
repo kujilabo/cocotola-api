@@ -3,6 +3,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
@@ -19,9 +20,9 @@ type ProblemModel interface {
 
 type problemModel struct {
 	userD.Model
-	Number      int                    `validate:"required"`
-	ProblemType string                 `validate:"required"`
-	Properties  map[string]interface{} `validate:"required"`
+	Number      int    `validate:"required"`
+	ProblemType string `validate:"required"`
+	// Properties  map[string]interface{} `validate:"required"`
 }
 
 func NewProblemModel(model userD.Model, number int, problemType string, properties map[string]interface{}) (ProblemModel, error) {
@@ -29,7 +30,7 @@ func NewProblemModel(model userD.Model, number int, problemType string, properti
 		Model:       model,
 		Number:      number,
 		ProblemType: problemType,
-		Properties:  properties,
+		// Properties:  properties,
 	}
 
 	return m, libD.Validator.Struct(m)
@@ -44,5 +45,5 @@ func (m *problemModel) GetProblemType() string {
 }
 
 func (m *problemModel) GetProperties(ctx context.Context) map[string]interface{} {
-	return m.Properties
+	panic(errors.New("not implemented"))
 }
