@@ -1,7 +1,7 @@
 ---
 app:
   name: cocotola-api
-  port: 8080
+  httpPort: 8080
   ownerPassword: $OWNER_PASSWORD
   testUserEmail: $TEST_USER_EMAIL
 db:
@@ -49,7 +49,7 @@ shutdown:
   timeSec1: 10
   timeSec2: 10
 log:
-  level: debug
+  level: $LOG_LEVEL
 swagger:
   enabled: false
   host: localhost:8080

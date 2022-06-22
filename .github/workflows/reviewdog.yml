@@ -2,18 +2,32 @@
 on: [pull_request]
 name: Reviewdog
 jobs:
+  # staticcheck:
+  #   name: runner / staticcheck
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-go@v3
+  #       with:
+  #         go-version: "1.16"
+  #     - uses: reviewdog/action-staticcheck@v1
+  #       with:
+  #         github_token: ${{ secrets.REVIEWDOG_TOKEN }}
+  #         reporter: github-pr-review
+  #         filter_mode: nofilter
+  #         fail_on_error: true
   staticcheck:
     name: runner / staticcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: "1.16"
-      - uses: reviewdog/action-staticcheck@v1
+      - uses: actions/checkout@v2
+      - name: staticcheck
+        uses: reviewdog/action-golangci-lint@v2
         with:
           github_token: ${{ secrets.REVIEWDOG_TOKEN }}
           reporter: github-pr-review
+          golangci_lint_flags: "--config=.github/.golangci.yml --disable-all -E staticcheck --timeout=10m"
+          tool_name: staticcheck
           filter_mode: nofilter
           fail_on_error: true
 

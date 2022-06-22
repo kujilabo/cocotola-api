@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -19,10 +20,14 @@ import (
 	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/xerrors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
@@ -53,6 +58,8 @@ import (
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
 
+type newIteratorFunc func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error)
+
 func main() {
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -80,7 +87,7 @@ func main() {
 		done <- true
 	}()
 
-	cfg, db, sqlDB, router, tp, err := initialize(ctx, *env)
+	cfg, db, sqlDB, tp, err := initialize(ctx, *env)
 	if err != nil {
 		panic(err)
 	}
@@ -91,17 +98,15 @@ func main() {
 		return userG.NewRepositoryFactory(db)
 	}
 	appS.UserRfFunc = userRfFunc
+
 	if err := initApp1(ctx, db, cfg.App.OwnerPassword); err != nil {
 		panic(err)
 	}
 
-	router.GET("/healthcheck", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
-
 	synthesizer := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
 	translatorClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+
 	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
 
 	pf, problemRepositories, problemImportProcessor := initPf(synthesizer, translatorClient, tatoebaClient)
@@ -135,6 +140,92 @@ func main() {
 		panic(err)
 	}
 
+	gracefulShutdownTime2 := time.Duration(cfg.Shutdown.TimeSec2) * time.Second
+
+	conn, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	x := pluginCommonGateway.NewTranslatorGRPCClient(conn, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	y, err := x.DictionaryLookup(ctx, appD.Lang2EN, appD.Lang2JA, "book")
+	if err != nil {
+		panic(err)
+	}
+	logrus.Info("-----------------------------")
+	logrus.Info(y)
+
+	result := run(context.Background(), cfg, db, pf, rfFunc, userRfFunc, synthesizer, translatorClient, tatoebaClient, newIterator)
+
+	time.Sleep(gracefulShutdownTime2)
+	logrus.Info("exited")
+	os.Exit(result)
+}
+
+func run(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc newIteratorFunc) int {
+	var eg *errgroup.Group
+	eg, ctx = errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return httpServer(ctx, cfg, db, pf, rfFunc, userRfFunc, synthesizerClient, translatorClient, tatoebaClient, newIteratorFunc)
+	})
+	eg.Go(func() error {
+		return signalNotify(ctx)
+	})
+	eg.Go(func() error {
+		<-ctx.Done()
+		return ctx.Err()
+	})
+
+	if err := eg.Wait(); err != nil {
+		logrus.Error(err)
+		return 1
+	}
+	return 0
+}
+
+func signalNotify(ctx context.Context) error {
+	sigs := make(chan os.Signal, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case <-ctx.Done():
+		signal.Reset()
+		return nil
+	case sig := <-sigs:
+		return fmt.Errorf("signal received: %v", sig.String())
+	}
+}
+
+func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc newIteratorFunc) error {
+	// cors
+	corsConfig := config.InitCORS(cfg.CORS)
+	logrus.Infof("cors: %+v", corsConfig)
+
+	if err := corsConfig.Validate(); err != nil {
+		return err
+	}
+
+	if !cfg.Debug.GinMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := gin.New()
+	router.Use(cors.New(corsConfig))
+	router.Use(gin.Recovery())
+
+	if cfg.Debug.GinMode {
+		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	}
+
+	if cfg.Debug.Wait {
+		router.Use(middleware.NewWaitMiddleware())
+	}
+
 	signingKey := []byte(cfg.Auth.SigningKey)
 	signingMethod := jwt.SigningMethodHS256
 	authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(cfg.Auth.AccessTokenTTLMin)*time.Minute, time.Duration(cfg.Auth.RefreshTokenTTLHour)*time.Hour)
@@ -153,6 +244,10 @@ func main() {
 		}
 		return callback(ctx, cfg.App.TestUserEmail, pf, rf, userRf, organizationName, appUser)
 	}
+
+	router.GET("/healthcheck", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
 
 	v1 := router.Group("v1")
 	{
@@ -180,7 +275,7 @@ func main() {
 
 		v1Problem := v1.Group("workbook/:workbookID/problem")
 		studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
-		problemHandler := appH.NewProblemHandler(studentUsecaseProblem, newIterator)
+		problemHandler := appH.NewProblemHandler(studentUsecaseProblem, newIteratorFunc)
 		v1Problem.Use(authMiddleware)
 		v1Problem.POST("", problemHandler.AddProblem)
 		v1Problem.GET(":problemID", problemHandler.FindProblemByID)
@@ -201,7 +296,7 @@ func main() {
 		v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
 
 		v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
-		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizer)
+		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
 		audioHandler := appH.NewAudioHandler(studentUsecaseAudio)
 		v1Audio.Use(authMiddleware)
 		v1Audio.GET(":audioID", audioHandler.FindAudioByID)
@@ -240,31 +335,35 @@ func main() {
 		docs.SwaggerInfo.Schemes = []string{cfg.Swagger.Schema}
 	}
 
-	gracefulShutdownTime1 := time.Duration(cfg.Shutdown.TimeSec1) * time.Second
-	gracefulShutdownTime2 := time.Duration(cfg.Shutdown.TimeSec2) * time.Second
-	server := http.Server{
-		Addr:    ":" + strconv.Itoa(cfg.App.Port),
+	httpServer := http.Server{
+		Addr:    ":" + strconv.Itoa(cfg.App.HTTPPort),
 		Handler: router,
 	}
 
+	logrus.Printf("http server listening at %v", httpServer.Addr)
+
+	errCh := make(chan error)
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		defer close(errCh)
+		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			logrus.Infof("failed to ListenAndServe. err: %v", err)
-			done <- true
+			errCh <- err
 		}
 	}()
 
-	logrus.Info("awaiting signal")
-	<-done
-	logrus.Info("exiting")
-
-	ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTime1)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		logrus.Infof("Server forced to shutdown. err: %v", err)
+	select {
+	case <-ctx.Done():
+		gracefulShutdownTime1 := time.Duration(cfg.Shutdown.TimeSec1) * time.Second
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), gracefulShutdownTime1)
+		defer shutdownCancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			logrus.Infof("Server forced to shutdown. err: %v", err)
+			return err
+		}
+		return nil
+	case err := <-errCh:
+		return err
 	}
-	time.Sleep(gracefulShutdownTime2)
-	logrus.Info("exited")
 }
 
 func initPf(synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
@@ -315,29 +414,21 @@ func initPf(synthesizerClient appS.SynthesizerClient, translatorClient pluginCom
 	return pf, problemRepositories, problemImportProcessor
 }
 
-func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *gin.Engine, *sdktrace.TracerProvider, error) {
+func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql.DB, *sdktrace.TracerProvider, error) {
 	cfg, err := config.LoadConfig(env)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// init log
 	if err := config.InitLog(env, cfg.Log); err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	// cors
-	corsConfig := config.InitCORS(cfg.CORS)
-	logrus.Infof("cors: %+v", corsConfig)
-
-	if err := corsConfig.Validate(); err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// tracer
 	tp, err := config.InitTracerProvider(cfg)
 	if err != nil {
-		return nil, nil, nil, nil, nil, xerrors.Errorf("failed to InitTracerProvider. err: %w", err)
+		return nil, nil, nil, nil, xerrors.Errorf("failed to InitTracerProvider. err: %w", err)
 	}
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
@@ -345,7 +436,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := config.InitDB(cfg.DB)
 	if err != nil {
-		return nil, nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
@@ -353,23 +444,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	}
 	userS.InitSystemAdmin(userRfFunc)
 
-	if !cfg.Debug.GinMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(gin.Recovery())
-
-	if cfg.Debug.GinMode {
-		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	}
-
-	if cfg.Debug.Wait {
-		router.Use(middleware.NewWaitMiddleware())
-	}
-
-	return cfg, db, sqlDB, router, tp, nil
+	return cfg, db, sqlDB, tp, nil
 }
 
 func initApp1(ctx context.Context, db *gorm.DB, password string) error {

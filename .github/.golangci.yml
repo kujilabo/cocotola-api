@@ -2,3 +2,10 @@
 linters-settings:
   gocyclo:
     min-complexity: 15
+
+  staticcheck:
+    # Select the Go version to target.
+    # Default: 1.13
+    go: "1.16"
+    # https://staticcheck.io/docs/options#checks
+    checks: ["all", "-SA1019"]

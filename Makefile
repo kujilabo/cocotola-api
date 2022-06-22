@@ -9,6 +9,17 @@ unit-test:
 swagger:
 	@swagger init -d src
 
+proto:
+	@protoc --go_out=./src/ --go_opt=paths=source_relative \
+	--go-grpc_out=./src/ --go-grpc_opt=paths=source_relative \
+	--proto_path=../cocotola-translator-api \
+	proto/translator_admin.proto
+	@protoc --go_out=./src/ --go_opt=paths=source_relative \
+	--go-grpc_out=./src/ --go-grpc_opt=paths=source_relative \
+	--proto_path=../cocotola-translator-api \
+	proto/translator_user.proto
+	
+
 docker-up:
 	@docker-compose -f docker/development/docker-compose.yml up -d
 	sleep 10

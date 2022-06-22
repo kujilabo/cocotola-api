@@ -1,7 +1,7 @@
 ---
 app:
   name: cocotola-api
-  port: 8080
+  httpPort: 8080
   ownerPassword: password
   testUserEmail: $TEST_USER_EMAIL
 db:
@@ -28,6 +28,7 @@ translator:
   timeoutSec: 3
   username: user
   password: password
+  grpcAddr: localhost:50151
 trace:
   exporter: jaeger
   jaeger:
