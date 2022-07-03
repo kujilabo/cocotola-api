@@ -357,7 +357,7 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 	errCh := make(chan error)
 	go func() {
 		defer close(errCh)
-		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			logrus.Infof("failed to ListenAndServe. err: %v", err)
 			errCh <- err
 		}
