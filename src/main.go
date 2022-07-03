@@ -105,7 +105,17 @@ func main() {
 
 	synthesizer := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
-	translatorClient := pluginCommonGateway.NewTranslatorClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	// translator
+
+	connTranslator, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
+	if err != nil {
+		panic(err)
+	}
+	defer connTranslator.Close()
+	// translatorClient := pluginCommonGateway.NewTranslatorHTTPClient(cfg.Translator.Endpoint, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	translatorClient := pluginCommonGateway.NewTranslatorGRPCClient(connTranslator, cfg.Translator.Username, cfg.Translator.Password, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
 
 	tatoebaClient := pluginCommonGateway.NewTatoebaClient(cfg.Tatoeba.Endpoint, cfg.Tatoeba.Username, cfg.Tatoeba.Password, time.Duration(cfg.Tatoeba.TimeoutSec)*time.Second)
 
@@ -142,21 +152,23 @@ func main() {
 
 	gracefulShutdownTime2 := time.Duration(cfg.Shutdown.TimeSec2) * time.Second
 
-	conn, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
+	// {
+	// 	conn, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	// 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+	// 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	defer conn.Close()
 
-	x := pluginCommonGateway.NewTranslatorGRPCClient(conn, time.Duration(cfg.Translator.TimeoutSec)*time.Second)
-	y, err := x.DictionaryLookup(ctx, appD.Lang2EN, appD.Lang2JA, "book")
-	if err != nil {
-		panic(err)
-	}
-	logrus.Info("-----------------------------")
-	logrus.Info(y)
+	// 	x := pluginCommonGateway.NewTranslatorGRPCClient(conn, "", "", time.Duration(cfg.Translator.TimeoutSec)*time.Second)
+	// 	y, err := x.DictionaryLookup(ctx, appD.Lang2EN, appD.Lang2JA, "book")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	logrus.Info("-----------------------------")
+	// 	logrus.Info(y)
+	// }
 
 	result := run(context.Background(), cfg, db, pf, rfFunc, userRfFunc, synthesizer, translatorClient, tatoebaClient, newIterator)
 

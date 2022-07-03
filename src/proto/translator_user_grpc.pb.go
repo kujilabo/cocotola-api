@@ -22,8 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TranslatorUserClient interface {
-	DictionaryLookup(ctx context.Context, in *DictionaryLookupParameter, opts ...grpc.CallOption) (*DictionaryLookupResposne, error)
-	DictionaryLookupWithPos(ctx context.Context, in *DictionaryLookupWithPosParameter, opts ...grpc.CallOption) (*DictionaryLookupResposne, error)
+	DictionaryLookup(ctx context.Context, in *DictionaryLookupParameter, opts ...grpc.CallOption) (*DictionaryLookupResponses, error)
+	DictionaryLookupWithPos(ctx context.Context, in *DictionaryLookupWithPosParameter, opts ...grpc.CallOption) (*DictionaryLookupResponse, error)
 }
 
 type translatorUserClient struct {
@@ -34,8 +34,8 @@ func NewTranslatorUserClient(cc grpc.ClientConnInterface) TranslatorUserClient {
 	return &translatorUserClient{cc}
 }
 
-func (c *translatorUserClient) DictionaryLookup(ctx context.Context, in *DictionaryLookupParameter, opts ...grpc.CallOption) (*DictionaryLookupResposne, error) {
-	out := new(DictionaryLookupResposne)
+func (c *translatorUserClient) DictionaryLookup(ctx context.Context, in *DictionaryLookupParameter, opts ...grpc.CallOption) (*DictionaryLookupResponses, error) {
+	out := new(DictionaryLookupResponses)
 	err := c.cc.Invoke(ctx, "/proto.TranslatorUser/DictionaryLookup", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -43,8 +43,8 @@ func (c *translatorUserClient) DictionaryLookup(ctx context.Context, in *Diction
 	return out, nil
 }
 
-func (c *translatorUserClient) DictionaryLookupWithPos(ctx context.Context, in *DictionaryLookupWithPosParameter, opts ...grpc.CallOption) (*DictionaryLookupResposne, error) {
-	out := new(DictionaryLookupResposne)
+func (c *translatorUserClient) DictionaryLookupWithPos(ctx context.Context, in *DictionaryLookupWithPosParameter, opts ...grpc.CallOption) (*DictionaryLookupResponse, error) {
+	out := new(DictionaryLookupResponse)
 	err := c.cc.Invoke(ctx, "/proto.TranslatorUser/DictionaryLookupWithPos", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -56,8 +56,8 @@ func (c *translatorUserClient) DictionaryLookupWithPos(ctx context.Context, in *
 // All implementations must embed UnimplementedTranslatorUserServer
 // for forward compatibility
 type TranslatorUserServer interface {
-	DictionaryLookup(context.Context, *DictionaryLookupParameter) (*DictionaryLookupResposne, error)
-	DictionaryLookupWithPos(context.Context, *DictionaryLookupWithPosParameter) (*DictionaryLookupResposne, error)
+	DictionaryLookup(context.Context, *DictionaryLookupParameter) (*DictionaryLookupResponses, error)
+	DictionaryLookupWithPos(context.Context, *DictionaryLookupWithPosParameter) (*DictionaryLookupResponse, error)
 	mustEmbedUnimplementedTranslatorUserServer()
 }
 
@@ -65,10 +65,10 @@ type TranslatorUserServer interface {
 type UnimplementedTranslatorUserServer struct {
 }
 
-func (UnimplementedTranslatorUserServer) DictionaryLookup(context.Context, *DictionaryLookupParameter) (*DictionaryLookupResposne, error) {
+func (UnimplementedTranslatorUserServer) DictionaryLookup(context.Context, *DictionaryLookupParameter) (*DictionaryLookupResponses, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DictionaryLookup not implemented")
 }
-func (UnimplementedTranslatorUserServer) DictionaryLookupWithPos(context.Context, *DictionaryLookupWithPosParameter) (*DictionaryLookupResposne, error) {
+func (UnimplementedTranslatorUserServer) DictionaryLookupWithPos(context.Context, *DictionaryLookupWithPosParameter) (*DictionaryLookupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DictionaryLookupWithPos not implemented")
 }
 func (UnimplementedTranslatorUserServer) mustEmbedUnimplementedTranslatorUserServer() {}

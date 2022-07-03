@@ -1,4 +1,4 @@
-.PHONY: gen-src unit-test swagger docker-up docker-down test-docker-up test-docker-down docker-clear
+.PHONY: gen-src unit-test swagger proto docker-up docker-down test-docker-up test-docker-down docker-clear
 
 gen-src:
 	@go generate ./src/...
