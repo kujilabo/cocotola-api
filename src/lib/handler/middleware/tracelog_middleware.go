@@ -16,6 +16,8 @@ func NewTraceLogMiddleware(appName string) gin.HandlerFunc {
 		otTraceID := sc.TraceID().String()
 
 		ctx := log.With(c.Request.Context(), log.Str("request_id", otTraceID))
+		logger := log.FromContext(ctx)
+		logger.Infof("uri: %s, method: %s", c.Request.RequestURI, c.Request.Method)
 
 		savedCtx := ctx
 		defer func() {

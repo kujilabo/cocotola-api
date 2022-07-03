@@ -13,7 +13,7 @@ import (
 
 type AppConfig struct {
 	Name          string `yaml:"name" validate:"required"`
-	Port          int    `yaml:"port" validate:"required"`
+	HTTPPort      int    `yaml:"httpPort" validate:"required"`
 	OwnerPassword string `yaml:"ownerPassword" validate:"required"`
 	TestUserEmail string `yaml:"testUserEmail" validate:"required"`
 }
@@ -51,6 +51,7 @@ type TranslatorConfig struct {
 	TimeoutSec int    `yaml:"timeoutSec" validate:"gte=1"`
 	Username   string `yaml:"username" validate:"required"`
 	Password   string `yaml:"password" validate:"required"`
+	GRPCAddr   string `yaml:"grpcAddr" validate:"required"`
 }
 
 type TatoebaConfig struct {
