@@ -1,4 +1,4 @@
-package handler
+package controller
 
 import (
 	"bytes"
@@ -10,12 +10,12 @@ import (
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/converter"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/domain"
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/converter"
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/service"
+	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
-	"github.com/kujilabo/cocotola-api/src/user/handlerhelper"
 )
 
 type TranslationHandler interface {
@@ -39,7 +39,7 @@ func NewTranslationHandler(translatorClient service.TranslatorClient) Translatio
 func (h *translationHandler) FindTranslations(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		param := entity.TranslationFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
@@ -73,7 +73,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Infof("FindTranslationByTextAndPos")
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		text := ginhelper.GetStringFromPath(c, "text")
 
@@ -104,7 +104,7 @@ func (h *translationHandler) FindTranslationByTextAndPos(c *gin.Context) {
 func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		text := ginhelper.GetStringFromPath(c, "text")
 		results, err := h.translatorClient.FindTranslationsByText(ctx, appD.Lang2JA, text)
@@ -125,7 +125,7 @@ func (h *translationHandler) FindTranslationsByText(c *gin.Context) {
 func (h *translationHandler) AddTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.TranslationAddParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			c.Status(http.StatusBadRequest)
@@ -148,7 +148,7 @@ func (h *translationHandler) AddTranslation(c *gin.Context) {
 func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		text := ginhelper.GetStringFromPath(c, "text")
 
 		pos, err := ginhelper.GetIntFromPath(c, "pos")
@@ -182,7 +182,7 @@ func (h *translationHandler) UpdateTranslation(c *gin.Context) {
 func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		text := ginhelper.GetStringFromPath(c, "text")
 
 		pos, err := ginhelper.GetIntFromPath(c, "pos")
@@ -204,7 +204,7 @@ func (h *translationHandler) RemoveTranslation(c *gin.Context) {
 }
 
 func (h *translationHandler) ExportTranslations(c *gin.Context) {
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		csvStruct := [][]string{
 			{"name", "address", "phone"},
 			{"Ram", "Tokyo", "1236524"},

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/app/domain"
-	"github.com/kujilabo/cocotola-api/src/app/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
 	"github.com/kujilabo/cocotola-api/src/lib/log"

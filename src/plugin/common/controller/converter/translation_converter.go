@@ -4,8 +4,8 @@ import (
 	"context"
 
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/domain"
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/service"
 )
 

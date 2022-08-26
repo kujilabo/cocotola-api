@@ -26,7 +26,7 @@ type workbookModel struct {
 	ownerID      userD.AppUserID  `validate:"required"`
 	privileges   userD.Privileges `validate:"required"`
 	Name         string           `validate:"required"`
-	Lang2        Lang2            `validate:"required"`
+	Lang2        Lang2            `validate:"required,len=2"`
 	ProblemType  string           `validate:"required"`
 	QuestionText string
 	Properties   map[string]string

@@ -1,4 +1,4 @@
-package handler
+package controller
 
 import (
 	"errors"
@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/xerrors"
 
+	"github.com/kujilabo/cocotola-api/src/app/controller/converter"
+	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/app/domain"
-	"github.com/kujilabo/cocotola-api/src/app/handler/converter"
-	"github.com/kujilabo/cocotola-api/src/app/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
 	"github.com/kujilabo/cocotola-api/src/lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
+	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
-	"github.com/kujilabo/cocotola-api/src/user/handlerhelper"
 )
 
 type RecordbookHandler interface {
@@ -49,7 +49,7 @@ func NewRecordbookHandler(studentUsecaseStudy studentU.StudentUsecaseStudy) Reco
 func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -77,7 +77,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("SetStudyResult")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -123,7 +123,7 @@ func (h *recordbookHandler) GetCompletionRate(c *gin.Context) {
 	logger := log.FromContext(ctx)
 	logger.Info("FindRecordbook")
 
-	handlerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleSecuredFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		workbookID, err := ginhelper.GetUintFromPath(c, "workbookID")
 		if err != nil {
 			c.Status(http.StatusBadRequest)

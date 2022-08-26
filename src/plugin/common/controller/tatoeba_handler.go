@@ -1,4 +1,4 @@
-package handler
+package controller
 
 import (
 	"errors"
@@ -8,11 +8,11 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/src/lib/log"
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/converter"
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/converter"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/service"
+	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
-	"github.com/kujilabo/cocotola-api/src/user/handlerhelper"
 )
 
 type TatoebaHandler interface {
@@ -35,7 +35,7 @@ func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
 
-	handlerhelper.HandleFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleFunction(c, func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 		param := entity.TatoebaSentenceFindParameter{}
 		if err := c.ShouldBindJSON(&param); err != nil {
 			logger.Warnf("err: %+v", err)
@@ -65,7 +65,7 @@ func (h *tatoebaHandler) FindSentencePairs(c *gin.Context) {
 func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		file, err := c.FormFile("file")
 		if err != nil {
@@ -95,7 +95,7 @@ func (h *tatoebaHandler) ImportSentences(c *gin.Context) {
 func (h *tatoebaHandler) ImportLinks(c *gin.Context) {
 	ctx := c.Request.Context()
 	logger := log.FromContext(ctx)
-	handlerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
+	controllerhelper.HandleRoleFunction(c, "Owner", func(organizationID userD.OrganizationID, operatorID userD.AppUserID) error {
 
 		file, err := c.FormFile("file")
 		if err != nil {

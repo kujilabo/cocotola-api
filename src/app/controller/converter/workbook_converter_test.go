@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/app/domain"
-	"github.com/kujilabo/cocotola-api/src/app/handler/entity"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	serviceM "github.com/kujilabo/cocotola-api/src/app/service/mock"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
@@ -47,7 +47,7 @@ func TestToWorkbookSearchResponse(t *testing.T) {
 			},
 			want: &entity.WorkbookSearchResponse{
 				TotalCount: 0,
-				Results:    []*entity.Workbook{},
+				Results:    []*entity.WorkbookResponseHTTPEntity{},
 			},
 			wantErr: false,
 		},
@@ -58,7 +58,7 @@ func TestToWorkbookSearchResponse(t *testing.T) {
 			},
 			want: &entity.WorkbookSearchResponse{
 				TotalCount: 7,
-				Results: []*entity.Workbook{
+				Results: []*entity.WorkbookResponseHTTPEntity{
 					{
 						Model: entity.Model{
 							ID:        1,
