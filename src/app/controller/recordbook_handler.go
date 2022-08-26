@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/src/app/controller/converter"
 	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
@@ -101,7 +101,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		// }
 
 		if err := h.studentUsecaseStudy.SetResult(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), studyType, domain.ProblemID(problemID), param.Result, param.Memorized); err != nil {
-			return xerrors.Errorf("failed to SetResult. err: %w", err)
+			return liberrors.Errorf("failed to SetResult. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)

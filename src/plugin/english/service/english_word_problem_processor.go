@@ -6,11 +6,10 @@ import (
 	"io"
 	"strconv"
 
-	"golang.org/x/xerrors"
-
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	plugin "github.com/kujilabo/cocotola-api/src/plugin/common/domain"
 	pluginS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
@@ -58,11 +57,11 @@ func NewEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*English
 	posS := param.GetProperties()["pos"]
 	pos, err := strconv.Atoi(posS)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to cast to int. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("failed to cast to int. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	translated := ""
@@ -71,12 +70,12 @@ func NewEnglishWordProblemAddParemeter(param appS.ProblemAddParameter) (*English
 	}
 
 	if _, ok := param.GetProperties()["lang2"]; !ok {
-		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
 	if err != nil {
-		return nil, xerrors.Errorf("lang2 format is invalid. err: %w", err)
+		return nil, liberrors.Errorf("lang2 format is invalid. err: %w", err)
 	}
 
 	m := &EnglishWordProblemAddParemeter{
@@ -102,7 +101,7 @@ type EnglishWordProblemUpdateParemeter struct {
 
 func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*EnglishWordProblemUpdateParemeter, error) {
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	translated := ""
@@ -111,12 +110,12 @@ func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*E
 	}
 
 	if _, ok := param.GetProperties()["lang2"]; !ok {
-		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
 	if err != nil {
-		return nil, xerrors.Errorf("lang2 format is invalid. err: %w", err)
+		return nil, liberrors.Errorf("lang2 format is invalid. err: %w", err)
 	}
 
 	tatoebaSentenceNumberFrom := 0
@@ -128,13 +127,13 @@ func NewEnglishWordProblemUpdateParemeter(param appS.ProblemUpdateParameter) (*E
 
 		from, err := strconv.Atoi(tatoebaSentenceNumberFromS)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberFromS, err)
+			return nil, liberrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberFromS, err)
 		}
 
 		tatoebaSentenceNumberToS := param.GetProperties()["tatoebaSentenceNumber2"]
 		to, err := strconv.Atoi(tatoebaSentenceNumberToS)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberToS, err)
+			return nil, liberrors.Errorf("failed to Atoi. value: %s, err: %w", tatoebaSentenceNumberToS, err)
 		}
 		tatoebaSentenceNumberFrom = from
 		tatoebaSentenceNumberTo = to
@@ -184,7 +183,7 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 
 	extractedParam, err := NewEnglishWordProblemAddParemeter(param)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
+		return nil, liberrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, err)
 	}
 
 	audioID := appD.AudioID(0)
@@ -217,14 +216,14 @@ func (p *englishWordProblemProcessor) AddProblem(ctx context.Context, rf appS.Re
 
 	problemRepo, err := rf.NewProblemRepository(ctx, domain.EnglishWordProblemType)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	idsOfAddedProblem := make([]appD.ProblemID, len(toAddParams))
 	for i, toAddParam := range toAddParams {
 		problemID, err := problemRepo.AddProblem(ctx, operator, toAddParam)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
+			return nil, liberrors.Errorf("failed to problemRepo.AddProblem. param: %+v, err: %w", param, err)
 		}
 		idsOfAddedProblem[i] = problemID
 	}
@@ -240,7 +239,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 	if err != nil {
 		logger.Warnf("err: %+v", err)
 		message := "Invalid parameter"
-		return 0, 0, xerrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, appD.NewPluginError(appD.ErrorType(appD.ErrorTypeClient), message, []string{message, err.Error()}, err))
+		return 0, 0, liberrors.Errorf("failed to toNewEnglishWordProblemParemeter. param: %+v, err: %w", param, appD.NewPluginError(appD.ErrorType(appD.ErrorTypeClient), message, []string{message, err.Error()}, err))
 	}
 
 	audioID := appD.AudioID(0)
@@ -257,7 +256,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 	if extractedParam.SentenceProvider == "tatoeba" {
 		sentenceIDtmp, err := p.findOrAddSentenceFromTatoeba(ctx, rf, operator, extractedParam.TatoebaSentenceNumberFrom, extractedParam.TatoebaSentenceNumberTo, extractedParam.Lang2)
 		if err != nil {
-			return 0, 0, xerrors.Errorf("failed to findOrAddSentenceFromTatoeba. err: %w", err)
+			return 0, 0, liberrors.Errorf("failed to findOrAddSentenceFromTatoeba. err: %w", err)
 		}
 		sentenceID = sentenceIDtmp
 	}
@@ -270,12 +269,12 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 
 	problemRepo, err := rf.NewProblemRepository(ctx, domain.EnglishWordProblemType)
 	if err != nil {
-		return 0, 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return 0, 0, liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	for _, toUpdateParam := range toUpdateParams {
 		if err := problemRepo.UpdateProblem(ctx, operator, id, toUpdateParam); err != nil {
-			return 0, 0, xerrors.Errorf("failed to problemRepo.UpdateProblem. param: %+v, err: %w", param, err)
+			return 0, 0, liberrors.Errorf("failed to problemRepo.UpdateProblem. param: %+v, err: %w", param, err)
 		}
 	}
 
@@ -285,7 +284,7 @@ func (p *englishWordProblemProcessor) UpdateProblem(ctx context.Context, rf appS
 func (p *englishWordProblemProcessor) RemoveProblem(ctx context.Context, rf appS.RepositoryFactory, operator appD.StudentModel, id appS.ProblemSelectParameter2) error {
 	problemRepo, err := rf.NewProblemRepository(ctx, domain.EnglishWordProblemType)
 	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, id); err != nil {
@@ -319,27 +318,27 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 	systemSpaceID := appS.GetSystemSpaceID()
 	workbookRepo, err := rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	tatoebaWorkbook, err := workbookRepo.FindWorkbookByName(ctx, operator, systemSpaceID, appS.TatoebaWorkbookName)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to FindWorkbookByName. name: %s, err: %w", appS.TatoebaWorkbookName, err)
+		return 0, liberrors.Errorf("failed to FindWorkbookByName. name: %s, err: %w", appS.TatoebaWorkbookName, err)
 	}
 
 	tatoebaSentenceFrom, err := p.tatoebaClient.FindSentenceBySentenceNumber(ctx, tatoebaSentenceNumberFrom)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
+		return 0, liberrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
 	}
 
 	tatoebaSentenceTo, err := p.tatoebaClient.FindSentenceBySentenceNumber(ctx, tatoebaSentenceNumberTo)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
+		return 0, liberrors.Errorf("failed to FindTatoebaSentenceBySentenceNumber. err: %w", err)
 	}
 
 	sentenceProblemRepo, err := rf.NewProblemRepository(ctx, domain.EnglishSentenceProblemType)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 	condition := map[string]interface{}{
 		"workbookId": tatoebaWorkbook.GetID(),
@@ -348,7 +347,7 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 	}
 	problems, err := sentenceProblemRepo.FindProblemsByCustomCondition(ctx, operator, condition)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to FindProblemsByCustomCondition. err: %w", err)
+		return 0, liberrors.Errorf("failed to FindProblemsByCustomCondition. err: %w", err)
 	}
 
 	if len(problems) != 0 {
@@ -369,11 +368,11 @@ func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.C
 
 	param, err := appS.NewProblemAddParameter(appD.WorkbookID(tatoebaWorkbook.GetID()), 1, sentenceAddProperties)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 	id, err := sentenceProblemRepo.AddProblem(ctx, operator, param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to AddProblem. err: %w", err)
+		return 0, liberrors.Errorf("failed to AddProblem. err: %w", err)
 	}
 
 	return id, err

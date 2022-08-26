@@ -1,9 +1,8 @@
 package domain
 
 import (
-	"golang.org/x/xerrors"
-
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 const Lang2Len = 2
@@ -23,7 +22,7 @@ type lang2 struct {
 
 func NewLang2(lang string) (Lang2, error) {
 	if len(lang) != Lang2Len {
-		return nil, xerrors.Errorf("invalid parameter. Lang2: %s. err: %w", lang, libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("invalid parameter. Lang2: %s. err: %w", lang, libD.ErrInvalidArgument)
 	}
 
 	return &lang2{
@@ -75,7 +74,7 @@ func (l *lang2) String() string {
 
 // func NewLang3(lang string) (Lang3, error) {
 // 	if len(lang) != Lang3Len {
-// 		return nil, xerrors.Errorf("invalid parameter. Lang3: %s", lang)
+// 		return nil, liberrors.Errorf("invalid parameter. Lang3: %s", lang)
 // 	}
 
 // 	return &lang3{
@@ -98,7 +97,7 @@ func (l *lang2) String() string {
 
 // func NewLang5(lang string) (Lang5, error) {
 // 	if len(lang) != Lang5Len {
-// 		return nil, xerrors.Errorf("invalid parameter. Lang5: %s", lang)
+// 		return nil, liberrors.Errorf("invalid parameter. Lang5: %s", lang)
 // 	}
 
 // 	return &lang5{

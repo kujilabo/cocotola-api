@@ -7,10 +7,10 @@ import (
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
 	"github.com/kujilabo/cocotola-api/src/plugin/english/domain"
-	"golang.org/x/xerrors"
 )
 
 type englishPhraseProblemAddParemeter struct {
@@ -21,15 +21,15 @@ type englishPhraseProblemAddParemeter struct {
 
 func toEnglishPhraseProblemAddParemeter(param appS.ProblemAddParameter) (*englishPhraseProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["lang2"]; !ok {
-		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["translated"]; !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	m := &englishPhraseProblemAddParemeter{
@@ -64,12 +64,12 @@ func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app
 
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishPhraseProblemType)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	extractedParam, err := toEnglishPhraseProblemAddParemeter(param)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
+		return nil, liberrors.Errorf("failed to toNewEnglishPhraseProblemParemeter. err: %w", err)
 	}
 
 	audio, err := p.synthesizerClient.Synthesize(ctx, appD.Lang2EN, extractedParam.Text)
@@ -79,7 +79,7 @@ func (p *englishPhraseProblemProcessor) AddProblem(ctx context.Context, repo app
 
 	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, appD.AudioID(audio.GetAudioModel().GetID()))
 	if err != nil {
-		return nil, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+		return nil, liberrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
 	return []appD.ProblemID{problemID}, err
@@ -99,12 +99,12 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 	}
 	newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewParameter. err: %w", err)
 	}
 
 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+		return 0, liberrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 	}
 
 	return problemID, nil
@@ -114,7 +114,7 @@ func (p *englishPhraseProblemProcessor) addSingleProblem(ctx context.Context, op
 func (p *englishPhraseProblemProcessor) RemoveProblem(ctx context.Context, repo appS.RepositoryFactory, operator appD.StudentModel, id appS.ProblemSelectParameter2) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishPhraseProblemType)
 	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, id); err != nil {

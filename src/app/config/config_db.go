@@ -3,10 +3,10 @@ package config
 import (
 	"database/sql"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	libG "github.com/kujilabo/cocotola-api/src/lib/gateway"
 )
 
@@ -48,7 +48,7 @@ func InitDB(cfg *DBConfig) (*gorm.DB, *sql.DB, error) {
 		}
 
 		if err := libG.MigrateMySQLDB(db); err != nil {
-			return nil, nil, xerrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
+			return nil, nil, liberrors.Errorf("failed to MigrateMySQLDB. err: %w", err)
 		}
 
 		return db, sqlDB, nil

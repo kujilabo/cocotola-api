@@ -4,10 +4,9 @@ package service
 import (
 	"context"
 
-	"golang.org/x/xerrors"
-
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 type Recordbook interface {
@@ -53,17 +52,17 @@ func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domai
 
 	studyResults, err := repo.FindStudyRecords(ctx, m.GetStudent(), m.workbookID, m.studyType)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindStudyResults. err: %w", err)
+		return nil, liberrors.Errorf("failed to FindStudyResults. err: %w", err)
 	}
 
 	workbookService, err := m.GetStudent().FindWorkbookByID(ctx, m.workbookID)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+		return nil, liberrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 	}
 
 	problemIDs, err := workbookService.FindProblemIDs(ctx, m.GetStudent())
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindProblemIDs. err: %w", err)
+		return nil, liberrors.Errorf("failed to FindProblemIDs. err: %w", err)
 	}
 
 	results := make(map[domain.ProblemID]domain.StudyRecord)
@@ -86,7 +85,7 @@ func (m *recordbook) GetResults(ctx context.Context) (map[domain.ProblemID]domai
 func (m *recordbook) GetResultsSortedLevel(ctx context.Context) ([]domain.StudyRecordWithProblemID, error) {
 	problems1, err := m.GetResults(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to GetResults. err: %w", err)
+		return nil, liberrors.Errorf("failed to GetResults. err: %w", err)
 	}
 
 	problems2 := make([]domain.StudyRecordWithProblemID, len(problems1))
@@ -111,7 +110,7 @@ func (m *recordbook) SetResult(ctx context.Context, problemType string, problemI
 	repo := m.rf.NewRecordbookRepository(ctx)
 
 	if err := repo.SetResult(ctx, m.GetStudent(), m.workbookID, m.studyType, problemType, problemID, result, memorized); err != nil {
-		return xerrors.Errorf("failed to SetResult. err: %w", err)
+		return liberrors.Errorf("failed to SetResult. err: %w", err)
 	}
 
 	return nil
@@ -150,17 +149,17 @@ func (m *recordbookSummary) GetCompletionRate(ctx context.Context) (map[string]i
 
 	numberOfMemorizedProblemsMap, err := repo.CountMemorizedProblem(ctx, m.GetStudent(), m.workbookID)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to SetResult. err: %w", err)
+		return nil, liberrors.Errorf("failed to SetResult. err: %w", err)
 	}
 
 	workbookService, err := m.GetStudent().FindWorkbookByID(ctx, m.workbookID)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+		return nil, liberrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 	}
 
 	numberOfProblems, err := workbookService.CountProblems(ctx, m.GetStudent())
 	if err != nil {
-		return nil, xerrors.Errorf("failed to SetResult. err: %w", err)
+		return nil, liberrors.Errorf("failed to SetResult. err: %w", err)
 	}
 
 	completionRateMap := map[string]int{}

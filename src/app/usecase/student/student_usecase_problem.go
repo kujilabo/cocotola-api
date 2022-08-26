@@ -5,12 +5,12 @@ import (
 	"errors"
 	"io"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	"github.com/kujilabo/cocotola-api/src/app/usecase"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
@@ -158,7 +158,7 @@ func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID u
 		}
 		tmpResult, err := s.addProblem(ctx, studentService, workbook, param)
 		if err != nil {
-			return xerrors.Errorf("failed to AddProblem. err: %w", err)
+			return liberrors.Errorf("failed to AddProblem. err: %w", err)
 		}
 		result = tmpResult
 		return nil
@@ -176,7 +176,7 @@ func (s *studentUsecaseProblem) UpdateProblem(ctx context.Context, organizationI
 			return err
 		}
 		if err := s.updateProblem(ctx, student, workbook, id, param); err != nil {
-			return xerrors.Errorf("failed to UpdateProblem. err: %w", err)
+			return liberrors.Errorf("failed to UpdateProblem. err: %w", err)
 		}
 		return nil
 	}); err != nil {
@@ -253,7 +253,7 @@ func (s *studentUsecaseProblem) ImportProblems(ctx context.Context, organization
 			}
 
 			if err != nil {
-				return xerrors.Errorf("failed to addProblem. err: %w", err)
+				return liberrors.Errorf("failed to addProblem. err: %w", err)
 			}
 			logger.Infof("%d", id)
 
@@ -276,7 +276,7 @@ func (s *studentUsecaseProblem) findStudentAndWorkbook(ctx context.Context, tx *
 	}
 	student, err := usecase.FindStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+		return nil, nil, liberrors.Errorf("failed to findStudent. err: %w", err)
 	}
 	workbook, err := student.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
@@ -298,10 +298,10 @@ func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.
 		return nil, err
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", len(addedIDs)); err != nil {
-		return nil, xerrors.Errorf("failed to IncrementQuotaUsage(Size). err: %w", err)
+		return nil, liberrors.Errorf("failed to IncrementQuotaUsage(Size). err: %w", err)
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", len(addedIDs)); err != nil {
-		return nil, xerrors.Errorf("failed to IncrementQuotaUsage(Update). err: %w", err)
+		return nil, liberrors.Errorf("failed to IncrementQuotaUsage(Update). err: %w", err)
 	}
 	return addedIDs, nil
 }
@@ -316,7 +316,7 @@ func (s *studentUsecaseProblem) updateProblem(ctx context.Context, student servi
 	}
 	added, updated, err := workbook.UpdateProblem(ctx, student, id, param)
 	if err != nil {
-		return xerrors.Errorf("failed to UpdateProblem. err: %w", err)
+		return liberrors.Errorf("failed to UpdateProblem. err: %w", err)
 	}
 	if added > 0 {
 		if err := student.IncrementQuotaUsage(ctx, problemType, "Size", int(added)); err != nil {

@@ -5,10 +5,9 @@ import (
 	"context"
 	"errors"
 
-	"golang.org/x/xerrors"
-
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 )
 
@@ -39,12 +38,12 @@ func (s *systemStudent) FindWorkbookFromSystemSpace(ctx context.Context, name st
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	workbook, err := workbookRepo.FindWorkbookByName(ctx, s, systemSpaceID, name)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to FindWorkbookByName. err: %w", err)
+		return nil, liberrors.Errorf("failed to FindWorkbookByName. err: %w", err)
 	}
 
 	return workbook, nil
@@ -58,12 +57,12 @@ func (s *systemStudent) AddWorkbookToSystemSpace(ctx context.Context, parameter 
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	workbookID, err := workbookRepo.AddWorkbook(ctx, s, systemSpaceID, parameter)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to AddWorkbook. err: %w", err)
+		return 0, liberrors.Errorf("failed to AddWorkbook. err: %w", err)
 	}
 
 	return workbookID, nil

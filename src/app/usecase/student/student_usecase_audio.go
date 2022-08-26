@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	"github.com/kujilabo/cocotola-api/src/app/usecase"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
@@ -89,7 +89,7 @@ func (s *studentUsecaseAudio) findStudentAndWorkbook(ctx context.Context, tx *go
 	}
 	studentService, err := usecase.FindStudent(ctx, s.pf, repo, userRepo, organizationID, operatorID)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+		return nil, nil, liberrors.Errorf("failed to findStudent. err: %w", err)
 	}
 	workbookService, err := studentService.FindWorkbookByID(ctx, workbookID)
 	if err != nil {

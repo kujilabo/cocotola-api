@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/auth/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
@@ -57,12 +57,12 @@ func (s *googleUserUsecase) RegisterAppUser(ctx context.Context, googleUserInfo 
 
 		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, organizationName)
 		if err != nil {
-			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
+			return liberrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
 		organization, err := systemOwner.GetOrganization(ctx)
 		if err != nil {
-			return xerrors.Errorf("failed to FindOrganization. err: %w", err)
+			return liberrors.Errorf("failed to FindOrganization. err: %w", err)
 		}
 
 		loginID := googleUserInfo.Email
@@ -99,21 +99,21 @@ func (s *googleUserUsecase) RegisterAppUser(ctx context.Context, googleUserInfo 
 			},
 		)
 		if err != nil {
-			return xerrors.Errorf("invalid AppUserAddParameter. err: %w", err)
+			return liberrors.Errorf("invalid AppUserAddParameter. err: %w", err)
 		}
 
 		studentID, err := systemOwner.AddAppUser(ctx, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to AddStudent. err: %w", err)
+			return liberrors.Errorf("failed to AddStudent. err: %w", err)
 		}
 
 		student2, err := systemOwner.FindAppUserByID(ctx, studentID)
 		if err != nil {
-			return xerrors.Errorf("failed to FindStudentByID. err: %w", err)
+			return liberrors.Errorf("failed to FindStudentByID. err: %w", err)
 		}
 
 		if err := s.registerAppUserCallback(ctx, tx, organizationName, student2); err != nil {
-			return xerrors.Errorf("failed to registerStudentCallback. err: %w", err)
+			return liberrors.Errorf("failed to registerStudentCallback. err: %w", err)
 		}
 
 		tokenSetTmp, err := s.authTokenManager.CreateTokenSet(ctx, student2, organization)

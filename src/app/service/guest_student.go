@@ -44,18 +44,18 @@ func (s *guestStudent) FindWorkbooksFromPublicSpace(ctx context.Context, conditi
 	return nil, errors.New("aaa")
 	// space, err := s.GetPersonalSpace(ctx)
 	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+	// 	return nil, liberrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	// }
 
 	// // specify space
 	// newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []userD.SpaceID{userD.SpaceID(space.GetID())})
 	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
+	// 	return nil, liberrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 	// }
 
 	// workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	// if err != nil {
-	// 	return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+	// 	return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	// }
 
 	// return workbookRepo.FindPersonalWorkbooks(ctx, s, newCondition)

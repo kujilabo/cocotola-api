@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	libG "github.com/kujilabo/cocotola-api/src/lib/gateway"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	"github.com/kujilabo/cocotola-api/src/plugin/english/domain"
@@ -137,21 +137,21 @@ func (r *englishPhraseProblemRepository) FindProblems(ctx context.Context, opera
 
 	if result := where.Order("workbook_id, number, created_at").
 		Limit(limit).Offset(offset).Find(&problemEntities); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
+		return nil, liberrors.Errorf("failed to Find. err: %w", result.Error)
 	}
 
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, liberrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
 
 	var count int64
 	if result := where.Model(&englishPhraseProblemEntity{}).Count(&count); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
+		return nil, liberrors.Errorf("failed to Count. err: %w", result.Error)
 	}
 
 	if count > math.MaxInt32 {
@@ -175,21 +175,21 @@ func (r *englishPhraseProblemRepository) FindAllProblems(ctx context.Context, op
 	}
 	if result := where().Order("workbook_id, number, text, created_at").
 		Limit(limit).Find(&problemEntities); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Find. err: %w", result.Error)
+		return nil, liberrors.Errorf("failed to Find. err: %w", result.Error)
 	}
 
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, liberrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
 
 	var count int64
 	if result := where().Model(&englishPhraseProblemEntity{}).Count(&count); result.Error != nil {
-		return nil, xerrors.Errorf("failed to Count. err: %w", result.Error)
+		return nil, liberrors.Errorf("failed to Count. err: %w", result.Error)
 	}
 
 	if count > math.MaxInt32 {

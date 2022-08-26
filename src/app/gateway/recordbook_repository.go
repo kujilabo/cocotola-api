@@ -5,12 +5,12 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 )
 
@@ -95,7 +95,7 @@ func (r *recordbookRepository) FindStudyRecords(ctx context.Context, operator do
 
 	studyTypeID, err := r.toStudyTypeID(studyType)
 	if err != nil {
-		return nil, xerrors.Errorf("unsupported studyType. studyType: %s", studyType)
+		return nil, liberrors.Errorf("unsupported studyType. studyType: %s", studyType)
 	}
 
 	var entities []recordbookEntity
@@ -125,12 +125,12 @@ func (r *recordbookRepository) SetResult(ctx context.Context, operator domain.St
 
 	studyTypeID, err := r.toStudyTypeID(studyType)
 	if err != nil {
-		return xerrors.Errorf("unsupported studyType. studyType: %s, err: %w", studyType, err)
+		return liberrors.Errorf("unsupported studyType. studyType: %s, err: %w", studyType, err)
 	}
 
 	problemTypeID, err := r.toProblemTypeID(problemType)
 	if err != nil {
-		return xerrors.Errorf("unsupported problemType. problemType: %s, err:%w", problemType, err)
+		return liberrors.Errorf("unsupported problemType. problemType: %s, err:%w", problemType, err)
 	}
 
 	if memorized {

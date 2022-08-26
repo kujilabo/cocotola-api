@@ -7,12 +7,12 @@ import (
 	"math"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	libG "github.com/kujilabo/cocotola-api/src/lib/gateway"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	"github.com/kujilabo/cocotola-api/src/plugin/english/domain"
@@ -94,7 +94,7 @@ func makeTatoebaNote(param appS.ProblemAddParameter) (string, error) {
 			service.EnglishSentenceProblemAddPropertyTatoebaAuthor1,
 			service.EnglishSentenceProblemAddPropertyTatoebaAuthor2} {
 			if _, ok := param.GetProperties()[key]; !ok {
-				return "", xerrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
+				return "", liberrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
 			}
 			noteMap[key] = param.GetProperties()[key]
 		}
@@ -153,7 +153,7 @@ func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*engl
 		service.EnglishSentenceProblemAddPropertyText} {
 
 		if _, ok := param.GetProperties()[key]; !ok {
-			return nil, xerrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
+			return nil, liberrors.Errorf("%s is not defined. err: %w", key, libD.ErrInvalidArgument)
 		}
 	}
 
@@ -163,7 +163,7 @@ func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*engl
 	}
 	// audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
 	// if err != nil {
-	// 	return nil, xerrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
+	// 	return nil, liberrors.Errorf("audioId is not integer. err: %w", lib.ErrInvalidArgument)
 	// }
 
 	m := &englishSentenceProblemAddParameter{
@@ -266,7 +266,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.
 	for i, e := range problemEntities {
 		p, err := e.toProblem(r.synthesizerClient)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, liberrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
@@ -286,17 +286,17 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 
 	conditionWorkbookID, ok := condition1["workbookId"].(uint)
 	if !ok {
-		return nil, xerrors.Errorf("workbookId is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("workbookId is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	conditionText, ok := condition1["text"].(string)
 	if !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	conditionTranslated, ok := condition1["translated"].(string)
 	if !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	var problemEntity englishSentenceProblemEntity
@@ -424,7 +424,7 @@ func (r *englishSentenceProblemRepository) AddProblem(ctx context.Context, opera
 	logger.Infof("englishSentenceProblemRepository.AddProblem. text: %s", problemParam.Text)
 
 	if result := r.db.Create(&englishSentenceProblem); result.Error != nil {
-		return 0, libG.ConvertDuplicatedError(xerrors.Errorf("failed to Create englishSentenceProblem. err: %w", result.Error), appS.ErrProblemAlreadyExists)
+		return 0, libG.ConvertDuplicatedError(liberrors.Errorf("failed to Create englishSentenceProblem. err: %w", result.Error), appS.ErrProblemAlreadyExists)
 	}
 
 	return appD.ProblemID(englishSentenceProblem.ID), nil

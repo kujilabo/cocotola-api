@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	libG "github.com/kujilabo/cocotola-api/src/lib/gateway"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	"github.com/kujilabo/cocotola-api/src/plugin/english/domain"
@@ -78,7 +78,7 @@ func (e *englishWordProblemEntity) toProblem(ctx context.Context, synthesizerCli
 
 	lang2, err := appD.NewLang2(e.Lang2)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewLang2. lang2: %s, err: %w", e.Lang2, err)
+		return nil, liberrors.Errorf("failed to NewLang2. lang2: %s, err: %w", e.Lang2, err)
 	}
 
 	phrases := make([]domain.EnglishPhraseProblemModel, 0)
@@ -126,19 +126,19 @@ type englishWordProblemAddParemeter struct {
 
 func toEnglishWordProblemAddParameter(param appS.ProblemAddParameter) (*englishWordProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["audioId"]; !ok {
-		return nil, xerrors.Errorf("audioId is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("audioId is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["pos"]; !ok {
-		return nil, xerrors.Errorf("pos is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("pos is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["lang2"]; !ok {
-		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	audioID, err := strconv.Atoi(param.GetProperties()["audioId"])
@@ -178,12 +178,12 @@ type englishWordProblemUpdateParemeter struct {
 
 func toEnglishWordProblemUpdateParameter(param appS.ProblemUpdateParameter) (*englishWordProblemUpdateParemeter, error) {
 	if _, ok := param.GetProperties()[service.EnglishWordProblemUpdatePropertyAudioID]; !ok {
-		return nil, xerrors.Errorf("audioId is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("audioId is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	text, err := param.GetStringProperty(service.EnglishWordProblemUpdatePropertyText)
 	if err != nil {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	audioID, err := param.GetIntProperty(service.EnglishWordProblemUpdatePropertyAudioID)
@@ -303,7 +303,7 @@ func (r *englishWordProblemRepository) toProblemSearchResult(ctx context.Context
 	for i, e := range problemEntities {
 		p, err := e.toProblem(ctx, r.synthesizerClient)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toProblem. err: %w", err)
+			return nil, liberrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
@@ -389,7 +389,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 
 	problemParam, err := toEnglishWordProblemAddParameter(param)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to toEnglishWordProblemAddParameter. param: %+v, err: %w", param, err)
+		return 0, liberrors.Errorf("failed to toEnglishWordProblemAddParameter. param: %+v, err: %w", param, err)
 	}
 
 	englishWordProblem := englishWordProblemEntity{
@@ -413,7 +413,7 @@ func (r *englishWordProblemRepository) AddProblem(ctx context.Context, operator 
 
 	logger.Infof("englishWordProblemRepository.AddProblem. text: %s", problemParam.Text)
 	if result := r.db.Create(&englishWordProblem); result.Error != nil {
-		return 0, xerrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, appS.ErrProblemAlreadyExists))
+		return 0, liberrors.Errorf("failed to Create. param: %+v, err: %w", param, libG.ConvertDuplicatedError(result.Error, appS.ErrProblemAlreadyExists))
 	}
 
 	return appD.ProblemID(englishWordProblem.ID), nil
@@ -427,7 +427,7 @@ func (r *englishWordProblemRepository) UpdateProblem(ctx context.Context, operat
 
 	problemParam, err := toEnglishWordProblemUpdateParameter(param)
 	if err != nil {
-		return xerrors.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
+		return liberrors.Errorf("failed to toEnglishWordProblemUdateParameter. param: %+v, err: %w", param, err)
 	}
 
 	englishWordProblem := englishWordProblemEntity{

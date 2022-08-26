@@ -6,10 +6,9 @@ import (
 	"errors"
 	"strconv"
 
-	"golang.org/x/xerrors"
-
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
 )
@@ -59,7 +58,7 @@ func (c *toSingleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]app
 
 	param, err := appS.NewProblemAddParameter(c.workbookID, c.number, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 
 	return []appS.ProblemAddParameter{param}, nil
@@ -99,7 +98,7 @@ func (c *toMultipleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]a
 
 		param, err := appS.NewProblemAddParameter(c.workbookID, c.number, properties)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return nil, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		return []appS.ProblemAddParameter{param}, nil
@@ -117,7 +116,7 @@ func (c *toMultipleEnglishWordProblemAddParameter) Run(ctx context.Context) ([]a
 
 		param, err := appS.NewProblemAddParameter(c.workbookID, c.number, properties)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return nil, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		params[i] = param
@@ -166,7 +165,7 @@ func (c *toSingleEnglishWordProblemUpdateParameter) Run(ctx context.Context) ([]
 
 	param, err := appS.NewProblemUpdateParameter(c.number, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 
 	return []appS.ProblemUpdateParameter{param}, nil
