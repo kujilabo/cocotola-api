@@ -14,12 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	ginlog "github.com/onrik/logrus/gin"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -35,20 +32,16 @@ import (
 
 	"github.com/kujilabo/cocotola-api/docs"
 	"github.com/kujilabo/cocotola-api/src/app/config"
+	"github.com/kujilabo/cocotola-api/src/app/controller"
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appG "github.com/kujilabo/cocotola-api/src/app/gateway"
-	appH "github.com/kujilabo/cocotola-api/src/app/handler"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
 	authG "github.com/kujilabo/cocotola-api/src/auth/gateway"
-	authH "github.com/kujilabo/cocotola-api/src/auth/handler"
-	authM "github.com/kujilabo/cocotola-api/src/auth/handler/middleware"
 	authU "github.com/kujilabo/cocotola-api/src/auth/usecase"
 	english_word "github.com/kujilabo/cocotola-api/src/data/english_word"
-	"github.com/kujilabo/cocotola-api/src/lib/handler/middleware"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/src/plugin/common/gateway"
-	pluginCommonHandler "github.com/kujilabo/cocotola-api/src/plugin/common/handler"
 	pluginCommonS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/src/plugin/english/domain"
 	pluginEnglishGateway "github.com/kujilabo/cocotola-api/src/plugin/english/gateway"
@@ -58,7 +51,7 @@ import (
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
 
-type newIteratorFunc func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error)
+// type newIteratorFunc func(ctx context.Context, workbookID appD.WorkbookID, problemType string, reader io.Reader) (appS.ProblemAddParameterIterator, error)
 
 func main() {
 	sigs := make(chan os.Signal, 1)
@@ -106,7 +99,6 @@ func main() {
 	synthesizer := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
 
 	// translator
-
 	connTranslator, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
@@ -177,7 +169,7 @@ func main() {
 	os.Exit(result)
 }
 
-func run(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc newIteratorFunc) int {
+func run(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc controller.NewIteratorFunc) int {
 	var eg *errgroup.Group
 	eg, ctx = errgroup.WithContext(ctx)
 
@@ -213,7 +205,7 @@ func signalNotify(ctx context.Context) error {
 	}
 }
 
-func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc newIteratorFunc) error {
+func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.ProcessorFactory, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc, synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient, newIteratorFunc controller.NewIteratorFunc) error {
 	// cors
 	corsConfig := config.InitCORS(cfg.CORS)
 	logrus.Infof("cors: %+v", corsConfig)
@@ -226,24 +218,11 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := gin.New()
-	router.Use(cors.New(corsConfig))
-	router.Use(gin.Recovery())
-
-	if cfg.Debug.GinMode {
-		router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	}
-
-	if cfg.Debug.Wait {
-		router.Use(middleware.NewWaitMiddleware())
-	}
-
 	signingKey := []byte(cfg.Auth.SigningKey)
 	signingMethod := jwt.SigningMethodHS256
 	authTokenManager := authG.NewAuthTokenManager(signingKey, signingMethod, time.Duration(cfg.Auth.AccessTokenTTLMin)*time.Minute, time.Duration(cfg.Auth.RefreshTokenTTLHour)*time.Hour)
 
 	googleAuthClient := authG.NewGoogleAuthClient(cfg.Auth.GoogleClientID, cfg.Auth.GoogleClientSecret, cfg.Auth.GoogleCallbackURL, time.Duration(cfg.Auth.APITimeoutSec)*time.Second)
-	authMiddleware := authM.NewAuthMiddleware(signingKey)
 
 	registerAppUserCallback := func(ctx context.Context, db *gorm.DB, organizationName string, appUser userD.AppUserModel) error {
 		rf, err := rfFunc(ctx, db)
@@ -257,87 +236,108 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 		return callback(ctx, cfg.App.TestUserEmail, pf, rf, userRf, organizationName, appUser)
 	}
 
-	router.GET("/healthcheck", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
+	googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
+	guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
+	studentUsecaseWorkbook := studentU.NewStudentUsecaseWorkbook(db, pf, rfFunc, userRfFunc)
+	studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
+	studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
+	studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
 
-	v1 := router.Group("v1")
-	{
-		v1.Use(otelgin.Middleware(cfg.App.Name))
-		v1.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
-		v1auth := v1.Group("auth")
-		googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
-		guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
-		authHandler := authH.NewAuthHandler(authTokenManager)
-		googleAuthHandler := authH.NewGoogleAuthHandler(googleUserUsecase)
-		guestAuthHandler := authH.NewGuestAuthHandler(guestUserUsecase)
-		v1auth.POST("google/authorize", googleAuthHandler.Authorize)
-		v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
-		v1auth.POST("refresh_token", authHandler.RefreshToken)
+	router := controller.NewRouter(googleUserUsecase, guestUserUsecase, studentUsecaseWorkbook, studentUsecaseProblem, studentUsecaseAudio, studentUseCaseStudy, translatorClient, tatoebaClient, newIteratorFunc, corsConfig, cfg.App, cfg.Auth, cfg.Debug)
 
-		v1Workbook := v1.Group("private/workbook")
-		studentUsecaseWorkbook := studentU.NewStudentUsecaseWorkbook(db, pf, rfFunc, userRfFunc)
-		privateWorkbookHandler := appH.NewPrivateWorkbookHandler(studentUsecaseWorkbook)
-		v1Workbook.Use(authMiddleware)
-		v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
-		v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
-		v1Workbook.PUT(":workbookID", privateWorkbookHandler.UpdateWorkbook)
-		v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
-		v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
+	// router := gin.New()
+	// router.Use(cors.New(corsConfig))
+	// router.Use(gin.Recovery())
 
-		v1Problem := v1.Group("workbook/:workbookID/problem")
-		studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
-		problemHandler := appH.NewProblemHandler(studentUsecaseProblem, newIteratorFunc)
-		v1Problem.Use(authMiddleware)
-		v1Problem.POST("", problemHandler.AddProblem)
-		v1Problem.GET(":problemID", problemHandler.FindProblemByID)
-		v1Problem.DELETE(":problemID", problemHandler.RemoveProblem)
-		v1Problem.PUT(":problemID", problemHandler.UpdateProblem)
-		// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
-		v1Problem.POST("find", problemHandler.FindProblems)
-		v1Problem.POST("find_all", problemHandler.FindAllProblems)
-		v1Problem.POST("find_by_ids", problemHandler.FindProblemsByProblemIDs)
-		v1Problem.POST("import", problemHandler.ImportProblems)
+	// if cfg.Debug.GinMode {
+	// 	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
+	// }
 
-		v1Study := v1.Group("study/workbook/:workbookID")
-		studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
-		recordbookHandler := appH.NewRecordbookHandler(studentUseCaseStudy)
-		v1Study.Use(authMiddleware)
-		v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
-		v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
-		v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
+	// if cfg.Debug.Wait {
+	// 	router.Use(middleware.NewWaitMiddleware())
+	// }
 
-		v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
-		studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
-		audioHandler := appH.NewAudioHandler(studentUsecaseAudio)
-		v1Audio.Use(authMiddleware)
-		v1Audio.GET(":audioID", audioHandler.FindAudioByID)
-	}
+	// router.GET("/healthcheck", func(c *gin.Context) {
+	// 	c.Status(http.StatusOK)
+	// })
 
-	plugin := router.Group("plugin")
-	{
-		plugin.Use(otelgin.Middleware(cfg.App.Name))
-		plugin.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
-		plugin.Use(authMiddleware)
-		{
-			pluginTranslation := plugin.Group("translation")
-			translationHandler := pluginCommonHandler.NewTranslationHandler(translatorClient)
-			pluginTranslation.POST("find", translationHandler.FindTranslations)
-			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
-			pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
-			pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
-			pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
-			pluginTranslation.POST("", translationHandler.AddTranslation)
-			pluginTranslation.POST("export", translationHandler.ExportTranslations)
-		}
-		{
-			pluginTatoeba := plugin.Group("tatoeba")
-			tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaClient)
-			pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
-			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
-			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
-		}
-	}
+	// v1 := router.Group("v1")
+	// {
+	// 	v1.Use(otelgin.Middleware(cfg.App.Name))
+	// 	v1.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
+	// 	v1auth := v1.Group("auth")
+	// 	googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
+	// 	guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
+	// 	authHandler := authH.NewAuthHandler(authTokenManager)
+	// 	googleAuthHandler := authH.NewGoogleAuthHandler(googleUserUsecase)
+	// 	guestAuthHandler := authH.NewGuestAuthHandler(guestUserUsecase)
+	// 	v1auth.POST("google/authorize", googleAuthHandler.Authorize)
+	// 	v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
+	// 	v1auth.POST("refresh_token", authHandler.RefreshToken)
+
+	// 	v1Workbook := v1.Group("private/workbook")
+	// 	studentUsecaseWorkbook := studentU.NewStudentUsecaseWorkbook(db, pf, rfFunc, userRfFunc)
+	// 	privateWorkbookHandler := appC.NewPrivateWorkbookHandler(studentUsecaseWorkbook)
+	// 	v1Workbook.Use(authMiddleware)
+	// 	v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
+	// 	v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
+	// 	v1Workbook.PUT(":workbookID", privateWorkbookHandler.UpdateWorkbook)
+	// 	v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
+	// 	v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
+
+	// 	v1Problem := v1.Group("workbook/:workbookID/problem")
+	// 	studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
+	// 	problemHandler := appC.NewProblemHandler(studentUsecaseProblem, newIteratorFunc)
+	// 	v1Problem.Use(authMiddleware)
+	// 	v1Problem.POST("", problemHandler.AddProblem)
+	// 	v1Problem.GET(":problemID", problemHandler.FindProblemByID)
+	// 	v1Problem.DELETE(":problemID", problemHandler.RemoveProblem)
+	// 	v1Problem.PUT(":problemID", problemHandler.UpdateProblem)
+	// 	// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
+	// 	v1Problem.POST("find", problemHandler.FindProblems)
+	// 	v1Problem.POST("find_all", problemHandler.FindAllProblems)
+	// 	v1Problem.POST("find_by_ids", problemHandler.FindProblemsByProblemIDs)
+	// 	v1Problem.POST("import", problemHandler.ImportProblems)
+
+	// 	v1Study := v1.Group("study/workbook/:workbookID")
+	// 	studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
+	// 	recordbookHandler := appC.NewRecordbookHandler(studentUseCaseStudy)
+	// 	v1Study.Use(authMiddleware)
+	// 	v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
+	// 	v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
+	// 	v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
+
+	// 	v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
+	// 	studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
+	// 	audioHandler := appC.NewAudioHandler(studentUsecaseAudio)
+	// 	v1Audio.Use(authMiddleware)
+	// 	v1Audio.GET(":audioID", audioHandler.FindAudioByID)
+	// }
+
+	// plugin := router.Group("plugin")
+	// {
+	// 	plugin.Use(otelgin.Middleware(cfg.App.Name))
+	// 	plugin.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
+	// 	plugin.Use(authMiddleware)
+	// 	{
+	// 		pluginTranslation := plugin.Group("translation")
+	// 		translationHandler := pluginCommonHandler.NewTranslationHandler(translatorClient)
+	// 		pluginTranslation.POST("find", translationHandler.FindTranslations)
+	// 		pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
+	// 		pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
+	// 		pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
+	// 		pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
+	// 		pluginTranslation.POST("", translationHandler.AddTranslation)
+	// 		pluginTranslation.POST("export", translationHandler.ExportTranslations)
+	// 	}
+	// 	{
+	// 		pluginTatoeba := plugin.Group("tatoeba")
+	// 		tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaClient)
+	// 		pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
+	// 		pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
+	// 		pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
+	// 	}
+	// }
 
 	if cfg.Swagger.Enabled {
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

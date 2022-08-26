@@ -1,11 +1,11 @@
-package handler
+package controller
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/kujilabo/cocotola-api/src/auth/handler/entity"
+	"github.com/kujilabo/cocotola-api/src/auth/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/auth/service"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 )

@@ -1,0 +1,12 @@
+@startuml
+
+actor Student
+usecase "Register a new workbook" as RegisterNewWorkbook
+
+Student --> RegisterNewWorkbook
+
+note right of RegisterNewWorkbook
+aaa bbb
+end note
+
+@enduml

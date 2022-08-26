@@ -3,7 +3,7 @@ package converter
 import (
 	"context"
 
-	"github.com/kujilabo/cocotola-api/src/plugin/common/handler/entity"
+	"github.com/kujilabo/cocotola-api/src/plugin/common/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/plugin/common/service"
 )
 
