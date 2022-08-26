@@ -108,25 +108,31 @@ func NewRouter(googleUserUsecase authU.GoogleUserUsecase, guestUserUsecase authU
 		plugin.Use(otelgin.Middleware(appConfig.Name))
 		plugin.Use(ginmiddleware.NewTraceLogMiddleware(appConfig.Name))
 		plugin.Use(authMiddleware)
-		{
-			pluginTranslation := plugin.Group("translation")
-			translationHandler := pluginCommonController.NewTranslationHandler(translatorClient)
-			pluginTranslation.POST("find", translationHandler.FindTranslations)
-			pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
-			pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
-			pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
-			pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
-			pluginTranslation.POST("", translationHandler.AddTranslation)
-			pluginTranslation.POST("export", translationHandler.ExportTranslations)
-		}
-		{
-			pluginTatoeba := plugin.Group("tatoeba")
-			tatoebaHandler := pluginCommonController.NewTatoebaHandler(tatoebaClient)
-			pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
-			pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
-			pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
-		}
+
+		InitTranslatorPluginRouter(plugin, translatorClient)
+		InitTatoebaPluginRouter(plugin, tatoebaClient)
 	}
 
 	return router
+}
+
+func InitTranslatorPluginRouter(plugin *gin.RouterGroup, translatorClient pluginCommonService.TranslatorClient) {
+
+	pluginTranslation := plugin.Group("translation")
+	translationHandler := pluginCommonController.NewTranslationHandler(translatorClient)
+	pluginTranslation.POST("find", translationHandler.FindTranslations)
+	pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
+	pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
+	pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
+	pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
+	pluginTranslation.POST("", translationHandler.AddTranslation)
+	pluginTranslation.POST("export", translationHandler.ExportTranslations)
+}
+
+func InitTatoebaPluginRouter(plugin *gin.RouterGroup, tatoebaClient pluginCommonService.TatoebaClient) {
+	pluginTatoeba := plugin.Group("tatoeba")
+	tatoebaHandler := pluginCommonController.NewTatoebaHandler(tatoebaClient)
+	pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
+	pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
+	pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
 }

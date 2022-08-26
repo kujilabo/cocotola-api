@@ -1,3 +1,5 @@
+//go:generate mockery --output mock --name TatoebaSentence
+//go:generate mockery --output mock --name TatoebaSentencePair
 package service
 
 import (
