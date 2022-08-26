@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/src/auth/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 )
 
@@ -66,7 +66,7 @@ func (c *googleAuthClient) RetrieveAccessToken(ctx context.Context, code string)
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to retrieve access token.err: %w", err)
+		return nil, liberrors.Errorf("failed to retrieve access token.err: %w", err)
 	}
 	defer resp.Body.Close()
 

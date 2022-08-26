@@ -9,8 +9,9 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
+
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 func dbList() map[string]*gorm.DB {
@@ -47,16 +48,16 @@ func setupDB(db *gorm.DB, driverName string, withInstance func(sqlDB *sql.DB) (d
 
 	driver, err := withInstance(sqlDB)
 	if err != nil {
-		log.Fatal(xerrors.Errorf("failed to WithInstance. err: %w", err))
+		log.Fatal(liberrors.Errorf("failed to WithInstance. err: %w", err))
 	}
 	m, err := migrate.NewWithDatabaseInstance("file://"+dir, driverName, driver)
 	if err != nil {
-		log.Fatal(xerrors.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
+		log.Fatal(liberrors.Errorf("failed to NewWithDatabaseInstance. err: %w", err))
 	}
 
 	if err := m.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal(xerrors.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
+			log.Fatal(liberrors.Errorf("failed to Up. driver:%s, err: %w", driverName, err))
 		}
 	}
 }

@@ -4,10 +4,9 @@ package service
 import (
 	"context"
 
-	"golang.org/x/xerrors"
-
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
@@ -70,18 +69,18 @@ func (s *student) GetPersonalSpace(ctx context.Context) (userS.Space, error) {
 func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition WorkbookSearchCondition) (WorkbookSearchResult, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return nil, liberrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	// specify space
 	newCondition, err := NewWorkbookSearchCondition(condition.GetPageNo(), condition.GetPageSize(), []userD.SpaceID{userD.SpaceID(space.GetID())})
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewWorkbookSearchCondition. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindPersonalWorkbooks(ctx, s, newCondition)
@@ -90,7 +89,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 func (s *student) FindWorkbookByID(ctx context.Context, id domain.WorkbookID) (Workbook, error) {
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByID(ctx, s, id)
@@ -99,12 +98,12 @@ func (s *student) FindWorkbookByID(ctx context.Context, id domain.WorkbookID) (W
 func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return nil, liberrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByName(ctx, s, userD.SpaceID(space.GetID()), name)
@@ -113,17 +112,17 @@ func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook
 func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter WorkbookAddParameter) (domain.WorkbookID, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return 0, liberrors.Errorf("failed to GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
 	}
 
 	workbookID, err := workbookRepo.AddWorkbook(ctx, s, userD.SpaceID(space.GetID()), parameter)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to AddWorkbook. err: %w", err)
+		return 0, liberrors.Errorf("failed to AddWorkbook. err: %w", err)
 	}
 
 	return workbookID, nil
@@ -183,7 +182,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 
 		return nil
 	default:
-		return xerrors.Errorf("invalid name. name: %s", name)
+		return liberrors.Errorf("invalid name. name: %s", name)
 	}
 }
 
@@ -223,7 +222,7 @@ func (s *student) IncrementQuotaUsage(ctx context.Context, problemType string, n
 
 		return nil
 	default:
-		return xerrors.Errorf("invalid name. name: %s", name)
+		return liberrors.Errorf("invalid name. name: %s", name)
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/src/app/controller/converter"
 	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
@@ -16,6 +15,7 @@ import (
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
@@ -237,7 +237,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 
 		problemID, err := h.studentUsecaseProblem.AddProblem(ctx, organizationID, operatorID, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
+			return liberrors.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"id": problemID})
@@ -265,11 +265,11 @@ func (h *problemHandler) UpdateProblem(c *gin.Context) {
 
 		parameter, err := converter.ToProblemUpdateParameter(&param)
 		if err != nil {
-			return xerrors.Errorf("failed to ToProblemUpdateParameter. param: %+v, err: %w", parameter, err)
+			return liberrors.Errorf("failed to ToProblemUpdateParameter. param: %+v, err: %w", parameter, err)
 		}
 
 		if err := h.studentUsecaseProblem.UpdateProblem(ctx, organizationID, operatorID, id, parameter); err != nil {
-			return xerrors.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
+			return liberrors.Errorf("failed to UpdateProblem. param: %+v, err: %w", parameter, err)
 		}
 
 		c.Status(http.StatusOK)
@@ -291,7 +291,7 @@ func (h *problemHandler) RemoveProblem(c *gin.Context) {
 		}
 
 		if err := h.studentUsecaseProblem.RemoveProblem(ctx, organizationID, operatorID, id); err != nil {
-			return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
+			return liberrors.Errorf("failed to RemoveProblem. err: %w", err)
 		}
 
 		c.Status(http.StatusNoContent)
@@ -331,7 +331,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		logger.Infof("fileName: %s", file.Filename)
 		multipartFile, err := file.Open()
 		if err != nil {
-			return xerrors.Errorf("failed to file.Open. err: %w", err)
+			return liberrors.Errorf("failed to file.Open. err: %w", err)
 		}
 		defer multipartFile.Close()
 
@@ -340,7 +340,7 @@ func (h *problemHandler) ImportProblems(c *gin.Context) {
 		}
 
 		if err := h.studentUsecaseProblem.ImportProblems(ctx, organizationID, operatorID, domain.WorkbookID(workbookID), newIterator); err != nil {
-			return xerrors.Errorf("failed to ImportProblems. err: %w", err)
+			return liberrors.Errorf("failed to ImportProblems. err: %w", err)
 		}
 
 		c.Status(http.StatusOK)

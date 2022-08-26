@@ -5,11 +5,10 @@ import (
 	"io"
 	"strconv"
 
-	"golang.org/x/xerrors"
-
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
 	"github.com/kujilabo/cocotola-api/src/plugin/english/domain"
@@ -54,14 +53,14 @@ func (p *englishSentenceProblemAddParemeter) toProperties(audioID appD.AudioID) 
 
 func toEnglishSentenceProblemAddParemeter(param appS.ProblemAddParameter) (*englishSentenceProblemAddParemeter, error) {
 	if _, ok := param.GetProperties()["text"]; !ok {
-		return nil, xerrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("text is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	if _, ok := param.GetProperties()["translated"]; !ok {
-		return nil, xerrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("translated is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 	if _, ok := param.GetProperties()["lang2"]; !ok {
-		return nil, xerrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
+		return nil, liberrors.Errorf("lang2 is not defined. err: %w", libD.ErrInvalidArgument)
 	}
 
 	lang2, err := appD.NewLang2(param.GetProperties()["lang2"])
@@ -104,12 +103,12 @@ func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo a
 
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishSentenceProblemType)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	extractedParam, err := toEnglishSentenceProblemAddParemeter(param)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to toNewEnglishSentenceProblemParemeter. err: %w", err)
+		return nil, liberrors.Errorf("failed to toNewEnglishSentenceProblemParemeter. err: %w", err)
 	}
 
 	audio, err := p.synthesizerClient.Synthesize(ctx, appD.Lang2EN, extractedParam.Text)
@@ -119,7 +118,7 @@ func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo a
 
 	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, appD.AudioID(audio.GetAudioModel().GetID()))
 	if err != nil {
-		return nil, xerrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
+		return nil, liberrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
 
 	return []appD.ProblemID{problemID}, nil
@@ -133,12 +132,12 @@ func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, 
 	properties := extractedParam.toProperties(audioID)
 	newParam, err := appS.NewProblemAddParameter(param.GetWorkbookID(), param.GetNumber(), properties)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to NewParameter. err: %w", err)
+		return 0, liberrors.Errorf("failed to NewParameter. err: %w", err)
 	}
 
 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+		return 0, liberrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
 	}
 
 	return problemID, nil
@@ -147,11 +146,11 @@ func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, 
 func (p *englishSentenceProblemProcessor) RemoveProblem(ctx context.Context, repo appS.RepositoryFactory, operator appD.StudentModel, id appS.ProblemSelectParameter2) error {
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishSentenceProblemType)
 	if err != nil {
-		return xerrors.Errorf("failed to NewProblemRepository. err: %w", err)
+		return liberrors.Errorf("failed to NewProblemRepository. err: %w", err)
 	}
 
 	if err := problemRepo.RemoveProblem(ctx, operator, id); err != nil {
-		return xerrors.Errorf("failed to RemoveProblem. err: %w", err)
+		return liberrors.Errorf("failed to RemoveProblem. err: %w", err)
 	}
 
 	return nil

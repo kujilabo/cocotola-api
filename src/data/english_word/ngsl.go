@@ -4,10 +4,9 @@ import (
 	"context"
 	"strconv"
 
-	"golang.org/x/xerrors"
-
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginCommonDomain "github.com/kujilabo/cocotola-api/src/plugin/common/domain"
 	pluginEnglishDomain "github.com/kujilabo/cocotola-api/src/plugin/english/domain"
@@ -373,17 +372,17 @@ func CreateWorkbook(ctx context.Context, student appS.Student, workbookName stri
 	}
 	param, err := appS.NewWorkbookAddParameter(pluginEnglishDomain.EnglishWordProblemType, workbookName, appD.Lang2JA, "", workbookProperties)
 	if err != nil {
-		return xerrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
+		return liberrors.Errorf("failed to NewWorkbookAddParameter. err: %w", err)
 	}
 
 	workbookID, err := student.AddWorkbookToPersonalSpace(ctx, param)
 	if err != nil {
-		return xerrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
+		return liberrors.Errorf("failed to AddWorkbookToPersonalSpace. err: %w", err)
 	}
 
 	workbook, err := student.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
-		return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+		return liberrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 	}
 
 	for i, word := range words {
@@ -394,12 +393,12 @@ func CreateWorkbook(ctx context.Context, student appS.Student, workbookName stri
 		}
 		param, err := appS.NewProblemAddParameter(workbookID, i+1, properties)
 		if err != nil {
-			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 
 		problemIDs, err := workbook.AddProblem(ctx, student, param)
 		if err != nil {
-			return xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+			return liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 		}
 		logger.Infof("problemIDs: %v", problemIDs)
 	}

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	libG "github.com/kujilabo/cocotola-api/src/lib/gateway"
 	"github.com/kujilabo/cocotola-api/src/lib/passwordhelper"
 	"github.com/kujilabo/cocotola-api/src/user/domain"
@@ -91,7 +91,7 @@ func (e *appUserEntity) TableName() string {
 
 func (e *appUserEntity) toSystemOwner(rf service.RepositoryFactory) (service.SystemOwner, error) {
 	if e.LoginID != SystemOwnerLoginID {
-		return nil, xerrors.Errorf("invalid system owner. loginID: %s", e.LoginID)
+		return nil, liberrors.Errorf("invalid system owner. loginID: %s", e.LoginID)
 	}
 
 	model, err := domain.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
@@ -166,7 +166,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationID(ctx context.Context,
 		Where("login_id = ?", SystemOwnerLoginID).
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, xerrors.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, service.ErrSystemOwnerNotFound)
+			return nil, liberrors.Errorf("system owner not found. organization ID: %d, err: %w", organizationID, service.ErrSystemOwnerNotFound)
 		}
 		return nil, result.Error
 	}
@@ -184,7 +184,7 @@ func (r *appUserRepository) FindSystemOwnerByOrganizationName(ctx context.Contex
 		Joins("inner join app_user on organization.id = app_user.organization_id").
 		First(&appUser); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, xerrors.Errorf("system owner not found. organization name: %s, err: %w", organizationName, service.ErrSystemOwnerNotFound)
+			return nil, liberrors.Errorf("system owner not found. organization name: %s, err: %w", organizationName, service.ErrSystemOwnerNotFound)
 		}
 
 		return nil, result.Error

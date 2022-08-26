@@ -1,7 +1,7 @@
 //go:generate mockery --output mock --name ProcessorFactory
 package service
 
-import "golang.org/x/xerrors"
+import liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 
 type ProcessorFactory interface {
 	NewProblemAddProcessor(processorType string) (ProblemAddProcessor, error)
@@ -36,7 +36,7 @@ func NewProcessorFactory(addProcessors map[string]ProblemAddProcessor, updatePro
 func (f *processorFactrory) NewProblemAddProcessor(processorType string) (ProblemAddProcessor, error) {
 	processor, ok := f.addProcessors[processorType]
 	if !ok {
-		return nil, xerrors.Errorf("newProblemProcessor not found. processorType: %s", processorType)
+		return nil, liberrors.Errorf("newProblemProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }
@@ -44,7 +44,7 @@ func (f *processorFactrory) NewProblemAddProcessor(processorType string) (Proble
 func (f *processorFactrory) NewProblemUpdateProcessor(processorType string) (ProblemUpdateProcessor, error) {
 	processor, ok := f.updateProcessors[processorType]
 	if !ok {
-		return nil, xerrors.Errorf("newProblemProcessor not found. processorType: %s", processorType)
+		return nil, liberrors.Errorf("newProblemProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }
@@ -52,7 +52,7 @@ func (f *processorFactrory) NewProblemUpdateProcessor(processorType string) (Pro
 func (f *processorFactrory) NewProblemRemoveProcessor(processorType string) (ProblemRemoveProcessor, error) {
 	processor, ok := f.removeProcessors[processorType]
 	if !ok {
-		return nil, xerrors.Errorf("newProblemRemoveProcessor not found. processorType: %s", processorType)
+		return nil, liberrors.Errorf("newProblemRemoveProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }
@@ -60,7 +60,7 @@ func (f *processorFactrory) NewProblemRemoveProcessor(processorType string) (Pro
 func (f *processorFactrory) NewProblemImportProcessor(processorType string) (ProblemImportProcessor, error) {
 	processor, ok := f.importProcessors[processorType]
 	if !ok {
-		return nil, xerrors.Errorf("NewProblemImportProcessor not found. processorType: %s", processorType)
+		return nil, liberrors.Errorf("NewProblemImportProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }
@@ -68,7 +68,7 @@ func (f *processorFactrory) NewProblemImportProcessor(processorType string) (Pro
 func (f *processorFactrory) NewProblemQuotaProcessor(processorType string) (ProblemQuotaProcessor, error) {
 	processor, ok := f.quotaProcessors[processorType]
 	if !ok {
-		return nil, xerrors.Errorf("NewProblemQuotaProcessor not found. processorType: %s", processorType)
+		return nil, liberrors.Errorf("NewProblemQuotaProcessor not found. processorType: %s", processorType)
 	}
 	return processor, nil
 }

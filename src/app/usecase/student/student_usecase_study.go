@@ -3,12 +3,12 @@ package student
 import (
 	"context"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	"github.com/kujilabo/cocotola-api/src/app/usecase"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
@@ -45,15 +45,15 @@ func (s *studentUsecaseStudy) FindResults(ctx context.Context, organizationID us
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return liberrors.Errorf("failed to findStudent. err: %w", err)
 		}
 		recordbook, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
-			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+			return liberrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
 		tmpResults, err := recordbook.GetResultsSortedLevel(ctx)
 		if err != nil {
-			return xerrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
+			return liberrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
 		}
 		results = tmpResults
 		return nil
@@ -69,15 +69,15 @@ func (s *studentUsecaseStudy) GetCompletionRate(ctx context.Context, organizatio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return liberrors.Errorf("failed to findStudent. err: %w", err)
 		}
 		recordbookSummary, err := student.FindRecordbookSummary(ctx, workbookID)
 		if err != nil {
-			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+			return liberrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
 		tmpResults, err := recordbookSummary.GetCompletionRate(ctx)
 		if err != nil {
-			return xerrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
+			return liberrors.Errorf("failed to GetResultsSortedLevel. err: %w", err)
 		}
 		results = tmpResults
 		return nil
@@ -92,7 +92,7 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, err := s.findStudent(ctx, tx, organizationID, operatorID)
 		if err != nil {
-			return xerrors.Errorf("failed to findStudent. err: %w", err)
+			return liberrors.Errorf("failed to findStudent. err: %w", err)
 		}
 		workbook, err := student.FindWorkbookByID(ctx, workbookID)
 		if err != nil {
@@ -100,10 +100,10 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 		}
 		recordbook, err := student.FindRecordbook(ctx, workbookID, studyType)
 		if err != nil {
-			return xerrors.Errorf("failed to FindRecordbook. err: %w", err)
+			return liberrors.Errorf("failed to FindRecordbook. err: %w", err)
 		}
 		if err := recordbook.SetResult(ctx, workbook.GetProblemType(), problemID, result, memorized); err != nil {
-			return xerrors.Errorf("failed to SetResult. err: %w", err)
+			return liberrors.Errorf("failed to SetResult. err: %w", err)
 		}
 		return nil
 	}); err != nil {
@@ -114,15 +114,15 @@ func (s *studentUsecaseStudy) SetResult(ctx context.Context, organizationID user
 func (s *studentUsecaseStudy) findStudent(ctx context.Context, db *gorm.DB, organizationID userD.OrganizationID, operatorID userD.AppUserID) (service.Student, error) {
 	rf, err := s.rfFunc(ctx, db)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to rfFunc. err: %w", err)
+		return nil, liberrors.Errorf("failed to rfFunc. err: %w", err)
 	}
 	userRepo, err := s.userRfFunc(ctx, db)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to userRepo. err: %w", err)
+		return nil, liberrors.Errorf("failed to userRepo. err: %w", err)
 	}
 	student, err := usecase.FindStudent(ctx, s.pf, rf, userRepo, organizationID, operatorID)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to findStudent. err: %w", err)
+		return nil, liberrors.Errorf("failed to findStudent. err: %w", err)
 	}
 
 	return student, nil

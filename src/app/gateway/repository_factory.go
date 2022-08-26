@@ -3,12 +3,12 @@ package gateway
 import (
 	"context"
 
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	libD "github.com/kujilabo/cocotola-api/src/lib/domain"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
 )
@@ -53,7 +53,7 @@ func (f *repositoryFactory) NewProblemRepository(ctx context.Context, problemTyp
 	logger.Infof("problemType: %s", problemType)
 	problemRepository, ok := f.problemRepositories[problemType]
 	if !ok {
-		return nil, xerrors.Errorf("problem repository not found. problemType: %s", problemType)
+		return nil, liberrors.Errorf("problem repository not found. problemType: %s", problemType)
 	}
 	return problemRepository(ctx, f.db)
 }

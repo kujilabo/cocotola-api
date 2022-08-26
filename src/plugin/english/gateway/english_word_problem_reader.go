@@ -8,8 +8,8 @@ import (
 
 	appD "github.com/kujilabo/cocotola-api/src/app/domain"
 	appS "github.com/kujilabo/cocotola-api/src/app/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	common "github.com/kujilabo/cocotola-api/src/plugin/common/domain"
-	"golang.org/x/xerrors"
 )
 
 var (
@@ -42,7 +42,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (appS.ProblemAddParame
 		return nil, err
 	}
 	if err != nil {
-		return nil, xerrors.Errorf("failed to reader.Read. err: %w", err)
+		return nil, liberrors.Errorf("failed to reader.Read. err: %w", err)
 	}
 	if len(line) == 0 {
 		return nil, nil
@@ -55,7 +55,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (appS.ProblemAddParame
 	if len(line) >= lenPos {
 		posTmp, err := common.ParsePos(line[posPos])
 		if err != nil {
-			return nil, xerrors.Errorf("failed to ParsePos. err: %w", err)
+			return nil, liberrors.Errorf("failed to ParsePos. err: %w", err)
 		}
 		pos = posTmp
 	}
@@ -73,7 +73,7 @@ func (r *engliushWordProblemAddParameterCSVReader) Next() (appS.ProblemAddParame
 	}
 	param, err := appS.NewProblemAddParameter(r.workbookID, r.num, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewProblemAddParameter. err: %w", err)
 	}
 
 	r.num++

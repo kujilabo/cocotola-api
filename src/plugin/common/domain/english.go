@@ -3,7 +3,7 @@ package domain
 import (
 	"strings"
 
-	"golang.org/x/xerrors"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 type WordPos int
@@ -55,5 +55,5 @@ func NewWordPos(i int) (WordPos, error) {
 	if i == int(PosOther) {
 		return WordPos(i), nil
 	}
-	return WordPos(0), xerrors.Errorf("invalid word pos. %d", i)
+	return WordPos(0), liberrors.Errorf("invalid word pos. %d", i)
 }

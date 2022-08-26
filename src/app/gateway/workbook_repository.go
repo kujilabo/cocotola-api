@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"golang.org/x/xerrors"
 	"gorm.io/gorm"
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
@@ -20,7 +19,9 @@ import (
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	userD "github.com/kujilabo/cocotola-api/src/user/domain"
 	userS "github.com/kujilabo/cocotola-api/src/user/service"
+
 	// casbinquery "github.com/pecolynx/casbin-query"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 type workbookEntity struct {
@@ -69,17 +70,17 @@ func (e *workbookEntity) toWorkbookModel(rf service.RepositoryFactory, pf servic
 
 	properties, err := jsonToStringMap(e.Properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to jsonToStringMap. err: %w ", err)
+		return nil, liberrors.Errorf("failed to jsonToStringMap. err: %w ", err)
 	}
 
 	lang2, err := domain.NewLang2(e.Lang2)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid lang2. lang2: %s, err: %w", e.Lang2, err)
+		return nil, liberrors.Errorf("invalid lang2. lang2: %s, err: %w", e.Lang2, err)
 	}
 
 	workbook, err := domain.NewWorkbookModel(model, userD.SpaceID(e.SpaceID), userD.AppUserID(e.OwnerID), privs, e.Name, lang2, problemType, e.QuestionText, properties)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
+		return nil, liberrors.Errorf("failed to NewWorkbook. entity: %+v, err: %w", e, err)
 	}
 	return workbook, nil
 }
@@ -155,7 +156,7 @@ func (r *workbookRepository) FindPersonalWorkbooks(ctx context.Context, operator
 	for i, e := range workbooks {
 		w, err := e.toWorkbookModel(r.rf, r.pf, operator, r.toProblemType(e.ProblemTypeID), priv)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to toWorkbook. err: %w", err)
+			return nil, liberrors.Errorf("failed to toWorkbook. err: %w", err)
 		}
 		results[i] = w
 	}
@@ -239,7 +240,7 @@ func (r *workbookRepository) FindWorkbookByID(ctx context.Context, operator doma
 
 	priv, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbookEntity.ID))
 	if err != nil {
-		return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+		return nil, liberrors.Errorf("failed to checkPrivileges. err: %w", err)
 	}
 	if !priv.HasPrivilege(domain.PrivilegeRead) {
 		return nil, service.ErrWorkbookPermissionDenied
@@ -277,7 +278,7 @@ func (r *workbookRepository) FindWorkbookByName(ctx context.Context, operator us
 	} else {
 		privTmp, err := r.getPrivileges(ctx, operator, domain.WorkbookID(workbookEntity.ID))
 		if err != nil {
-			return nil, xerrors.Errorf("failed to checkPrivileges. err: %w", err)
+			return nil, liberrors.Errorf("failed to checkPrivileges. err: %w", err)
 		}
 		if !privTmp.HasPrivilege(domain.PrivilegeRead) {
 			return nil, service.ErrWorkbookPermissionDenied
@@ -301,7 +302,7 @@ func (r *workbookRepository) getPrivileges(ctx context.Context, operator userD.A
 	userObject := userD.NewUserObject(userD.AppUserID(operator.GetID()))
 	e, err := rbacRepo.NewEnforcerWithRolesAndUsers(workbookRoles, []userD.RBACUser{userObject})
 	if err != nil {
-		return nil, xerrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
+		return nil, liberrors.Errorf("failed to NewEnforcerWithRolesAndUsers. err: %w", err)
 	}
 	workbookObject := domain.NewWorkbookObject(workbookID)
 	privs := r.getAllWorkbookPrivileges()
@@ -314,7 +315,7 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator userD.App
 
 	problemTypeID := r.toProblemTypeID(param.GetProblemType())
 	if problemTypeID == 0 {
-		return 0, xerrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
+		return 0, liberrors.Errorf("unsupported problemType. problemType: %s", param.GetProblemType())
 	}
 	propertiesJSON, err := stringMapToJSON(param.GetProperties())
 	if err != nil {
@@ -346,18 +347,18 @@ func (r *workbookRepository) AddWorkbook(ctx context.Context, operator userD.App
 
 	// the workbookWriter role can read, update, remove
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeRead); err != nil {
-		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: read, err: %w", err)
+		return 0, liberrors.Errorf("Failed to AddNamedPolicy. priv: read, err: %w", err)
 	}
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeUpdate); err != nil {
-		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: update, err: %w", err)
+		return 0, liberrors.Errorf("Failed to AddNamedPolicy. priv: update, err: %w", err)
 	}
 	if err := rbacRepo.AddNamedPolicy(workbookWriter, workbookObject, domain.PrivilegeRemove); err != nil {
-		return 0, xerrors.Errorf("Failed to AddNamedPolicy. priv: remove, err: %w", err)
+		return 0, liberrors.Errorf("Failed to AddNamedPolicy. priv: remove, err: %w", err)
 	}
 
 	// user is assigned the workbookWriter role
 	if err := rbacRepo.AddNamedGroupingPolicy(userObject, workbookWriter); err != nil {
-		return 0, xerrors.Errorf("Failed to AddNamedGroupingPolicy. err: %w", err)
+		return 0, liberrors.Errorf("Failed to AddNamedGroupingPolicy. err: %w", err)
 	}
 
 	// rbacRepo.NewEnforcerWithRolesAndUsers([]userD.RBACRole{workbookWriter}, []userD.RBACUser{userObject})

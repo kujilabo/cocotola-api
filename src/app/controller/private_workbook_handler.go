@@ -7,13 +7,13 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/xerrors"
 
 	"github.com/kujilabo/cocotola-api/src/app/controller/converter"
 	"github.com/kujilabo/cocotola-api/src/app/controller/entity"
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/ginhelper"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	controllerhelper "github.com/kujilabo/cocotola-api/src/user/controller/helper"
@@ -86,12 +86,12 @@ func (h *privateWorkbookHandler) FindWorkbookByID(c *gin.Context) {
 
 		workbook, err := h.studentUsecaseWorkbook.FindWorkbookByID(ctx, organizationID, operatorID, domain.WorkbookID(uint(workbookID)))
 		if err != nil {
-			return xerrors.Errorf("failed to FindWorkbookByID. err: %w", err)
+			return liberrors.Errorf("failed to FindWorkbookByID. err: %w", err)
 		}
 
 		workbookResponse, err := converter.ToWorkbookHTTPEntity(workbook)
 		if err != nil {
-			return xerrors.Errorf("failed to ToWorkbookHTTPEntity. err: %w", err)
+			return liberrors.Errorf("failed to ToWorkbookHTTPEntity. err: %w", err)
 		}
 
 		c.JSON(http.StatusOK, workbookResponse)
@@ -121,12 +121,12 @@ func (h *privateWorkbookHandler) AddWorkbook(c *gin.Context) {
 
 		parameter, err := converter.ToWorkbookAddParameter(&param)
 		if err != nil {
-			return xerrors.Errorf("failed to ToAdd. err: %w", err)
+			return liberrors.Errorf("failed to ToAdd. err: %w", err)
 		}
 
 		workbookID, err := h.studentUsecaseWorkbook.AddWorkbook(ctx, organizationID, operatorID, parameter)
 		if err != nil {
-			return xerrors.Errorf("failed to addWorkbook. err: %w", err)
+			return liberrors.Errorf("failed to addWorkbook. err: %w", err)
 		}
 
 		c.JSON(http.StatusOK, controllerhelper.IDResponse{ID: uint(workbookID)})

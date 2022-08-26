@@ -14,7 +14,6 @@ package main
 // 	"time"
 
 // 	"github.com/sirupsen/logrus"
-// 	"golang.org/x/xerrors"
 // 	"gorm.io/gorm"
 
 // 	"github.com/kujilabo/cocotola-api/src/app/config"
@@ -31,6 +30,7 @@ package main
 // 	pluginEnglishS "github.com/kujilabo/cocotola-api/src/plugin/english/service"
 // 	userG "github.com/kujilabo/cocotola-api/src/user/gateway"
 // 	userS "github.com/kujilabo/cocotola-api/src/user/service"
+// liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 // )
 
 // var defaultPageNo = 1
@@ -93,7 +93,7 @@ package main
 // 		}
 
 // 		if len(line) != columnLength {
-// 			return xerrors.Errorf("invalid umber of column. row: %d", i)
+// 			return liberrors.Errorf("invalid umber of column. row: %d", i)
 // 		}
 
 // 		i++
@@ -148,11 +148,11 @@ package main
 // 		m := p.GetProperties(ctx)
 // 		textObj, ok := m["text"]
 // 		if !ok {
-// 			return nil, xerrors.Errorf("text not found. %v", m)
+// 			return nil, liberrors.Errorf("text not found. %v", m)
 // 		}
 // 		text, ok := textObj.(string)
 // 		if !ok {
-// 			return nil, xerrors.Errorf("text is not string. %v", m)
+// 			return nil, liberrors.Errorf("text is not string. %v", m)
 // 		}
 
 // 		problemMap[text] = true

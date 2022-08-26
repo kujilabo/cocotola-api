@@ -22,7 +22,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/xerrors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
@@ -40,6 +39,7 @@ import (
 	authG "github.com/kujilabo/cocotola-api/src/auth/gateway"
 	authU "github.com/kujilabo/cocotola-api/src/auth/usecase"
 	english_word "github.com/kujilabo/cocotola-api/src/data/english_word"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
 	pluginCommonGateway "github.com/kujilabo/cocotola-api/src/plugin/common/gateway"
 	pluginCommonS "github.com/kujilabo/cocotola-api/src/plugin/common/service"
@@ -118,7 +118,7 @@ func main() {
 		if ok {
 			return processor.CreateCSVReader(ctx, workbookID, reader)
 		}
-		return nil, xerrors.Errorf("processor not found. problemType: %s", problemType)
+		return nil, liberrors.Errorf("processor not found. problemType: %s", problemType)
 	}
 
 	problemTypeRepo := appG.NewProblemTypeRepository(db)
@@ -440,7 +440,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// tracer
 	tp, err := config.InitTracerProvider(cfg)
 	if err != nil {
-		return nil, nil, nil, nil, xerrors.Errorf("failed to InitTracerProvider. err: %w", err)
+		return nil, nil, nil, nil, liberrors.Errorf("failed to InitTracerProvider. err: %w", err)
 	}
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
@@ -448,7 +448,7 @@ func initialize(ctx context.Context, env string) (*config.Config, *gorm.DB, *sql
 	// init db
 	db, sqlDB, err := config.InitDB(cfg.DB)
 	if err != nil {
-		return nil, nil, nil, nil, xerrors.Errorf("failed to InitDB. err: %w", err)
+		return nil, nil, nil, nil, liberrors.Errorf("failed to InitDB. err: %w", err)
 	}
 
 	userRfFunc := func(ctx context.Context, db *gorm.DB) (userS.RepositoryFactory, error) {
@@ -471,22 +471,22 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 		organization, err := systemAdmin.FindOrganizationByName(ctx, "cocotola")
 		if err != nil {
 			if !errors.Is(err, userS.ErrOrganizationNotFound) {
-				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
+				return liberrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
 			firstOwnerAddParam, err := userS.NewFirstOwnerAddParameter("cocotola-owner", "Owner(cocotola)", password)
 			if err != nil {
-				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
+				return liberrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
 			organizationAddParameter, err := userS.NewOrganizationAddParameter("cocotola", firstOwnerAddParam)
 			if err != nil {
-				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
+				return liberrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
 			organizationID, err := systemAdmin.AddOrganization(ctx, organizationAddParameter)
 			if err != nil {
-				return xerrors.Errorf("failed to AddOrganization. err: %w", err)
+				return liberrors.Errorf("failed to AddOrganization. err: %w", err)
 			}
 
 			logger.Infof("organizationID: %d", organizationID)
@@ -502,15 +502,15 @@ func initApp1(ctx context.Context, db *gorm.DB, password string) error {
 
 func initApp2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryFunc, userRfFunc userS.RepositoryFactoryFunc) error {
 	if err := initApp2_1(ctx, db, rfFunc, userRfFunc); err != nil {
-		return xerrors.Errorf("failed to initApp2_1. err: %w", err)
+		return liberrors.Errorf("failed to initApp2_1. err: %w", err)
 	}
 
 	if err := initApp2_2(ctx, db, rfFunc, userRfFunc); err != nil {
-		return xerrors.Errorf("failed to initApp2_2. err: %w", err)
+		return liberrors.Errorf("failed to initApp2_2. err: %w", err)
 	}
 
 	if err := initApp2_3(ctx, db, rfFunc, userRfFunc); err != nil {
-		return xerrors.Errorf("failed to initApp2_3. err: %w", err)
+		return liberrors.Errorf("failed to initApp2_3. err: %w", err)
 	}
 
 	return nil
@@ -529,23 +529,23 @@ func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 
 		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, "cocotola")
 		if err != nil {
-			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
+			return liberrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
 		systemStudent, err := systemOwner.FindAppUserByLoginID(ctx, appS.SystemStudentLoginID)
 		if err != nil {
 			if !errors.Is(err, userS.ErrAppUserNotFound) {
-				return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
+				return liberrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 			}
 
 			param, err := userS.NewAppUserAddParameter(appS.SystemStudentLoginID, "SystemStudent(cocotola)", []string{}, map[string]string{})
 			if err != nil {
-				return xerrors.Errorf("failed to NewAppUserAddParameter. err: %w", err)
+				return liberrors.Errorf("failed to NewAppUserAddParameter. err: %w", err)
 			}
 
 			systemStudentID, err := systemOwner.AddAppUser(ctx, param)
 			if err != nil {
-				return xerrors.Errorf("failed to AddAppUser. err: %w", err)
+				return liberrors.Errorf("failed to AddAppUser. err: %w", err)
 			}
 
 			propertiesSystemStudentID = systemStudentID
@@ -576,18 +576,18 @@ func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 
 		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appS.OrganizationName)
 		if err != nil {
-			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
+			return liberrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
 		systemSpace, err := systemOwner.FindSystemSpace(ctx)
 		if err != nil {
 			if !errors.Is(err, userS.ErrSpaceNotFound) {
-				return xerrors.Errorf("failed to FindSystemSpace. err: %w", err)
+				return liberrors.Errorf("failed to FindSystemSpace. err: %w", err)
 			}
 
 			spaceID, err := systemOwner.AddSystemSpace(ctx)
 			if err != nil {
-				return xerrors.Errorf("failed to AddSystemSpace. err: %w", err)
+				return liberrors.Errorf("failed to AddSystemSpace. err: %w", err)
 			}
 
 			propertiesSystemSpaceID = spaceID
@@ -618,12 +618,12 @@ func initApp2_3(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 
 		systemOwner, err := systemAdmin.FindSystemOwnerByOrganizationName(ctx, appS.OrganizationName)
 		if err != nil {
-			return xerrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
+			return liberrors.Errorf("failed to FindSystemOwnerByOrganizationName. err: %w", err)
 		}
 
 		systemStudentAppUser, err := systemOwner.FindAppUserByLoginID(ctx, appS.SystemStudentLoginID)
 		if err != nil {
-			return xerrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
+			return liberrors.Errorf("failed to FindAppUserByLoginID. err: %w", err)
 		}
 
 		rf, err := rfFunc(ctx, tx)
@@ -674,19 +674,19 @@ func callback(ctx context.Context, testUserEmail string, pf appS.ProcessorFactor
 	if appUser.GetLoginID() == testUserEmail {
 		student, err := appS.NewStudent(pf, repo, userRepo, appUser)
 		if err != nil {
-			return xerrors.Errorf("failed to NewStudent. err: %w", err)
+			return liberrors.Errorf("failed to NewStudent. err: %w", err)
 		}
 
 		if err := english_word.CreateDemoWorkbook(ctx, student); err != nil {
-			return xerrors.Errorf("failed to CreateDemoWorkbook. err: %w", err)
+			return liberrors.Errorf("failed to CreateDemoWorkbook. err: %w", err)
 		}
 
 		if err := english_word.Create20NGSLWorkbook(ctx, student); err != nil {
-			return xerrors.Errorf("failed to Create20NGSLWorkbook. err: %w", err)
+			return liberrors.Errorf("failed to Create20NGSLWorkbook. err: %w", err)
 		}
 
 		// if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
-		// 	return xerrors.Errorf("failed to Create300NGSLWorkbook. err: %w", err)
+		// 	return liberrors.Errorf("failed to Create300NGSLWorkbook. err: %w", err)
 		// }
 	}
 
