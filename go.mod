@@ -14,6 +14,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/go-cmp v0.5.8
 	github.com/mattn/go-sqlite3 v1.14.15
+	github.com/ohler55/ojg v1.14.4
 	github.com/onrik/gorm-logrus v0.4.0
 	github.com/onrik/logrus v0.9.0
 	github.com/pkg/errors v0.9.1
