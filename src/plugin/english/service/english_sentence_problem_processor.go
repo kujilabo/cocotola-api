@@ -15,6 +15,10 @@ import (
 )
 
 var (
+	EnglishSentenceProblemQuotaSizeUnit                     = appS.QuotaUnitPersitance
+	EnglishSentenceProblemQuotaSizeLimit                    = 5000
+	EnglishSentenceProblemQuotaUpdateUnit                   = appS.QuotaUnitDay
+	EnglishSentenceProblemQuotaUpdateLimit                  = 100
 	EnglishSentenceProblemAddPropertyAudioID                = "audioId"
 	EnglishSentenceProblemAddPropertyLang2                  = "lang2"
 	EnglishSentenceProblemAddPropertyText                   = "text"
@@ -81,6 +85,7 @@ type EnglishSentenceProblemProcessor interface {
 	appS.ProblemAddProcessor
 	appS.ProblemRemoveProcessor
 	appS.ProblemImportProcessor
+	appS.ProblemQuotaProcessor
 }
 
 type englishSentenceProblemProcessor struct {
@@ -99,7 +104,7 @@ func NewEnglishSentenceProblemProcessor(synthesizerClient appS.SynthesizerClient
 
 func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo appS.RepositoryFactory, operator appD.StudentModel, workbook appD.WorkbookModel, param appS.ProblemAddParameter) ([]appD.ProblemID, error) {
 	logger := log.FromContext(ctx)
-	logger.Infof("AddProblem1")
+	logger.Info("englishSentenceProblemProcessor.AddProblem")
 
 	problemRepo, err := repo.NewProblemRepository(ctx, domain.EnglishSentenceProblemType)
 	if err != nil {
@@ -111,12 +116,20 @@ func (p *englishSentenceProblemProcessor) AddProblem(ctx context.Context, repo a
 		return nil, liberrors.Errorf("failed to toNewEnglishSentenceProblemParemeter. err: %w", err)
 	}
 
-	audio, err := p.synthesizerClient.Synthesize(ctx, appD.Lang2EN, extractedParam.Text)
-	if err != nil {
-		return nil, err
+	audioID := appD.AudioID(0)
+	if workbook.GetProperties()["audioEnabled"] == "true" {
+		logger.Infof("audioEnabled is true")
+		audio, err := p.synthesizerClient.Synthesize(ctx, appD.Lang2EN, extractedParam.Text)
+		if err != nil {
+			return nil, liberrors.Errorf("p.synthesizerClient.Synthesize. err: %w", err)
+		}
+
+		audioID = appD.AudioID(audio.GetAudioModel().GetID())
+	} else {
+		logger.Infof("audioEnabled is false")
 	}
 
-	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, appD.AudioID(audio.GetAudioModel().GetID()))
+	problemID, err := p.addSingleProblem(ctx, operator, problemRepo, param, extractedParam, audioID)
 	if err != nil {
 		return nil, liberrors.Errorf("failed to addSingleProblem: extractedParam: %+v, err: %w", extractedParam, err)
 	}
@@ -137,7 +150,7 @@ func (p *englishSentenceProblemProcessor) addSingleProblem(ctx context.Context, 
 
 	problemID, err := problemRepo.AddProblem(ctx, operator, newParam)
 	if err != nil {
-		return 0, liberrors.Errorf("failed to problemRepo.AddProblem. err: %w", err)
+		return 0, liberrors.Errorf("problemRepo.AddProblem. err: %w, newParam: %+v", err, newParam.GetProperties())
 	}
 
 	return problemID, nil
@@ -158,4 +171,20 @@ func (p *englishSentenceProblemProcessor) RemoveProblem(ctx context.Context, rep
 
 func (p *englishSentenceProblemProcessor) CreateCSVReader(ctx context.Context, workbookID appD.WorkbookID, reader io.Reader) (appS.ProblemAddParameterIterator, error) {
 	return p.newProblemAddParameterCSVReader(workbookID, reader), nil
+}
+
+func (p *englishSentenceProblemProcessor) GetUnitForSizeQuota() appS.QuotaUnit {
+	return EnglishSentenceProblemQuotaSizeUnit
+}
+
+func (p *englishSentenceProblemProcessor) GetLimitForSizeQuota() int {
+	return EnglishSentenceProblemQuotaSizeLimit
+}
+
+func (p *englishSentenceProblemProcessor) GetUnitForUpdateQuota() appS.QuotaUnit {
+	return EnglishSentenceProblemQuotaUpdateUnit
+}
+
+func (p *englishSentenceProblemProcessor) GetLimitForUpdateQuota() int {
+	return EnglishSentenceProblemQuotaUpdateLimit
 }

@@ -17,11 +17,10 @@ import (
 )
 
 var (
-	quotaSizeUnit  = appS.QuotaUnitPersitance
-	quotaSizeLimit = 5000
-
-	quotaUpdateUnit                            = appS.QuotaUnitDay
-	quotaUpdateLimit                           = 100
+	EnglishWordProblemQuotaSizeUnit            = appS.QuotaUnitPersitance
+	EnglishWordProblemQuotaSizeLimit           = 5000
+	EnglishWordProblemQuotaUpdateUnit          = appS.QuotaUnitDay
+	EnglishWordProblemQuotaUpdateLimit         = 100
 	EnglishWordProblemUpdatePropertyText       = "text"
 	EnglishWordProblemUpdatePropertyTranslated = "translated"
 	EnglishWordProblemUpdatePropertyAudioID    = "audioId"
@@ -299,19 +298,19 @@ func (p *englishWordProblemProcessor) CreateCSVReader(ctx context.Context, workb
 }
 
 func (p *englishWordProblemProcessor) GetUnitForSizeQuota() appS.QuotaUnit {
-	return quotaSizeUnit
+	return EnglishWordProblemQuotaSizeUnit
 }
 
 func (p *englishWordProblemProcessor) GetLimitForSizeQuota() int {
-	return quotaSizeLimit
+	return EnglishWordProblemQuotaSizeLimit
 }
 
 func (p *englishWordProblemProcessor) GetUnitForUpdateQuota() appS.QuotaUnit {
-	return quotaUpdateUnit
+	return EnglishWordProblemQuotaUpdateUnit
 }
 
 func (p *englishWordProblemProcessor) GetLimitForUpdateQuota() int {
-	return quotaUpdateLimit
+	return EnglishWordProblemQuotaUpdateLimit
 }
 
 func (p *englishWordProblemProcessor) findOrAddSentenceFromTatoeba(ctx context.Context, rf appS.RepositoryFactory, operator appD.StudentModel, tatoebaSentenceNumberFrom, tatoebaSentenceNumberTo int, lang2 appD.Lang2) (appD.ProblemID, error) {

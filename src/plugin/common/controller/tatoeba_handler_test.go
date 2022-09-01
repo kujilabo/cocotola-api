@@ -26,6 +26,19 @@ import (
 var anythingOfContext = mock.MatchedBy(func(_ context.Context) bool { return true })
 var anythingOfTatoebaSentenceSearchCondition = mock.MatchedBy(func(_ service.TatoebaSentenceSearchCondition) bool { return true })
 
+func mapGetString(m map[string]interface{}, key string) string {
+	return m[key].(string)
+
+}
+
+func mapGetInt(m map[string]interface{}, key string) int {
+	return interfaceInt64ToInt(m[key])
+}
+
+func interfaceInt64ToInt(i interface{}) int {
+	return int(i.(int64))
+}
+
 func parseJSON(t *testing.T, b *bytes.Buffer) interface{} {
 	respBytes, err := io.ReadAll(b)
 	require.NoError(t, err)
@@ -49,22 +62,22 @@ func initTatoebaRouter(tatoebaClient service.TatoebaClient) *gin.Engine {
 	return router
 }
 
+func testNewTatoebaSentence(sentenceaNumber int, lang2 appD.Lang2, text string, author string) service.TatoebaSentence {
+	sentence := new(service_mock.TatoebaSentence)
+	sentence.On("GetSentenceNumber").Return(sentenceaNumber)
+	sentence.On("GetLang2").Return(lang2)
+	sentence.On("GetText").Return(text)
+	sentence.On("GetAuthor").Return(author)
+	sentence.On("GetUpdatedAt").Return(time.Now())
+	return sentence
+}
+
 func Test_FindSentencePairs_OK(t *testing.T) {
 	// given
 	tatoebaClient := new(service_mock.TatoebaClient)
 	// -
-	src := new(service_mock.TatoebaSentence)
-	dst := new(service_mock.TatoebaSentence)
-	src.On("GetSentenceNumber").Return(1)
-	src.On("GetLang2").Return(appD.Lang2EN)
-	src.On("GetText").Return("test1")
-	src.On("GetAuthor").Return("author1")
-	src.On("GetUpdatedAt").Return(time.Now())
-	dst.On("GetSentenceNumber").Return(2)
-	dst.On("GetLang2").Return(appD.Lang2JA)
-	dst.On("GetText").Return("test2")
-	dst.On("GetAuthor").Return("author2")
-	dst.On("GetUpdatedAt").Return(time.Now())
+	src := testNewTatoebaSentence(1, appD.Lang2EN, "test1", "author1")
+	dst := testNewTatoebaSentence(2, appD.Lang2EN, "test2", "author2")
 	pair := new(service_mock.TatoebaSentencePair)
 	pair.On("GetSrc").Return(src)
 	pair.On("GetDst").Return(dst)
@@ -77,11 +90,13 @@ func Test_FindSentencePairs_OK(t *testing.T) {
 	r := initTatoebaRouter(tatoebaClient)
 
 	// when
+	// parameter is valid
 	// - keyword: apple
+	// - pageNo: 1
+	// - pageSize: 1
 	body, err := json.Marshal(gin.H{"keyword": "apple", "pageNo": 1, "pageSize": 10})
 	require.NoError(t, err)
 	req, err := http.NewRequest(http.MethodPost, "/v1/plugin/tatoeba/find", bytes.NewBuffer(body))
-	req.SetBasicAuth("user", "pass")
 	require.NoError(t, err)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -91,15 +106,23 @@ func Test_FindSentencePairs_OK(t *testing.T) {
 	totalCountExpr := parseExpr(t, "$.totalCount")
 
 	// bytes, _ := io.ReadAll(w.Body)
-	// fmt.Println(string(bytes))
 	// t.Logf("resp: %s", string(bytes))
 	// - check the status code
 	assert.Equal(t, http.StatusOK, w.Code)
 	jsonObj := parseJSON(t, w.Body)
 
-	jsonResults := resultsExpr.Get(jsonObj)
-	assert.Equal(t, 1, len(jsonResults))
+	{
+		results := resultsExpr.Get(jsonObj)
+		assert.Equal(t, 1, len(results))
 
-	jsonTotalCount := totalCountExpr.Get(jsonObj)
-	assert.Equal(t, 1, int(jsonTotalCount[0].(int64)))
+		results0 := results[0].(map[string]interface{})
+		results0src := results0["src"].(map[string]interface{})
+		assert.Equal(t, mapGetInt(results0src, "sentenceNumber"), 1)
+		assert.Equal(t, mapGetString(results0src, "lang2"), "en")
+		assert.Equal(t, mapGetString(results0src, "text"), "test1")
+		assert.Equal(t, mapGetString(results0src, "author"), "author1")
+
+		totalCount := totalCountExpr.Get(jsonObj)
+		assert.Equal(t, 1, interfaceInt64ToInt(totalCount[0]))
+	}
 }

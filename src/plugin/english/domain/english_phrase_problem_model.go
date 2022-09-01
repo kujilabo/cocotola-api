@@ -54,7 +54,7 @@ func (m *englishPhraseProblemModel) GetTranslated() string {
 	return m.Translated
 }
 
-func (m *englishPhraseProblemModel) Properties(ctx context.Context) map[string]interface{} {
+func (m *englishPhraseProblemModel) GetProperties(ctx context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"audioId":    uint(m.AudioID),
 		"text":       m.Text,

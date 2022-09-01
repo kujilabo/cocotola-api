@@ -401,7 +401,8 @@ func initPf(synthesizerClient appS.SynthesizerClient, translatorClient pluginCom
 		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
 	}
 	problemQuotaProcessor := map[string]appS.ProblemQuotaProcessor{
-		pluginEnglishDomain.EnglishWordProblemType: englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishWordProblemType:     englishWordProblemProcessor,
+		pluginEnglishDomain.EnglishSentenceProblemType: englishSentenceProblemProcessor,
 	}
 
 	englishWordProblemRepositoryFunc := func(ctx context.Context, db *gorm.DB) (appS.ProblemRepository, error) {

@@ -11,7 +11,7 @@ type TatoebaSentenceFindParameter struct {
 
 type TatoebaSentence struct {
 	SentenceNumber int       `json:"sentenceNumber"`
-	Lang2          string    `json:"2"`
+	Lang2          string    `json:"lang2"`
 	Text           string    `json:"text"`
 	Author         string    `json:"author"`
 	UpdatedAt      time.Time `json:"updatedAt"`

@@ -54,7 +54,7 @@ func (m *englishSentenceProblemModel) GetNote() string {
 	return m.Note
 }
 
-func (m *englishSentenceProblemModel) Properties(ctx context.Context) map[string]interface{} {
+func (m *englishSentenceProblemModel) GetProperties(ctx context.Context) map[string]interface{} {
 	return map[string]interface{}{
 		"audioId":    uint(m.AudioID),
 		"text":       m.Text,

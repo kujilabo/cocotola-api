@@ -20,9 +20,9 @@ type ProblemModel interface {
 
 type problemModel struct {
 	userD.Model
-	Number      int    `validate:"required"`
-	ProblemType string `validate:"required"`
-	// Properties  map[string]interface{} `validate:"required"`
+	Number      int                    `validate:"required"`
+	ProblemType string                 `validate:"required"`
+	Properties  map[string]interface{} `validate:"required"`
 }
 
 func NewProblemModel(model userD.Model, number int, problemType string, properties map[string]interface{}) (ProblemModel, error) {
@@ -30,7 +30,7 @@ func NewProblemModel(model userD.Model, number int, problemType string, properti
 		Model:       model,
 		Number:      number,
 		ProblemType: problemType,
-		// Properties:  properties,
+		Properties:  properties,
 	}
 
 	return m, libD.Validator.Struct(m)
