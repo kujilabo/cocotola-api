@@ -15,6 +15,7 @@ import (
 
 	"github.com/kujilabo/cocotola-api/src/app/domain"
 	"github.com/kujilabo/cocotola-api/src/app/service"
+	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 )
 
 type synthesizerClient struct {
@@ -86,7 +87,7 @@ func (c *synthesizerClient) Synthesize(ctx context.Context, lang2 domain.Lang2, 
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("c.client.Do. err: %w", err)
 	}
 	defer resp.Body.Close()
 

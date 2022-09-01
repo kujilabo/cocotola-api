@@ -237,7 +237,7 @@ func (h *problemHandler) AddProblem(c *gin.Context) {
 
 		problemID, err := h.studentUsecaseProblem.AddProblem(ctx, organizationID, operatorID, parameter)
 		if err != nil {
-			return liberrors.Errorf("failed to AddProblem. param: %+v, err: %w", parameter, err)
+			return liberrors.Errorf("studentUsecaseProblem.AddProblem. param: %+v, err: %w", parameter, err)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"id": problemID})

@@ -41,7 +41,7 @@ func (e *englishSentenceProblemEntity) TableName() string {
 	return "english_sentence_problem"
 }
 
-func (e *englishSentenceProblemEntity) toProblem(synthesizerClient appS.SynthesizerClient) (service.EnglishSentenceProblem, error) {
+func (e *englishSentenceProblemEntity) toProblem(ctx context.Context, synthesizerClient appS.SynthesizerClient) (service.EnglishSentenceProblem, error) {
 	model, err := userD.NewModel(e.ID, e.Version, e.CreatedAt, e.UpdatedAt, e.CreatedBy, e.UpdatedBy)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,16 @@ func (e *englishSentenceProblemEntity) toProblem(synthesizerClient appS.Synthesi
 	if err != nil {
 		return nil, err
 	}
-	return service.NewEnglishSentenceProblem(englishSentenceProblemModel, problem)
+
+	englishSentenceProblem, err := service.NewEnglishSentenceProblem(englishSentenceProblemModel, problem)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := log.FromContext(ctx)
+	logger.Infof("properties: %+v", englishSentenceProblem.GetProperties(ctx))
+
+	return englishSentenceProblem, nil
 }
 
 type englishSentenceProblemAddParameter struct {
@@ -81,7 +90,7 @@ type englishSentenceProblemAddParameter struct {
 func makeTatoebaNote(param appS.ProblemAddParameter) (string, error) {
 	provider, ok := param.GetProperties()[service.EnglishSentenceProblemAddPropertyProvider]
 	if !ok {
-		return "", nil
+		return "{}", nil
 	}
 
 	if provider == "tatoeba" {
@@ -107,7 +116,7 @@ func makeTatoebaNote(param appS.ProblemAddParameter) (string, error) {
 		return string(noteBytes), nil
 	}
 
-	return "", nil
+	return "{}", nil
 }
 
 // func toEnglishSentenceProblemAddParameter(param appS.ProblemAddParameter) (*englishSentenceProblemAddParameter, error) {
@@ -214,7 +223,7 @@ func (r *englishSentenceProblemRepository) FindProblems(ctx context.Context, ope
 		return nil, result.Error
 	}
 
-	return r.toProblemSearchResult(count, problemEntities)
+	return r.toProblemSearchResult(ctx, count, problemEntities)
 }
 
 func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) (appS.ProblemSearchResult, error) {
@@ -240,7 +249,7 @@ func (r *englishSentenceProblemRepository) FindAllProblems(ctx context.Context, 
 		return nil, result.Error
 	}
 
-	return r.toProblemSearchResult(count, problemEntities)
+	return r.toProblemSearchResult(ctx, count, problemEntities)
 }
 
 func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.Context, operator appD.StudentModel, param appS.ProblemIDsCondition) (appS.ProblemSearchResult, error) {
@@ -264,14 +273,14 @@ func (r *englishSentenceProblemRepository) FindProblemsByProblemIDs(ctx context.
 
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.synthesizerClient)
+		p, err := e.toProblem(ctx, r.synthesizerClient)
 		if err != nil {
 			return nil, liberrors.Errorf("failed to toProblem. err: %w", err)
 		}
 		problems[i] = p
 	}
 
-	return r.toProblemSearchResult(0, problemEntities)
+	return r.toProblemSearchResult(ctx, 0, problemEntities)
 }
 func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx context.Context, operator appD.StudentModel, condition interface{}) ([]appD.ProblemModel, error) {
 	_, span := tracer.Start(ctx, "englishSentenceProblemRepository.FindProblemsByCustomCondition")
@@ -314,7 +323,7 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 		return nil, result.Error
 	}
 
-	problem, err := problemEntity.toProblem(r.synthesizerClient)
+	problem, err := problemEntity.toProblem(ctx, r.synthesizerClient)
 	if err != nil {
 		return nil, err
 	}
@@ -322,10 +331,10 @@ func (r *englishSentenceProblemRepository) FindProblemsByCustomCondition(ctx con
 	return []appD.ProblemModel{problem}, nil
 }
 
-func (r *englishSentenceProblemRepository) toProblemSearchResult(count int64, problemEntities []englishSentenceProblemEntity) (appS.ProblemSearchResult, error) {
+func (r *englishSentenceProblemRepository) toProblemSearchResult(ctx context.Context, count int64, problemEntities []englishSentenceProblemEntity) (appS.ProblemSearchResult, error) {
 	problems := make([]appD.ProblemModel, len(problemEntities))
 	for i, e := range problemEntities {
-		p, err := e.toProblem(r.synthesizerClient)
+		p, err := e.toProblem(ctx, r.synthesizerClient)
 		if err != nil {
 			return nil, err
 		}
@@ -357,7 +366,7 @@ func (r *englishSentenceProblemRepository) FindProblemByID(ctx context.Context, 
 		return nil, result.Error
 	}
 
-	return problemEntity.toProblem(r.synthesizerClient)
+	return problemEntity.toProblem(ctx, r.synthesizerClient)
 }
 
 func (r *englishSentenceProblemRepository) FindProblemIDs(ctx context.Context, operator appD.StudentModel, workbookID appD.WorkbookID) ([]appD.ProblemID, error) {

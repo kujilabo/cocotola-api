@@ -149,7 +149,7 @@ func (s *student) RemoveWorkbook(ctx context.Context, workbookID domain.Workbook
 func (s *student) CheckQuota(ctx context.Context, problemType string, name QuotaName) error {
 	processor, err := s.pf.NewProblemQuotaProcessor(problemType)
 	if err != nil {
-		return err
+		return liberrors.Errorf("s.pf.NewProblemQuotaProcessor. err: %w", err)
 	}
 
 	userQuotaRepo := s.rf.NewUserQuotaRepository(ctx)

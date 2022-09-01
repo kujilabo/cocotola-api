@@ -50,7 +50,7 @@ func ToWorkbookHTTPEntity(workbook domain.WorkbookModel) (entity.WorkbookRespons
 
 func ToWorkbookAddParameter(param *entity.WorkbookAddParameter) (service.WorkbookAddParameter, error) {
 	return service.NewWorkbookAddParameter(param.ProblemType, param.Name, domain.Lang2JA, param.QuestionText, map[string]string{
-		"audioEnabled": "true",
+		"audioEnabled": "false",
 	})
 }
 

@@ -158,7 +158,7 @@ func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID u
 		}
 		tmpResult, err := s.addProblem(ctx, studentService, workbook, param)
 		if err != nil {
-			return liberrors.Errorf("failed to AddProblem. err: %w", err)
+			return liberrors.Errorf("s.addProblem. err: %w", err)
 		}
 		result = tmpResult
 		return nil
@@ -253,7 +253,7 @@ func (s *studentUsecaseProblem) ImportProblems(ctx context.Context, organization
 			}
 
 			if err != nil {
-				return liberrors.Errorf("failed to addProblem. err: %w", err)
+				return liberrors.Errorf("s.addProblem. err: %w", err)
 			}
 			logger.Infof("%d", id)
 
@@ -288,20 +288,20 @@ func (s *studentUsecaseProblem) findStudentAndWorkbook(ctx context.Context, tx *
 func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.Student, workbook service.Workbook, param service.ProblemAddParameter) ([]domain.ProblemID, error) {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("student.CheckQuota. err: %w", err)
 	}
 	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("student.CheckQuota. err: %w", err)
 	}
 	addedIDs, err := workbook.AddProblem(ctx, student, param)
 	if err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("workbook.AddProblem. err: %w", err)
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Size", len(addedIDs)); err != nil {
-		return nil, liberrors.Errorf("failed to IncrementQuotaUsage(Size). err: %w", err)
+		return nil, liberrors.Errorf("student.IncrementQuotaUsage(Size). err: %w", err)
 	}
 	if err := student.IncrementQuotaUsage(ctx, problemType, "Update", len(addedIDs)); err != nil {
-		return nil, liberrors.Errorf("failed to IncrementQuotaUsage(Update). err: %w", err)
+		return nil, liberrors.Errorf("student.IncrementQuotaUsage(Update). err: %w", err)
 	}
 	return addedIDs, nil
 }
