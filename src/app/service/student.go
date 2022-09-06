@@ -89,7 +89,7 @@ func (s *student) FindWorkbooksFromPersonalSpace(ctx context.Context, condition 
 func (s *student) FindWorkbookByID(ctx context.Context, id domain.WorkbookID) (Workbook, error) {
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("s.rf.NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByID(ctx, s, id)
@@ -98,12 +98,12 @@ func (s *student) FindWorkbookByID(ctx context.Context, id domain.WorkbookID) (W
 func (s *student) FindWorkbookByName(ctx context.Context, name string) (Workbook, error) {
 	space, err := s.GetPersonalSpace(ctx)
 	if err != nil {
-		return nil, liberrors.Errorf("failed to GetPersonalSpace. err: %w", err)
+		return nil, liberrors.Errorf("s.GetPersonalSpace. err: %w", err)
 	}
 
 	workbookRepo, err := s.rf.NewWorkbookRepository(ctx)
 	if err != nil {
-		return nil, liberrors.Errorf("failed to NewWorkbookRepository. err: %w", err)
+		return nil, liberrors.Errorf("s.rf.NewWorkbookRepository. err: %w", err)
 	}
 
 	return workbookRepo.FindWorkbookByName(ctx, s, userD.SpaceID(space.GetID()), name)
@@ -131,7 +131,7 @@ func (s *student) AddWorkbookToPersonalSpace(ctx context.Context, parameter Work
 func (s *student) UpdateWorkbook(ctx context.Context, workbookID domain.WorkbookID, version int, parameter WorkbookUpdateParameter) error {
 	workbook, err := s.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
-		return err
+		return liberrors.Errorf("s.FindWorkbookByID. err: %w", err)
 	}
 
 	return workbook.UpdateWorkbook(ctx, s, version, parameter)
@@ -140,7 +140,7 @@ func (s *student) UpdateWorkbook(ctx context.Context, workbookID domain.Workbook
 func (s *student) RemoveWorkbook(ctx context.Context, workbookID domain.WorkbookID, version int) error {
 	workbook, err := s.FindWorkbookByID(ctx, workbookID)
 	if err != nil {
-		return err
+		return liberrors.Errorf("s.FindWorkbookByID. err: %w", err)
 	}
 
 	return workbook.RemoveWorkbook(ctx, s, version)
@@ -160,7 +160,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 		limit := processor.GetLimitForSizeQuota()
 		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_size", unit, limit)
 		if err != nil {
-			return err
+			return liberrors.Errorf("userQuotaRepo.IsExceeded(size). err: %w", err)
 		}
 
 		if isExceeded {
@@ -173,7 +173,7 @@ func (s *student) CheckQuota(ctx context.Context, problemType string, name Quota
 		limit := processor.GetLimitForUpdateQuota()
 		isExceeded, err := userQuotaRepo.IsExceeded(ctx, s, problemType+"_update", unit, limit)
 		if err != nil {
-			return err
+			return liberrors.Errorf("userQuotaRepo.IsExceeded(update). err: %w", err)
 		}
 
 		if isExceeded {

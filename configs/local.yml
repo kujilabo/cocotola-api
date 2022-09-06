@@ -2,6 +2,7 @@
 app:
   name: cocotola-api
   httpPort: 8080
+  metricsPort: 8081
   ownerPassword: password
   testUserEmail: $TEST_USER_EMAIL
 db:

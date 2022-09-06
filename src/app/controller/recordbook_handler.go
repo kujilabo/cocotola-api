@@ -64,7 +64,7 @@ func (h *recordbookHandler) FindRecordbook(c *gin.Context) {
 
 		response, err := converter.ToProblemWithLevelList(ctx, result)
 		if err != nil {
-			return err
+			return liberrors.Errorf("converter.ToProblemWithLevelList. err: %w", err)
 		}
 
 		c.JSON(http.StatusOK, response)
@@ -86,7 +86,7 @@ func (h *recordbookHandler) SetStudyResult(c *gin.Context) {
 		studyType := ginhelper.GetStringFromPath(c, "studyType")
 		problemID, err := ginhelper.GetUintFromPath(c, "problemID")
 		if err != nil {
-			return err
+			return liberrors.Errorf("ginhelper.GetUintFromPath. err: %w", err)
 		}
 
 		param := entity.StudyResultParameter{}

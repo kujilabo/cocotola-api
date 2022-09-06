@@ -77,7 +77,7 @@ func (s *studentUsecaseProblem) FindAllProblemsByWorkbookID(ctx context.Context,
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		tmpResult, err := workbook.FindAllProblems(ctx, student)
 		if err != nil {
@@ -96,7 +96,7 @@ func (s *studentUsecaseProblem) FindProblemsByProblemIDs(ctx context.Context, or
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		tmpResult, err := workbook.FindProblemsByProblemIDs(ctx, student, param)
 		if err != nil {
@@ -115,7 +115,7 @@ func (s *studentUsecaseProblem) FindProblemByID(ctx context.Context, organizatio
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		tmpResult, err := workbook.FindProblemByID(ctx, student, id.GetProblemID())
 		if err != nil {
@@ -134,7 +134,7 @@ func (s *studentUsecaseProblem) FindProblemIDs(ctx context.Context, organization
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		tmpResult, err := workbook.FindProblemIDs(ctx, student)
 		if err != nil {
@@ -154,7 +154,7 @@ func (s *studentUsecaseProblem) AddProblem(ctx context.Context, organizationID u
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		studentService, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, param.GetWorkbookID())
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		tmpResult, err := s.addProblem(ctx, studentService, workbook, param)
 		if err != nil {
@@ -173,7 +173,7 @@ func (s *studentUsecaseProblem) UpdateProblem(ctx context.Context, organizationI
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		if err := s.updateProblem(ctx, student, workbook, id, param); err != nil {
 			return liberrors.Errorf("failed to UpdateProblem. err: %w", err)
@@ -192,14 +192,14 @@ func (s *studentUsecaseProblem) RemoveProblem(ctx context.Context, organizationI
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, id.GetWorkbookID())
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		if err := workbook.RemoveProblem(ctx, student, id); err != nil {
-			return err
+			return liberrors.Errorf("workbook.RemoveProblem. err: %w", err)
 		}
 		problemType := workbook.GetProblemType()
 		if err := student.DecrementQuotaUsage(ctx, problemType, "Size", 1); err != nil {
-			return err
+			return liberrors.Errorf("student.DecrementQuotaUsage. err: %w", err)
 		}
 
 		return nil
@@ -217,7 +217,7 @@ func (s *studentUsecaseProblem) ImportProblems(ctx context.Context, organization
 	{
 		_, workbook, err := s.findStudentAndWorkbook(ctx, s.db, organizationID, operatorID, workbookID)
 		if err != nil {
-			return err
+			return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 		}
 		problemType = workbook.GetProblemType()
 	}
@@ -243,7 +243,7 @@ func (s *studentUsecaseProblem) ImportProblems(ctx context.Context, organization
 		if err := s.db.Transaction(func(tx *gorm.DB) error {
 			student, workbook, err := s.findStudentAndWorkbook(ctx, tx, organizationID, operatorID, workbookID)
 			if err != nil {
-				return err
+				return liberrors.Errorf("s.findStudentAndWorkbook. err: %w", err)
 			}
 
 			id, err := s.addProblem(ctx, student, workbook, param)
@@ -309,10 +309,10 @@ func (s *studentUsecaseProblem) addProblem(ctx context.Context, student service.
 func (s *studentUsecaseProblem) updateProblem(ctx context.Context, student service.Student, workbook service.Workbook, id service.ProblemSelectParameter2, param service.ProblemUpdateParameter) error {
 	problemType := workbook.GetProblemType()
 	if err := student.CheckQuota(ctx, problemType, "Size"); err != nil {
-		return err
+		return liberrors.Errorf("student.CheckQuota(size). err: %w", err)
 	}
 	if err := student.CheckQuota(ctx, problemType, "Update"); err != nil {
-		return err
+		return liberrors.Errorf("student.CheckQuota(udpate). err: %w", err)
 	}
 	added, updated, err := workbook.UpdateProblem(ctx, student, id, param)
 	if err != nil {
