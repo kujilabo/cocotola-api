@@ -46,7 +46,12 @@ func (r *audioResponse) toModel() (service.Audio, error) {
 	return service.NewAudio(audioModel)
 }
 
-func NewSynthesizerClient(endpoint, username, password string, timeout time.Duration) service.SynthesizerClient {
+func NewSynthesizerClient(endpoint, username, password string, timeout time.Duration) (service.SynthesizerClient, error) {
+
+	if _, err := url.Parse(endpoint); err != nil {
+		return nil, err
+	}
+
 	return &synthesizerClient{
 		endpoint: endpoint,
 		username: username,
@@ -55,7 +60,7 @@ func NewSynthesizerClient(endpoint, username, password string, timeout time.Dura
 			Timeout:   timeout,
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		},
-	}
+	}, nil
 }
 
 func (c *synthesizerClient) Synthesize(ctx context.Context, lang2 domain.Lang2, text string) (service.Audio, error) {
@@ -80,7 +85,7 @@ func (c *synthesizerClient) Synthesize(ctx context.Context, lang2 domain.Lang2, 
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(paramBytes))
 	if err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("http.NewRequestWithContext. err: %w", err)
 
 	}
 
@@ -116,7 +121,7 @@ func (c *synthesizerClient) FindAudioByAudioID(ctx context.Context, audioID doma
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), http.NoBody)
 	if err != nil {
-		return nil, err
+		return nil, liberrors.Errorf("http.NewRequestWithContext. err: %w", err)
 
 	}
 

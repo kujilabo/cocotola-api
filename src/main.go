@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -38,6 +39,7 @@ import (
 	studentU "github.com/kujilabo/cocotola-api/src/app/usecase/student"
 	authG "github.com/kujilabo/cocotola-api/src/auth/gateway"
 	authU "github.com/kujilabo/cocotola-api/src/auth/usecase"
+	english_sentence "github.com/kujilabo/cocotola-api/src/data/english_sentence"
 	english_word "github.com/kujilabo/cocotola-api/src/data/english_word"
 	liberrors "github.com/kujilabo/cocotola-api/src/lib/errors"
 	"github.com/kujilabo/cocotola-api/src/lib/log"
@@ -96,7 +98,10 @@ func main() {
 		panic(err)
 	}
 
-	synthesizer := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
+	synthesizer, err := appG.NewSynthesizerClient(cfg.Synthesizer.Endpoint, cfg.Synthesizer.Username, cfg.Synthesizer.Password, time.Duration(cfg.Synthesizer.TimeoutSec)*time.Second)
+	if err != nil {
+		panic(err)
+	}
 
 	// translator
 	connTranslator, err := grpc.Dial(cfg.Translator.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -177,6 +182,9 @@ func run(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Processor
 		return httpServer(ctx, cfg, db, pf, rfFunc, userRfFunc, synthesizerClient, translatorClient, tatoebaClient, newIteratorFunc)
 	})
 	eg.Go(func() error {
+		return metricsServer(ctx, cfg)
+	})
+	eg.Go(func() error {
 		return signalNotify(ctx)
 	})
 	eg.Go(func() error {
@@ -211,7 +219,7 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 	logrus.Infof("cors: %+v", corsConfig)
 
 	if err := corsConfig.Validate(); err != nil {
-		return err
+		return liberrors.Errorf("corsConfig.Validate. err: %w", err)
 	}
 
 	if !cfg.Debug.GinMode {
@@ -244,100 +252,6 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 	studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
 
 	router := controller.NewRouter(googleUserUsecase, guestUserUsecase, studentUsecaseWorkbook, studentUsecaseProblem, studentUsecaseAudio, studentUseCaseStudy, translatorClient, tatoebaClient, newIteratorFunc, corsConfig, cfg.App, cfg.Auth, cfg.Debug)
-
-	// router := gin.New()
-	// router.Use(cors.New(corsConfig))
-	// router.Use(gin.Recovery())
-
-	// if cfg.Debug.GinMode {
-	// 	router.Use(ginlog.Middleware(ginlog.DefaultConfig))
-	// }
-
-	// if cfg.Debug.Wait {
-	// 	router.Use(middleware.NewWaitMiddleware())
-	// }
-
-	// router.GET("/healthcheck", func(c *gin.Context) {
-	// 	c.Status(http.StatusOK)
-	// })
-
-	// v1 := router.Group("v1")
-	// {
-	// 	v1.Use(otelgin.Middleware(cfg.App.Name))
-	// 	v1.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
-	// 	v1auth := v1.Group("auth")
-	// 	googleUserUsecase := authU.NewGoogleUserUsecase(db, googleAuthClient, authTokenManager, registerAppUserCallback)
-	// 	guestUserUsecase := authU.NewGuestUserUsecase(authTokenManager)
-	// 	authHandler := authH.NewAuthHandler(authTokenManager)
-	// 	googleAuthHandler := authH.NewGoogleAuthHandler(googleUserUsecase)
-	// 	guestAuthHandler := authH.NewGuestAuthHandler(guestUserUsecase)
-	// 	v1auth.POST("google/authorize", googleAuthHandler.Authorize)
-	// 	v1auth.POST("guest/authorize", guestAuthHandler.Authorize)
-	// 	v1auth.POST("refresh_token", authHandler.RefreshToken)
-
-	// 	v1Workbook := v1.Group("private/workbook")
-	// 	studentUsecaseWorkbook := studentU.NewStudentUsecaseWorkbook(db, pf, rfFunc, userRfFunc)
-	// 	privateWorkbookHandler := appC.NewPrivateWorkbookHandler(studentUsecaseWorkbook)
-	// 	v1Workbook.Use(authMiddleware)
-	// 	v1Workbook.POST(":workbookID", privateWorkbookHandler.FindWorkbooks)
-	// 	v1Workbook.GET(":workbookID", privateWorkbookHandler.FindWorkbookByID)
-	// 	v1Workbook.PUT(":workbookID", privateWorkbookHandler.UpdateWorkbook)
-	// 	v1Workbook.DELETE(":workbookID", privateWorkbookHandler.RemoveWorkbook)
-	// 	v1Workbook.POST("", privateWorkbookHandler.AddWorkbook)
-
-	// 	v1Problem := v1.Group("workbook/:workbookID/problem")
-	// 	studentUsecaseProblem := studentU.NewStudentUsecaseProblem(db, pf, rfFunc, userRfFunc)
-	// 	problemHandler := appC.NewProblemHandler(studentUsecaseProblem, newIteratorFunc)
-	// 	v1Problem.Use(authMiddleware)
-	// 	v1Problem.POST("", problemHandler.AddProblem)
-	// 	v1Problem.GET(":problemID", problemHandler.FindProblemByID)
-	// 	v1Problem.DELETE(":problemID", problemHandler.RemoveProblem)
-	// 	v1Problem.PUT(":problemID", problemHandler.UpdateProblem)
-	// 	// v1Problem.GET("problem_ids", problemHandler.FindProblemIDs)
-	// 	v1Problem.POST("find", problemHandler.FindProblems)
-	// 	v1Problem.POST("find_all", problemHandler.FindAllProblems)
-	// 	v1Problem.POST("find_by_ids", problemHandler.FindProblemsByProblemIDs)
-	// 	v1Problem.POST("import", problemHandler.ImportProblems)
-
-	// 	v1Study := v1.Group("study/workbook/:workbookID")
-	// 	studentUseCaseStudy := studentU.NewStudentUsecaseStudy(db, pf, rfFunc, userRfFunc)
-	// 	recordbookHandler := appC.NewRecordbookHandler(studentUseCaseStudy)
-	// 	v1Study.Use(authMiddleware)
-	// 	v1Study.GET("study_type/:studyType", recordbookHandler.FindRecordbook)
-	// 	v1Study.POST("study_type/:studyType/problem/:problemID/record", recordbookHandler.SetStudyResult)
-	// 	v1Study.GET("completion_rate", recordbookHandler.GetCompletionRate)
-
-	// 	v1Audio := v1.Group("workbook/:workbookID/problem/:problemID/audio")
-	// 	studentUsecaseAudio := studentU.NewStudentUsecaseAudio(db, pf, rfFunc, userRfFunc, synthesizerClient)
-	// 	audioHandler := appC.NewAudioHandler(studentUsecaseAudio)
-	// 	v1Audio.Use(authMiddleware)
-	// 	v1Audio.GET(":audioID", audioHandler.FindAudioByID)
-	// }
-
-	// plugin := router.Group("plugin")
-	// {
-	// 	plugin.Use(otelgin.Middleware(cfg.App.Name))
-	// 	plugin.Use(middleware.NewTraceLogMiddleware(cfg.App.Name))
-	// 	plugin.Use(authMiddleware)
-	// 	{
-	// 		pluginTranslation := plugin.Group("translation")
-	// 		translationHandler := pluginCommonHandler.NewTranslationHandler(translatorClient)
-	// 		pluginTranslation.POST("find", translationHandler.FindTranslations)
-	// 		pluginTranslation.GET("text/:text/pos/:pos", translationHandler.FindTranslationByTextAndPos)
-	// 		pluginTranslation.GET("text/:text", translationHandler.FindTranslationsByText)
-	// 		pluginTranslation.PUT("text/:text/pos/:pos", translationHandler.UpdateTranslation)
-	// 		pluginTranslation.DELETE("text/:text/pos/:pos", translationHandler.RemoveTranslation)
-	// 		pluginTranslation.POST("", translationHandler.AddTranslation)
-	// 		pluginTranslation.POST("export", translationHandler.ExportTranslations)
-	// 	}
-	// 	{
-	// 		pluginTatoeba := plugin.Group("tatoeba")
-	// 		tatoebaHandler := pluginCommonHandler.NewTatoebaHandler(tatoebaClient)
-	// 		pluginTatoeba.POST("find", tatoebaHandler.FindSentencePairs)
-	// 		pluginTatoeba.POST("sentence/import", tatoebaHandler.ImportSentences)
-	// 		pluginTatoeba.POST("link/import", tatoebaHandler.ImportLinks)
-	// 	}
-	// }
 
 	if cfg.Swagger.Enabled {
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -378,6 +292,43 @@ func httpServer(ctx context.Context, cfg *config.Config, db *gorm.DB, pf appS.Pr
 	}
 }
 
+func metricsServer(ctx context.Context, cfg *config.Config) error {
+	router := gin.New()
+	router.Use(gin.Recovery())
+
+	httpServer := http.Server{
+		Addr:    ":" + strconv.Itoa(cfg.App.MetricsPort),
+		Handler: router,
+	}
+
+	router.GET("/healthcheck", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	errCh := make(chan error)
+	go func() {
+		defer close(errCh)
+		if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			logrus.Infof("failed to ListenAndServe. err: %v", err)
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		gracefulShutdownTime1 := time.Duration(cfg.Shutdown.TimeSec1) * time.Second
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), gracefulShutdownTime1)
+		defer shutdownCancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			logrus.Infof("Server forced to shutdown. err: %v", err)
+			return err
+		}
+		return nil
+	case err := <-errCh:
+		return err
+	}
+}
 func initPf(synthesizerClient appS.SynthesizerClient, translatorClient pluginCommonS.TranslatorClient, tatoebaClient pluginCommonS.TatoebaClient) (appS.ProcessorFactory, map[string]func(context.Context, *gorm.DB) (appS.ProblemRepository, error), map[string]appS.ProblemImportProcessor) {
 
 	englishWordProblemProcessor := pluginEnglishS.NewEnglishWordProblemProcessor(synthesizerClient, translatorClient, tatoebaClient, pluginEnglishGateway.NewEnglishWordProblemAddParameterCSVReader)
@@ -523,7 +474,7 @@ func initApp2_1(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		userRf, err := userRfFunc(ctx, tx)
 		if err != nil {
-			return err
+			return liberrors.Errorf("userRfFunc. err: %w", err)
 		}
 
 		systemAdmin := userS.NewSystemAdmin(userRf)
@@ -570,7 +521,7 @@ func initApp2_2(ctx context.Context, db *gorm.DB, rfFunc appS.RepositoryFactoryF
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		userRf, err := userRfFunc(ctx, tx)
 		if err != nil {
-			return err
+			return liberrors.Errorf("userRfFunc. err: %w", err)
 		}
 
 		systemAdmin := userS.NewSystemAdmin(userRf)
@@ -684,6 +635,10 @@ func callback(ctx context.Context, testUserEmail string, pf appS.ProcessorFactor
 
 		if err := english_word.Create20NGSLWorkbook(ctx, student); err != nil {
 			return liberrors.Errorf("failed to Create20NGSLWorkbook. err: %w", err)
+		}
+
+		if err := english_sentence.CreateFlushWorkbook(ctx, student); err != nil {
+			return liberrors.Errorf("english_sentence.CreateFlushWorkbook. err: %w", err)
 		}
 
 		// if err := english_word.Create300NGSLWorkbook(ctx, student); err != nil {
