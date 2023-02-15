@@ -18,7 +18,7 @@ require (
 	github.com/onrik/gorm-logrus v0.4.0
 	github.com/onrik/logrus v0.9.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a
